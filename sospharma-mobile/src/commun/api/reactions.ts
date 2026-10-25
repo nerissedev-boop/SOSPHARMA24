@@ -53,8 +53,9 @@ export function reactionPour(erreur: unknown): Reaction {
     case 'FORBIDDEN':
       return { type: 'message', message: t('erreurs.accesRefuse') };
     case 'UNAUTHENTICATED':
-      // Pas de compte dans l'app : le jeton d'appareil sera recréé au prochain lancement.
-      return { type: 'connexion', message: t('erreurs.generique') };
+      // Jeton d'appareil inconnu de l'API : le client l'a effacé et l'appareil se réenregistre aussitôt
+      // (surJetonAppareilRefuse) ; l'usager n'a qu'à réessayer. Les écrans agent gèrent leur propre 401.
+      return { type: 'connexion', message: t('erreurs.appareilRenouvele') };
     case 'MAINTENANCE':
       return { type: 'cache', message: t('erreurs.maintenance') };
     case 'NETWORK_ERROR':

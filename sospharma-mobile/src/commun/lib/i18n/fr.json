@@ -366,6 +366,7 @@
   "erreurs": {
     "titre": "Un problème est survenu",
     "generique": "Un problème est survenu. Réessayez.",
+    "appareilRenouvele": "La connexion de votre téléphone a été renouvelée. Réessayez.",
     "reseau": "Pas de connexion internet.",
     "format": "Réponse inattendue du serveur.",
     "tropDeDemandes": "Vous avez envoyé trop de demandes aujourd'hui. Réessayez demain.",

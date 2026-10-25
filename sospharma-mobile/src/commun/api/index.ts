@@ -3,6 +3,7 @@ export {
   avecMetaOuErreur,
   construireUrl,
   definirJetonAppareil,
+  surJetonAppareilRefuse,
   definirTransport,
   donneesOuErreur,
   lireEnveloppe,

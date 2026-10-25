@@ -100,6 +100,17 @@ export function definirJetonAppareil(jeton: string | null): void {
   else stockage().remove(CLE_JETON);
 }
 
+const ecouteursJetonRefuse = new Set<() => void>();
+
+/**
+ * Appelé quand l'API ne reconnaît plus le jeton d'appareil (401 UNAUTHENTICATED) : le jeton
+ * vient d'être effacé, l'enregistrement de l'appareil doit être refait. Renvoie de quoi se désabonner.
+ */
+export function surJetonAppareilRefuse(ecouteur: () => void): () => void {
+  ecouteursJetonRefuse.add(ecouteur);
+  return () => ecouteursJetonRefuse.delete(ecouteur);
+}
+
 export function construireUrl(chemin: string, params?: Record<string, ValeurParam>): string {
   const base = config.apiUrl.replace(/\/$/, '');
   const morceaux: string[] = [];
@@ -198,7 +209,14 @@ export async function appeler<T>(chemin: string, options: OptionsAppel = {}): Pr
         status: reponse.status,
       };
     }
-    return lireEnveloppe<T>(json, reponse.status);
+    const resultat = lireEnveloppe<T>(json, reponse.status);
+    // Jeton d'appareil inconnu de l'API (base restaurée, passage de la démo à l'API…) : on l'efface
+    // pour que l'appareil se réenregistre. Les routes agent (jeton Sanctum) ne sont pas concernées.
+    if (!resultat.success && resultat.error.code === 'UNAUTHENTICATED' && jeton && !entetesEnPlus?.Authorization) {
+      definirJetonAppareil(null);
+      ecouteursJetonRefuse.forEach((ecouteur) => ecouteur());
+    }
+    return resultat;
   } catch {
     return { success: false, error: erreurLocale('SERVER_ERROR', t('erreurs.generique')), meta: null, status: null };
   } finally {

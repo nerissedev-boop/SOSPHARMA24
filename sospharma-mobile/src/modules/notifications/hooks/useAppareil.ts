@@ -1,24 +1,14 @@
 import { useMutation } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { definirJetonAppareil, donneesOuErreur, lireJetonAppareil } from '@/commun/api';
-import { alerte, signalerErreur, stockage, t, usePreferences } from '@/commun/lib';
+import { definirJetonAppareil, donneesOuErreur, lireJetonAppareil, surJetonAppareilRefuse } from '@/commun/api';
+import { alerte, signalerErreur, t, usePreferences } from '@/commun/lib';
 import { useZoneCourante } from '@/modules/territoire';
 
 import { enregistrerAppareil, modifierAppareil } from '../api';
+import { identifiantAnonyme } from '../identifiant';
 import { configurerNotifications, obtenirJetonExpo } from '../notifications';
-
-const CLE_IDENTIFIANT = 'appareil.identifiant';
-
-function identifiantAnonyme(): string {
-  let id = stockage().getString(CLE_IDENTIFIANT);
-  if (!id) {
-    id = `app_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
-    stockage().set(CLE_IDENTIFIANT, id);
-  }
-  return id;
-}
 
 /**
  * Enregistre l'appareil auprès de l'API au premier lancement (identifiant anonyme,
@@ -27,6 +17,9 @@ function identifiantAnonyme(): string {
 export function useEnregistrementAppareil(): void {
   const { villeId } = useZoneCourante();
   const derniereVille = useRef<string | null>(null);
+  // Jeton refusé par l'API (effacé par le client) : on relance l'enregistrement.
+  const [essai, setEssai] = useState(0);
+  useEffect(() => surJetonAppareilRefuse(() => setEssai((n) => n + 1)), []);
 
   useEffect(() => {
     void configurerNotifications();
@@ -57,7 +50,7 @@ export function useEnregistrementAppareil(): void {
     return () => {
       annule = true;
     };
-  }, [villeId]);
+  }, [villeId, essai]);
 }
 
 /** Préférence « Nouveau tour de garde » (notification du samedi matin). */
