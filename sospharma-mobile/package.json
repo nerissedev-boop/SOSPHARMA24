@@ -1,0 +1,92 @@
+{
+  "name": "sospharma-mobile",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
+    "@expo-google-fonts/urbanist": "^0.4.2",
+    "@maplibre/maplibre-react-native": "^11.5.0",
+    "@react-native-community/netinfo": "12.0.1",
+    "@sentry/react-native": "~8.28.0",
+    "@tanstack/query-sync-storage-persister": "^5.104.5",
+    "@tanstack/react-query": "^5.104.5",
+    "@tanstack/react-query-persist-client": "^5.104.5",
+    "eslint-config-expo": "~58.0.4",
+    "expo": "~58.0.16",
+    "expo-asset": "~58.0.17",
+    "expo-clipboard": "~58.0.3",
+    "expo-constants": "~58.0.12",
+    "expo-crypto": "~58.0.7",
+    "expo-device": "~58.0.5",
+    "expo-file-system": "~58.0.10",
+    "expo-font": "~58.0.9",
+    "expo-image-manipulator": "~58.0.15",
+    "expo-image-picker": "~58.0.10",
+    "expo-linking": "~58.0.13",
+    "expo-localization": "~58.0.5",
+    "expo-location": "~58.0.18",
+    "expo-notifications": "~58.1.5",
+    "expo-router": "~58.0.24",
+    "expo-secure-store": "~58.0.2",
+    "expo-splash-screen": "~58.0.10",
+    "expo-status-bar": "~58.0.3",
+    "expo-system-ui": "~58.0.6",
+    "i18next": "^26.5.3",
+    "jest-expo": "~58.0.11",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-i18next": "^17.1.0",
+    "react-native": "0.88.0",
+    "react-native-mmkv": "^4.3.2",
+    "react-native-nitro-modules": "^0.37.1",
+    "react-native-reanimated": "4.7.1",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-screens": "~4.30.0",
+    "react-native-svg": "15.16.0",
+    "react-native-web": "~0.21.4",
+    "react-native-worklets": "0.13.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "^14.1.0",
+    "@types/jest": "^30.0.0",
+    "@types/react": "~19.3.0",
+    "eslint": "^9.39.5",
+    "jest": "^30.5.2",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "verifier": "npm run typecheck && npm run lint && npm run test",
+    "icones:generer": "node scripts/generer-icones.mjs",
+    "polices:detecter": "node scripts/detecter-vonca.mjs",
+    "prestart": "node scripts/detecter-vonca.mjs",
+    "api:generer": "npx --yes openapi-typescript@7 ${OPENAPI_URL:-./openapi.json} -o src/commun/api/schema.genere.ts",
+    "e2e": "maestro test e2e/"
+  },
+  "private": true,
+  "jest": {
+    "preset": "jest-expo",
+    "testTimeout": 20000,
+    "maxWorkers": 2,
+    "setupFiles": [
+      "./jest.setup.ts"
+    ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/e2e/"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|@maplibre/.*|react-native-mmkv|react-native-nitro-modules|@tanstack/.*|zustand)"
+    ]
+  }
+}

@@ -1,0 +1,125 @@
+# Parcours agent terrain : connexion (identifiants fictifs acceptés en démo), nouveau relevé
+# en 4 étapes (position, doublons, photo de façade, fiche), envoi, retour à « Mes relevés ».
+# Lancement : maestro test e2e/releve-agent.yaml (development build ou preview, EXPO_PUBLIC_API_MOCK=1).
+# La photo utilise l'appareil photo du téléphone ou de l'émulateur : les étapes de l'appareil
+# photo système sont marquées « optional » car leurs libellés varient selon le constructeur.
+appId: com.sospharma24.app
+---
+- launchApp:
+    clearState: true
+    permissions:
+      location: allow
+      camera: allow
+      notifications: deny
+- extendedWaitUntil:
+    visible:
+      id: "ecran-localisation"
+    timeout: 15000
+- tapOn:
+    id: "bouton-activer-localisation"
+- extendedWaitUntil:
+    visible:
+      id: "ecran-accueil"
+    timeout: 15000
+
+# Profil -> Espace agent et pharmacien
+- tapOn:
+    id: "onglet-profil"
+- scrollUntilVisible:
+    element:
+      id: "lien-espace-agent"
+    direction: DOWN
+- tapOn:
+    id: "lien-espace-agent"
+- assertVisible:
+    id: "ecran-connexion-agent"
+- assertVisible: "Espace agent terrain"
+
+# 22 Connexion
+- tapOn:
+    id: "champ-email"
+- inputText: "k.yao@sospharma24.ci"
+- tapOn:
+    id: "champ-mot-de-passe"
+- inputText: "demo1234"
+- tapOn: "Afficher le mot de passe"
+- assertVisible: "Masquer le mot de passe"
+- hideKeyboard
+- tapOn:
+    id: "bouton-se-connecter"
+
+# 23 Mes relevés : l'onglet Profil est devenu « Relevés »
+- extendedWaitUntil:
+    visible:
+      id: "ecran-releves"
+    timeout: 10000
+- assertVisible:
+    id: "onglet-releves"
+- assertNotVisible:
+    id: "onglet-profil"
+- assertVisible: "Mes relevés"
+- tapOn:
+    id: "bouton-nouveau-releve"
+
+# 24 Position (± 8 m en démo)
+- extendedWaitUntil:
+    visible: "Précision ± 8 m"
+    timeout: 15000
+- assertVisible: "Étape 1 sur 4"
+- tapOn:
+    id: "bouton-valider-position"
+
+# 25 Doublons
+- extendedWaitUntil:
+    visible:
+      id: "ecran-releve-doublons"
+    timeout: 10000
+- assertVisible: "Cette pharmacie est-elle déjà connue ?"
+- tapOn:
+    id: "bouton-nouvelle-pharmacie"
+
+# 26 Photos : façade obligatoire
+- assertVisible: "Étape 3 sur 4"
+- tapOn:
+    id: "bouton-photo-facade"
+- tapOn:
+    id: "com.android.camera2:id/shutter_button"
+    optional: true
+- tapOn:
+    id: "com.android.camera2:id/done_button"
+    optional: true
+- tapOn:
+    text: "(OK|Utiliser la photo|Use Photo)"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "photo-facade"
+    timeout: 20000
+- tapOn:
+    id: "bouton-continuer-photos"
+
+# 27 Fiche et envoi
+- assertVisible: "Étape 4 sur 4"
+- tapOn:
+    id: "champ-nom-pharmacie"
+- inputText: "Pharmacie Maestro"
+- hideKeyboard
+- assertVisible: "Lun. au sam. 08:00 à 21:00, dim. fermée"
+- tapOn:
+    id: "bouton-envoyer-releve"
+- extendedWaitUntil:
+    visible:
+      id: "ecran-releves"
+    timeout: 15000
+- assertVisible: "Pharmacie Maestro"
+
+# Quitter : l'onglet Profil revient
+- tapOn:
+    id: "bouton-quitter"
+- tapOn:
+    text: "Quitter"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "onglet-profil"
+    timeout: 10000

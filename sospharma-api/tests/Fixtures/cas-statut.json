@@ -1,0 +1,68 @@
+{
+  "description": "Cas de test partagés de la règle de statut (API Laravel + app mobile). Priorité : garde > ouverte > fermée. jour : 0 = dimanche ... 6 = samedi, heure locale du fuseau. Une plage dont la fermeture est avant l'ouverture passe minuit. prochaine_ouverture : ISO UTC de la prochaine ouverture si fermée, sinon null.",
+  "cas": [
+    {
+      "nom": "Ouverte dans sa plage du mardi",
+      "maintenant": "2026-10-20T10:00:00Z",
+      "fuseau": "Africa/Abidjan",
+      "pharmacie": { "h24": false, "horaires": [{ "jour": 2, "ouverture": "08:00", "fermeture": "22:00" }], "gardes": [] },
+      "attendu": { "statut": "ouverte", "prochaine_ouverture": null }
+    },
+    {
+      "nom": "Fermée après la fermeture, rouvre le lendemain matin",
+      "maintenant": "2026-10-20T23:40:00Z",
+      "fuseau": "Africa/Abidjan",
+      "pharmacie": { "h24": false, "horaires": [{ "jour": 2, "ouverture": "08:00", "fermeture": "22:00" }, { "jour": 3, "ouverture": "07:00", "fermeture": "22:00" }], "gardes": [] },
+      "attendu": { "statut": "fermee", "prochaine_ouverture": "2026-10-21T07:00:00Z" }
+    },
+    {
+      "nom": "De garde la nuit l'emporte sur fermée",
+      "maintenant": "2026-10-20T23:40:00Z",
+      "fuseau": "Africa/Abidjan",
+      "pharmacie": { "h24": false, "horaires": [{ "jour": 2, "ouverture": "08:00", "fermeture": "22:00" }], "gardes": [{ "debut": "2026-10-17T08:00:00Z", "fin": "2026-10-24T08:00:00Z" }] },
+      "attendu": { "statut": "garde", "prochaine_ouverture": null }
+    },
+    {
+      "nom": "Ouverte 24h/24",
+      "maintenant": "2026-10-20T03:00:00Z",
+      "fuseau": "Africa/Abidjan",
+      "pharmacie": { "h24": true, "horaires": [], "gardes": [] },
+      "attendu": { "statut": "ouverte", "prochaine_ouverture": null }
+    },
+    {
+      "nom": "24h/24 et de garde : garde prioritaire",
+      "maintenant": "2026-10-20T03:00:00Z",
+      "fuseau": "Africa/Abidjan",
+      "pharmacie": { "h24": true, "horaires": [], "gardes": [{ "debut": "2026-10-17T08:00:00Z", "fin": "2026-10-24T08:00:00Z" }] },
+      "attendu": { "statut": "garde", "prochaine_ouverture": null }
+    },
+    {
+      "nom": "Plage qui passe minuit, encore ouverte à 01:30",
+      "maintenant": "2026-10-21T01:30:00Z",
+      "fuseau": "Africa/Abidjan",
+      "pharmacie": { "h24": false, "horaires": [{ "jour": 2, "ouverture": "18:00", "fermeture": "02:00" }], "gardes": [] },
+      "attendu": { "statut": "ouverte", "prochaine_ouverture": null }
+    },
+    {
+      "nom": "Garde terminée : redevient selon ses horaires",
+      "maintenant": "2026-10-24T09:00:00Z",
+      "fuseau": "Africa/Abidjan",
+      "pharmacie": { "h24": false, "horaires": [{ "jour": 6, "ouverture": "08:00", "fermeture": "13:00" }], "gardes": [{ "debut": "2026-10-17T08:00:00Z", "fin": "2026-10-24T08:00:00Z" }] },
+      "attendu": { "statut": "ouverte", "prochaine_ouverture": null }
+    },
+    {
+      "nom": "Fuseau UTC+1 (Douala) : 07:30 UTC = 08:30 locale, ouverte",
+      "maintenant": "2026-10-20T07:30:00Z",
+      "fuseau": "Africa/Douala",
+      "pharmacie": { "h24": false, "horaires": [{ "jour": 2, "ouverture": "08:00", "fermeture": "20:00" }], "gardes": [] },
+      "attendu": { "statut": "ouverte", "prochaine_ouverture": null }
+    },
+    {
+      "nom": "Dimanche sans horaire, rouvre lundi",
+      "maintenant": "2026-10-18T12:00:00Z",
+      "fuseau": "Africa/Abidjan",
+      "pharmacie": { "h24": false, "horaires": [{ "jour": 1, "ouverture": "08:00", "fermeture": "20:00" }], "gardes": [] },
+      "attendu": { "statut": "fermee", "prochaine_ouverture": "2026-10-19T08:00:00Z" }
+    }
+  ]
+}

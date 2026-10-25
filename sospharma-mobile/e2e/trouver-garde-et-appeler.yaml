@@ -1,0 +1,29 @@
+# Parcours : ouvrir l'app, trouver la pharmacie de garde la plus proche, l'appeler.
+# Lancement : maestro test e2e/trouver-garde-et-appeler.yaml (development build ou preview installé).
+appId: com.sospharma24.app
+---
+- launchApp:
+    clearState: true
+    permissions:
+      location: allow
+      notifications: deny
+- extendedWaitUntil:
+    visible:
+      id: "ecran-localisation"
+    timeout: 15000
+- tapOn:
+    id: "bouton-activer-localisation"
+- extendedWaitUntil:
+    visible:
+      id: "ecran-accueil"
+    timeout: 15000
+- tapOn:
+    id: "carte-gardes"
+- assertVisible:
+    id: "ecran-garde"
+- assertVisible: "La plus proche de garde"
+- assertVisible: "Pharmacie de la Paix"
+- tapOn:
+    id: "bloc-garde-plus-proche-appeler"
+# Le composeur téléphonique s'ouvre (tel:+2250123456789, numéro fictif de démonstration).
+- back

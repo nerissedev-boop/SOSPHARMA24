@@ -1,0 +1,7 @@
+# Réglages personnels de l'éditeur
+.vscode/
+.idea/
+
+# Systèmes
+.DS_Store
+Thumbs.db

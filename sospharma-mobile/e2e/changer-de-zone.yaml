@@ -1,0 +1,35 @@
+# Parcours : changer de zone depuis l'accueil (liste A à Z des communes).
+appId: com.sospharma24.app
+---
+- launchApp:
+    permissions:
+      location: allow
+- runFlow:
+    when:
+      visible:
+        id: "ecran-localisation"
+    commands:
+      - tapOn:
+          id: "bouton-activer-localisation"
+- extendedWaitUntil:
+    visible:
+      id: "ecran-accueil"
+    timeout: 15000
+- tapOn:
+    id: "barre-zone"
+- assertVisible:
+    id: "ecran-zone"
+- assertVisible: "Communes proches de vous"
+- tapOn:
+    id: "lien-toutes-communes"
+- assertVisible:
+    id: "ecran-communes"
+- tapOn:
+    id: "segment-az"
+- tapOn:
+    id: "commune-abj-plateau"
+- extendedWaitUntil:
+    visible:
+      id: "ecran-accueil"
+    timeout: 10000
+- assertVisible: ".*Plateau, Abidjan.*"

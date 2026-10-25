@@ -1,0 +1,84 @@
+{
+  "expo": {
+    "name": "SOS Pharma 24",
+    "slug": "sospharma-mobile",
+    "scheme": "sospharma24",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.sospharma24.app",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "comgooglemaps",
+          "whatsapp",
+          "yango"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.sospharma24.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1B8A3E",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "plugins": [
+      "./plugins/chemins-courts-windows",
+      "expo-router",
+      "expo-localization",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180
+        }
+      ],
+      "@maplibre/maplibre-react-native",
+      "@sentry/react-native",
+      "expo-asset",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pour vous montrer les pharmacies les plus proches et les pharmacies de garde autour de vous, et pour placer précisément une pharmacie lors d’un relevé (espace agent).",
+          "locationFullAccuracyPermission": "La position précise est nécessaire pour placer une pharmacie à l’entrée exacte lors d’un relevé.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1B8A3E"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Pour joindre une capture d’écran à votre message.",
+          "cameraPermission": "Pour photographier la façade, l’enseigne et les horaires d’une pharmacie lors d’un relevé (espace agent).",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false,
+          "configureAndroidBackup": true
+        }
+      ]
+    ]
+  }
+}
