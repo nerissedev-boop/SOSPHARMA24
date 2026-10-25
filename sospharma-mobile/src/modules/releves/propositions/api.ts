@@ -1,4 +1,4 @@
-import { appeler, type ApiResult, type NouvelleProposition, type PharmacieResume, type Proposition } from '@/commun/api';
+import { appeler, joindreFichier, type ApiResult, type NouvelleProposition, type PharmacieResume, type Proposition } from '@/commun/api';
 import type { Coordonnees } from '@/commun/lib';
 
 import type { PhotoLocale } from '../types';
@@ -20,8 +20,7 @@ export function creerProposition(corps: NouvelleProposition): Promise<ApiResult<
 /** Photo de la façade, obligatoire (image JPEG déjà réduite, sans EXIF). */
 export function envoyerFacade(propositionId: string, photo: PhotoLocale): Promise<ApiResult<unknown>> {
   const corps = new FormData();
-  // Format React Native d'un fichier local dans un FormData.
-  corps.append('photo', { uri: photo.uri, name: 'facade.jpg', type: 'image/jpeg' } as unknown as Blob);
+  joindreFichier(corps, 'photo', photo.uri, 'facade.jpg', 'image/jpeg');
   return appeler<unknown>(`/propositions/${encodeURIComponent(propositionId)}/photo`, { methode: 'POST', corps, delaiMs: 60_000 });
 }
 

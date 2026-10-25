@@ -13,6 +13,7 @@ export {
 } from './client';
 export { reactionPour, estErreurHorsConnexion, doitReessayer, type Reaction } from './reactions';
 export { useReactionErreur } from './useReactionErreur';
+export { joindreFichier } from './fichier';
 export * from './schema';
 export * from './types';
 export { reglerDemo, nombreRelevesDemo, reinitialiserDemoAgent } from './demo/adaptateur';

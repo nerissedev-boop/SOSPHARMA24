@@ -1,4 +1,4 @@
-import { appeler, type ApiResult, type MessageSupport, type Pays, type SujetSupport } from '@/commun/api';
+import { appeler, joindreFichier, type ApiResult, type MessageSupport, type Pays, type SujetSupport } from '@/commun/api';
 
 export type NouveauMessage = { sujet: SujetSupport; message: string; contact: string | null };
 
@@ -11,7 +11,7 @@ export function envoyerMessage(corps: NouveauMessage): Promise<ApiResult<Message
 export function joindreCapture(messageId: string, uri: string, type = 'image/jpeg'): Promise<ApiResult<unknown>> {
   const donnees = new FormData();
   // Format attendu par React Native pour un fichier dans un FormData.
-  donnees.append('capture', { uri, name: 'capture.jpg', type } as unknown as Blob);
+  joindreFichier(donnees, 'capture', uri, 'capture.jpg', type);
   return appeler(`/support/messages/${encodeURIComponent(messageId)}/capture`, { methode: 'POST', corps: donnees, delaiMs: 60_000 });
 }
 

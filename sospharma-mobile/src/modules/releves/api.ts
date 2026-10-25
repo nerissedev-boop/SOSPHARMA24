@@ -1,5 +1,6 @@
 import {
   appeler,
+  joindreFichier,
   type ApiResult,
   type Connexion,
   type CorpsReleveApi,
@@ -114,8 +115,7 @@ export async function envoyerPhoto(releveId: string, type: TypePhotoReleve, phot
   corps.append('type', type);
   corps.append('largeur', String(photo.largeur));
   corps.append('hauteur', String(photo.hauteur));
-  // Format React Native d'un fichier local dans un FormData.
-  corps.append('photo', { uri: photo.uri, name: `${type}.jpg`, type: 'image/jpeg' } as unknown as Blob);
+  joindreFichier(corps, 'photo', photo.uri, `${type}.jpg`, 'image/jpeg');
   return appeler<unknown>(`/agent/releves/${encodeURIComponent(releveId)}/photos`, {
     methode: 'POST',
     corps,
