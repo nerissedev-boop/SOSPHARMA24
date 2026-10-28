@@ -52,13 +52,13 @@ class AuthController extends Controller
     {
         $this->auth->envoyerLienReinitialisation($request->validated('email'));
 
-        return ApiResponse::ok(['message' => 'Si un compte existe pour cet e-mail, un lien de réinitialisation vient d\'être envoyé.']);
+        return ApiResponse::ok(['message' => __('Si un compte existe pour cet e-mail, un lien de réinitialisation vient d\'être envoyé.')]);
     }
 
     public function reinitialiser(ReinitialiserMotDePasseRequest $request): JsonResponse
     {
         $this->auth->reinitialiser($request->validated('email'), $request->validated('token'), $request->validated('password'));
 
-        return ApiResponse::ok(['message' => 'Votre mot de passe a été modifié. Vous pouvez vous connecter.']);
+        return ApiResponse::ok(['message' => __('Votre mot de passe a été modifié. Vous pouvez vous connecter.')]);
     }
 }

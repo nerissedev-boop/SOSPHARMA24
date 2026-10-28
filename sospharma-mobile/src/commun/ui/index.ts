@@ -23,4 +23,4 @@ export { PiedFixe, LigneMenu } from './Mise';
 export { useNavigationOnglets, CHEMINS_ONGLETS } from './navigation/useNavigationOnglets';
 export * from './icones';
 export { useRetour, useRevenirAccueil } from './navigation/retour';
-export { useRetourAuDemarrage } from './navigation/useRetourAuDemarrage';
+export { revenirAuLogo, useRetourAuDemarrage } from './navigation/useRetourAuDemarrage';

@@ -94,3 +94,8 @@ jest.mock('expo-image-manipulator', () => ({
     })),
   },
 }));
+
+// Téléphone réglé en français (l'app suit sa langue) : les tests vérifient les textes français.
+jest.mock('expo-localization', () => ({
+  getLocales: () => [{ languageCode: 'fr', languageTag: 'fr-CI', regionCode: 'CI' }],
+}));

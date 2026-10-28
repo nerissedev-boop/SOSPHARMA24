@@ -317,7 +317,9 @@
     "notifRefusee": "Autorisez les notifications dans les réglages du téléphone.",
     "langue": "Langue",
     "francais": "Français",
-    "langueSeule": "Seul le français est disponible pour l'instant.",
+    "anglais": "English",
+    "langueAuto": "Langue du téléphone",
+    "langueTexte": "L'application revient à l'accueil dans la langue choisie.",
     "modeNuit": "Mode nuit",
     "modes": {
       "auto": "Automatique",
@@ -535,6 +537,22 @@
     "adresse": "Adresse ou repère",
     "adressePlaceholder": "Ex. : face au marché, boulevard Latrille",
     "adresseObligatoire": "Indiquez l'adresse ou un repère : obligatoire pour une nouvelle pharmacie."
+  },
+  "horaires": {
+    "fermee": "fermée",
+    "plage": "{{debut}} à {{fin}}",
+    "separateur": " et ",
+    "intervalle": "{{debut}} au {{fin}}",
+    "h24": "Ouverte 24h/24, 7j/7",
+    "jours": {
+      "0": "dim.",
+      "1": "lun.",
+      "2": "mar.",
+      "3": "mer.",
+      "4": "jeu.",
+      "5": "ven.",
+      "6": "sam."
+    }
   },
   "proposer": {
     "titre": "Proposer une pharmacie",

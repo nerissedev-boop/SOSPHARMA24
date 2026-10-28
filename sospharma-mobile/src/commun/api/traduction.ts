@@ -132,10 +132,11 @@ export function depuisPaysApi(p: PaysApi): Pays {
     // Coordonnées vides tant que l'équipe ne les a pas renseignées : « bientôt disponible ».
     resume: p.resume ?? null,
     support: { whatsapp: p.support?.whatsapp ?? null, telephone: p.support?.telephone ?? null, email: p.support?.email ?? null },
+    // Libellés traduits par l'app quand elle les connaît (anglais) ; sinon celui de l'API.
     urgences: (p.urgences ?? []).map((u) => ({
       code: u.service,
-      libelle: u.libelle,
-      libelle_court: u.libelle,
+      libelle: t(`urgences.libelles.${u.service}`, { defaultValue: u.libelle }),
+      libelle_court: t(`urgences.libelles.${u.service}`, { defaultValue: u.libelle }),
       description: t(`urgences.descriptions.${u.service}`, { defaultValue: '' }),
       numero: u.numero,
       icone: ICONES_URGENCE[u.service] ?? 'autre',

@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PharmacieResume } from '@/commun/api';
-import { dateCourte, distanceKm, distanceNombre, t, useEnLigne, usePreferences } from '@/commun/lib';
+import { dateCourte, distanceKm, distanceNombre, localeActive, t, useEnLigne, usePreferences } from '@/commun/lib';
 import { ombres, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
@@ -462,7 +462,7 @@ function NoteAvis({ note }: { note: { moyenne: number; nombre: number } }) {
     <View style={styles.note}>
       <IconeEtoile size={14} color={c.etoile} />
       <Texte variante="libelle" couleur={c.texteSecondaire}>
-        <Texte variante="libelleFort">{note.moyenne.toLocaleString('fr-FR')}</Texte> {t('carte.avis', { count: note.nombre })}
+        <Texte variante="libelleFort">{note.moyenne.toLocaleString(localeActive())}</Texte> {t('carte.avis', { count: note.nombre })}
       </Texte>
     </View>
   );

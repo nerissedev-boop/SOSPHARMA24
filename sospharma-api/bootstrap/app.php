@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Commun\Erreurs\RenduErreursApi;
+use App\Commun\Http\Middleware\DefinirLangue;
 use App\Commun\Http\Middleware\RequestId;
 use App\Commun\Http\Middleware\VerifierRole;
 use Illuminate\Foundation\Application;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Le request_id est posé avant tout le reste (y compris le mode maintenance),
         // pour que même une réponse 503 le porte.
         $middleware->prepend(RequestId::class);
+        $middleware->append(DefinirLangue::class);
 
         $middleware->alias([
             'role' => VerifierRole::class,

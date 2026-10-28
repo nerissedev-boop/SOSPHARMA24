@@ -2,7 +2,16 @@ export { config, estModeDemo, positionSimulee } from './config';
 export * from './format';
 export * from './geo';
 export * from './liens';
-export { t, useTranslation, LANGUES_DISPONIBLES } from './i18n';
+export {
+  appliquerLangue,
+  langueActive,
+  localeActive,
+  t,
+  useTranslation,
+  LANGUES_DISPONIBLES,
+  type Langue,
+  type PreferenceLangue,
+} from './i18n';
 export {
   usePreferences,
   useSession,

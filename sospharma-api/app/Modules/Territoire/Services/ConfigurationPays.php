@@ -20,7 +20,7 @@ final class ConfigurationPays
 
     private const CLE_FUSEAUX = 'territoire.villes.fuseaux';
 
-    private const CLE_RESUMES = 'territoire.pays.resumes';
+    private const CLE_RESUMES = 'territoire.pays.resumes.v2';
 
     /**
      * Le cache ne garde que les colonnes brutes : Laravel 13 refuse de désérialiser des objets
@@ -65,13 +65,21 @@ final class ConfigurationPays
      */
     public function resume(int $paysId): ?string
     {
-        return $this->resumesParPays()[$paysId] ?? null;
+        $resume = $this->resumesParPays()[$paysId] ?? null;
+        if ($resume === null) {
+            return null;
+        }
+        // Phrase construite à chaque appel, dans la langue de la requête : le cache ne garde que les données.
+        $villes = implode(', ', $resume['ouvertes']);
+        $texte = count($resume['ouvertes']) > 1 ? __(':villes ouverts', ['villes' => $villes]) : __(':villes ouvert', ['villes' => $villes]);
+
+        return $resume['bientot'] ? __(':resume, autres villes bientôt', ['resume' => $texte]) : $texte;
     }
 
-    /** @return array<int, string> */
+    /** @return array<int, array{ouvertes: list<string>, bientot: bool}> */
     private function resumesParPays(): array
     {
-        /** @var array<int, string> */
+        /** @var array<int, array{ouvertes: list<string>, bientot: bool}> */
         return Cache::rememberForever(self::CLE_RESUMES, function (): array {
             $resumes = [];
             $parPays = Ville::query()->where('actif', true)->orderBy('nom')->get(['pays_id', 'nom', 'statut'])->groupBy('pays_id');
@@ -80,11 +88,10 @@ final class ConfigurationPays
                 if ($ouvertes->isEmpty()) {
                     continue;
                 }
-                $resume = $ouvertes->implode(', ').($ouvertes->count() > 1 ? ' ouverts' : ' ouvert');
-                if ($villes->contains(fn (Ville $v): bool => $v->statut === StatutVille::Bientot)) {
-                    $resume .= ', autres villes bientôt';
-                }
-                $resumes[(int) $paysId] = $resume;
+                $resumes[(int) $paysId] = [
+                    'ouvertes' => $ouvertes->values()->all(),
+                    'bientot' => $villes->contains(fn (Ville $v): bool => $v->statut === StatutVille::Bientot),
+                ];
             }
 
             return $resumes;

@@ -1,16 +1,16 @@
 /**
- * Formats d'affichage via Intl (langue française, fuseau du pays).
+ * Formats d'affichage via Intl (langue de l'interface, fuseau du pays).
  * Règle de rédaction : pas de séparateur « · » dans les méta.
  */
-const LOCALE = 'fr-FR';
+import { localeActive } from './i18n';
 
-const unDecimale = new Intl.NumberFormat(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const entier = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 });
+const unDecimale = () => new Intl.NumberFormat(localeActive(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const entier = () => new Intl.NumberFormat(localeActive(), { maximumFractionDigits: 0 });
 
 /** 440 -> "0,4" ; 12500 -> "13" (au-delà de 10 km, sans décimale). */
 export function distanceNombre(metres: number): string {
   const km = metres / 1000;
-  return km >= 10 ? entier.format(km) : unDecimale.format(km);
+  return km >= 10 ? entier().format(km) : unDecimale().format(km);
 }
 
 /** 440 -> "0,4 km" */
@@ -21,11 +21,11 @@ export function distanceKm(metres: number | null | undefined): string {
 
 /** Distance arrondie au kilomètre (listes de communes) : 4200 -> "4 km". */
 export function distanceKmEntier(metres: number): string {
-  return `${entier.format(Math.max(1, Math.round(metres / 1000)))} km`;
+  return `${entier().format(Math.max(1, Math.round(metres / 1000)))} km`;
 }
 
 function partie(date: Date, fuseau: string, options: Intl.DateTimeFormatOptions): string {
-  return new Intl.DateTimeFormat(LOCALE, { timeZone: fuseau, ...options }).format(date);
+  return new Intl.DateTimeFormat(localeActive(), { timeZone: fuseau, ...options }).format(date);
 }
 
 /** "sam. 17 oct." */
@@ -101,5 +101,5 @@ export function initiales(prenom: string, nom: string): string {
 
 /** Première lettre en minuscule (« De garde cette nuit » -> « de garde cette nuit »). */
 export function minusculeInitiale(texte: string): string {
-  return texte.length ? texte[0]!.toLocaleLowerCase(LOCALE) + texte.slice(1) : texte;
+  return texte.length ? texte[0]!.toLocaleLowerCase(localeActive()) + texte.slice(1) : texte;
 }

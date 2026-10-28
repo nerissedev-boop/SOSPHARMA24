@@ -13,6 +13,7 @@ import { useCallback, useEffect, type ReactNode } from 'react';
 
 import { useReactionErreur } from '@/commun/api';
 import {
+  appliquerLangue,
   brancherReseauEtPremierPlan,
   creerClientRequetes,
   enveloppeSentry,
@@ -20,6 +21,7 @@ import {
   installerGestionnaireGlobal,
   OPTIONS_PERSISTANCE,
   signalerErreur,
+  usePreferences,
 } from '@/commun/lib';
 import { FournisseurTheme, policesACharger, useTheme } from '@/commun/theme';
 import { HoteDialogues, useRetourAuDemarrage } from '@/commun/ui';
@@ -30,6 +32,8 @@ import { usePaysCourant, useSynchroniserZone } from '@/modules/territoire';
 
 initialiserSentry();
 installerGestionnaireGlobal();
+// Langue choisie dans le Profil (préférences lues de façon synchrone), avant le premier écran.
+appliquerLangue(usePreferences.getState().langue);
 SplashScreen.preventAutoHideAsync().catch((e: unknown) => signalerErreur(e));
 
 const clientRequetes = creerClientRequetes();

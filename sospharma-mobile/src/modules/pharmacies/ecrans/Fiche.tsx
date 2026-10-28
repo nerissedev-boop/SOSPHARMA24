@@ -5,7 +5,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { reactionPour, type AssurancePharmacie } from '@/commun/api';
-import { dateCourte, heureLocale, t, telephoneAffiche, usePreferences, useSessionAgent } from '@/commun/lib';
+import { dateCourte, heureLocale, localeActive, t, telephoneAffiche, usePreferences, useSessionAgent } from '@/commun/lib';
 import { ombres, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
@@ -212,7 +212,7 @@ function Fiche() {
                   <View style={styles.note}>
                     <IconeEtoile size={14} color={c.etoile} />
                     <Texte variante="petit" couleur={c.texteSecondaire}>
-                      <Texte variante="petitFort">{fiche.note.moyenne.toLocaleString('fr-FR')}</Texte>{' '}
+                      <Texte variante="petitFort">{fiche.note.moyenne.toLocaleString(localeActive())}</Texte>{' '}
                       {t('carte.avis', { count: fiche.note.nombre })}
                     </Texte>
                   </View>

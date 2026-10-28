@@ -1,5 +1,5 @@
 import { config } from '../lib/config';
-import { t } from '../lib/i18n';
+import { langueActive, t } from '../lib/i18n';
 import { stockage } from '../lib/stockage';
 import { transportDemo } from './demo/adaptateur';
 import type { Meta } from './schema';
@@ -174,7 +174,7 @@ export async function appeler<T>(chemin: string, options: OptionsAppel = {}): Pr
   signal?.addEventListener('abort', relaisAnnulation);
 
   try {
-    const entetes: Record<string, string> = { Accept: 'application/json', 'Accept-Language': 'fr' };
+    const entetes: Record<string, string> = { Accept: 'application/json', 'Accept-Language': langueActive() };
     const jeton = lireJetonAppareil();
     if (jeton) entetes['X-Device-Token'] = jeton;
     Object.assign(entetes, entetesEnPlus);

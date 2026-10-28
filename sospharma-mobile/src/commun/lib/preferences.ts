@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { estModeDemo } from './config';
+import type { PreferenceLangue } from './i18n';
 import { stockageSynchrone } from './stockage';
 
 export type ModeNuit = 'auto' | 'jour' | 'nuit';
@@ -54,6 +55,8 @@ type EtatPreferences = {
   paysCode: string;
   zone: ZoneChoisie | null;
   modeNuit: ModeNuit;
+  /** Langue de l'interface : « auto » suit le téléphone. */
+  langue: PreferenceLangue;
   filtres: Filtres;
   filtreRapide: FiltreRapide;
   profil: ProfilLocal;
@@ -71,6 +74,7 @@ type EtatPreferences = {
   definirPays: (code: string) => void;
   definirZone: (zone: ZoneChoisie | null) => void;
   definirModeNuit: (mode: ModeNuit) => void;
+  definirLangue: (langue: PreferenceLangue) => void;
   definirFiltres: (filtres: Filtres) => void;
   definirFiltreRapide: (filtre: FiltreRapide) => void;
   reinitialiserFiltres: () => void;
@@ -91,6 +95,7 @@ export const usePreferences = create<EtatPreferences>()(
       paysCode: 'CI',
       zone: null,
       modeNuit: 'auto',
+      langue: 'auto',
       filtres: FILTRES_PAR_DEFAUT,
       filtreRapide: 'toutes',
       profil: estModeDemo() ? PROFIL_DEMO : { prenom: '', nom: '', telephone: '' },
@@ -107,6 +112,7 @@ export const usePreferences = create<EtatPreferences>()(
       definirPays: (paysCode) => set({ paysCode }),
       definirZone: (zone) => set({ zone }),
       definirModeNuit: (modeNuit) => set({ modeNuit }),
+      definirLangue: (langue) => set({ langue }),
       definirFiltres: (filtres) => set({ filtres, assurancesFiltreChoisies: true }),
       definirFiltreRapide: (filtreRapide) => set({ filtreRapide }),
       reinitialiserFiltres: () => set({ filtres: FILTRES_PAR_DEFAUT, filtreRapide: 'toutes', assurancesFiltreChoisies: false }),

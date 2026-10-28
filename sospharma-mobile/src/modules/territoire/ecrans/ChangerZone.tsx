@@ -164,7 +164,7 @@ function ChangerZone() {
             >
               <Texte variante="boutonPetit" couleur={c.vertTexte}>
                 {/* L'API ne donne pas le nombre de communes : à défaut, celles chargées pour la ville. */}
-                {t('zone.toutes', { deVille: de(villeOuverte.nom), count: villeOuverte.nombre_communes || communes.data?.length || 0 })}
+                {t('zone.toutes', { deVille: de(villeOuverte.nom), ville: villeOuverte.nom, count: villeOuverte.nombre_communes || communes.data?.length || 0 })}
               </Texte>
               <IconeChevronDroite size={18} color={c.vertTexte} />
             </Pressable>

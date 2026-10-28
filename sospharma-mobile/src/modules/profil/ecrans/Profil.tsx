@@ -1,11 +1,12 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { alerte, estModeDemo, initiales, t, usePreferences, type ModeNuit } from '@/commun/lib';
+import { alerte, appliquerLangue, estModeDemo, initiales, t, usePreferences, type ModeNuit, type PreferenceLangue } from '@/commun/lib';
 import { libelleStatut } from '@/commun/regles';
 import { useTheme } from '@/commun/theme';
-import { avecErrorBoundary, CaseACocher, Ecran, IconeBulle, IconePlus, LigneMenu, LignePharmacie, Texte } from '@/commun/ui';
+import { avecErrorBoundary, CaseACocher, Ecran, IconeBulle, IconePlus, LigneMenu, LignePharmacie, revenirAuLogo, Texte } from '@/commun/ui';
 import { useNotificationGarde } from '@/modules/notifications';
 import { usePaysCourant, useZoneCourante } from '@/modules/territoire';
 
@@ -13,6 +14,12 @@ import { EditionProfil } from '../composants/EditionProfil';
 import { useFavoris } from '../hooks/useFavoris';
 
 const CYCLE_MODE: Record<ModeNuit, ModeNuit> = { auto: 'nuit', nuit: 'jour', jour: 'auto' };
+/** Chaque langue s'écrit dans sa propre langue (« English » même en français). */
+const NOM_LANGUE: Record<PreferenceLangue, () => string> = {
+  auto: () => t('profil.langueAuto'),
+  fr: () => t('profil.francais'),
+  en: () => t('profil.anglais'),
+};
 
 /** 14 Profil et favoris. */
 function Profil() {
@@ -29,6 +36,28 @@ function Profil() {
   const notification = useNotificationGarde();
   const mesAssurances = usePreferences((e) => e.mesAssurances);
   const nomComplet = `${profil.prenom} ${profil.nom}`.trim();
+  const langue = usePreferences((e) => e.langue);
+  const definirLangue = usePreferences((e) => e.definirLangue);
+  const clientRequetes = useQueryClient();
+
+  // Les écrans lisent leurs textes à l'affichage : on repasse par le logo pour tout reconstruire,
+  // et on recharge les données dont l'API fournit des textes (résumés, messages).
+  const changerLangue = (choix: PreferenceLangue) => {
+    if (choix === langue) return;
+    definirLangue(choix);
+    appliquerLangue(choix);
+    void clientRequetes.invalidateQueries();
+    revenirAuLogo();
+  };
+  const choisirLangue = () =>
+    alerte(t('profil.langue'), t('profil.langueTexte'), [
+      // Le choix actuel d'abord : c'est lui qui ressort en vert plein.
+      ...([langue, ...(['fr', 'en', 'auto'] as const).filter((l) => l !== langue)] as PreferenceLangue[]).map((choix) => ({
+        text: choix === langue ? `${NOM_LANGUE[choix]()} ✓` : NOM_LANGUE[choix](),
+        onPress: () => changerLangue(choix),
+      })),
+      { text: t('commun.annuler'), style: 'cancel' as const },
+    ]);
 
   return (
     <Ecran testID="ecran-profil">
@@ -113,8 +142,9 @@ function Profil() {
           />
           <LigneMenu
             libelle={t('profil.langue')}
-            valeur={t('profil.francais')}
-            onPress={() => alerte(t('profil.langue'), t('profil.langueSeule'))}
+            valeur={NOM_LANGUE[langue]()}
+            onPress={choisirLangue}
+            testID="ligne-langue"
           />
         </View>
 

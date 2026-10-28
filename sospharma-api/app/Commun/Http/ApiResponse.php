@@ -83,12 +83,16 @@ final class ApiResponse
         ?int $statut = null,
         array $entetes = [],
     ): JsonResponse {
+        // Messages écrits en français dans le code, traduits ici selon la langue de la requête (lang/en.json).
         $erreur = [
             'code' => $code->value,
-            'message' => $message ?? $code->messageParDefaut(),
+            'message' => self::traduire($message ?? $code->messageParDefaut()),
         ];
         if ($details !== null && $details !== []) {
-            $erreur['details'] = $details;
+            $erreur['details'] = array_map(
+                fn (mixed $v): mixed => is_array($v) ? array_map(fn (mixed $m): mixed => is_string($m) ? self::traduire($m) : $m, $v) : $v,
+                $details,
+            );
         }
 
         return self::reponse([
@@ -96,6 +100,14 @@ final class ApiResponse
             'error' => $erreur,
             'meta' => self::meta([]),
         ], $statut ?? $code->statutHttp(), $entetes);
+    }
+
+    /** Phrase française -> langue de la requête ; inchangée si lang/en.json ne la connaît pas. */
+    private static function traduire(string $message): string
+    {
+        $traduit = __($message);
+
+        return is_string($traduit) ? $traduit : $message;
     }
 
     /**

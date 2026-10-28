@@ -5,6 +5,15 @@ import { AppState } from 'react-native';
 import { noterDepart, rejouerDemarrageAuRetour } from '../../lib/premierPlan';
 
 /**
+ * Repasse par l'écran du logo, qui ramène ensuite à l'accueil : tous les écrans sont reconstruits
+ * (retour dans l'app, changement de langue).
+ */
+export function revenirAuLogo(): void {
+  if (router.canDismiss()) router.dismissAll();
+  router.replace('/demarrage');
+}
+
+/**
  * Rejoue l'écran du logo quand l'usager revient dans l'app après l'avoir vraiment quittée
  * (règle dans `commun/lib/premierPlan.ts`). Monté une seule fois, à la racine.
  *
@@ -20,20 +29,16 @@ export function useRetourAuDemarrage(): void {
   const navigation = useNavigationContainerRef();
 
   useEffect(() => {
-    const allerAuLogo = () => {
-      if (router.canDismiss()) router.dismissAll();
-      router.replace('/demarrage');
-    };
     const appliquer = () => {
       if (!rejouerDemarrageAuRetour()) return;
       if (navigation.isReady()) {
-        allerAuLogo();
+        revenirAuLogo();
         return;
       }
       // Fenêtre reconstruite : la navigation n'est pas encore montée.
       const desabonner = navigation.addListener('state', () => {
         desabonner();
-        allerAuLogo();
+        revenirAuLogo();
       });
     };
     appliquer();
