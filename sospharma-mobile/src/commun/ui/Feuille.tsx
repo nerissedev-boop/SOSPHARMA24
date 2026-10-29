@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { Easing, interpolate, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { t } from '../lib/i18n';
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { BoutonIcone } from './BoutonIcone';
 import { IconeFermer } from './icones/trait';
@@ -34,7 +35,7 @@ type Props = {
 /**
  * Feuille du design system, qui monte du bas de l'écran au-dessus d'un voile sombre.
  * Seule forme de fenêtre de l'app (dialogues, partage, éditions, vérification) : même
- * poignée, mêmes marges, même animation, aucun arrondi ni bordure (charte).
+ * poignée, mêmes marges, même animation, haut arrondi de 24 et aucune bordure (charte « cartes »).
  * La feuille reste affichée le temps de son animation de fermeture.
  */
 export function Feuille({
@@ -137,8 +138,8 @@ export function Feuille({
 
 const styles = StyleSheet.create({
   bas: { flex: 1, justifyContent: 'flex-end' },
-  feuille: { maxHeight: '90%', paddingTop: 10 },
-  poignee: { alignSelf: 'center', width: 40, height: 4, marginBottom: 14 },
+  feuille: { maxHeight: '90%', paddingTop: 10, borderTopLeftRadius: rayons.feuille, borderTopRightRadius: rayons.feuille },
+  poignee: { alignSelf: 'center', width: 40, height: 4, marginBottom: 14, borderRadius: rayons.pilule },
   defilement: { flexGrow: 0 },
   contenu: { paddingHorizontal: 20, gap: 14 },
   entete: { flexDirection: 'row', alignItems: 'center', gap: 12 },

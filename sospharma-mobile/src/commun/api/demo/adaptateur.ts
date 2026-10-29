@@ -184,6 +184,8 @@ function versResume(p: PharmacieDemo, depuis: { latitude: number; longitude: num
     })(),
     distance_m: distance,
     marche_min: distance === null ? null : marcheMinutes(distance),
+    // Démo : aucune photo de façade (pastille de statut à la place de la vignette).
+    photo_url: null,
   };
 }
 
@@ -194,7 +196,6 @@ function versFiche(p: PharmacieDemo, depuis: { latitude: number; longitude: numb
     services: p.services,
     verifiee_le: tourEnCours(horloge()).debut,
     note: p.note,
-    photo_url: null,
   };
 }
 

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '../lib/i18n';
 import { useSessionAgent } from '../lib/sessionAgent';
 import { ombres } from '../theme/ombres';
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { HiGeoLocation, HiHome, HiUiUserProfile, HiUiUserProfileOutline } from './icones/healthicons';
 import { IconeLune, IconePlus, IconeReleves } from './icones/trait';
@@ -21,7 +22,7 @@ type Props = {
 
 /**
  * Barre d'onglets personnalisée (5 onglets) : Urgence = cercle rouge avec +,
- * Garde actif en rouge, sinon actif vert. Fond blanc, ombre douce, sans bordure.
+ * Garde actif en rouge, sinon actif vert. Fond blanc, haut arrondi de 20, ombre douce, sans bordure.
  * Utilisable par le navigateur d'onglets ou seule (écrans hors onglets des maquettes).
  */
 export function BarreOnglets({ actif, onSelection }: Props) {
@@ -98,6 +99,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingTop: 8,
     paddingHorizontal: 4,
+    borderTopLeftRadius: rayons.grandeCarte,
+    borderTopRightRadius: rayons.grandeCarte,
   },
   onglet: { minWidth: 60, minHeight: 50, alignItems: 'center' },
   urgence: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },

@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { alerte, appliquerLangue, estModeDemo, initiales, t, usePreferences, type ModeNuit, type PreferenceLangue } from '@/commun/lib';
 import { libelleStatut } from '@/commun/regles';
-import { useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import { avecErrorBoundary, CaseACocher, Ecran, IconeBulle, IconePlus, LigneMenu, LignePharmacie, revenirAuLogo, Texte } from '@/commun/ui';
 import { useNotificationGarde } from '@/modules/notifications';
 import { usePaysCourant, useZoneCourante } from '@/modules/territoire';
@@ -87,7 +87,8 @@ function Profil() {
           </Pressable>
         </View>
 
-        <View>
+        {/* Favoris : cartes arrondies espacées de 8 (charte « cartes »). */}
+        <View style={styles.favoris}>
           <Texte variante="sectionMoyenne" titre style={styles.titreSection}>
             {t('profil.favoris')}
           </Texte>
@@ -95,6 +96,7 @@ function Profil() {
             <LignePharmacie
               key={p.id}
               variante="favori"
+              photoUrl={p.photo_url ?? null}
               nom={p.nom}
               statut={p.statut}
               libelleStatut={libelleStatut(p, fuseau)}
@@ -195,7 +197,8 @@ function Profil() {
 const styles = StyleSheet.create({
   contenu: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 24, gap: 16 },
   entete: { height: 44, justifyContent: 'center' },
-  carteProfil: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 14 },
+  carteProfil: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: rayons.carte },
+  favoris: { gap: 8 },
   avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   initiales: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontSize: 17 },
   flex: { flex: 1, gap: 2 },

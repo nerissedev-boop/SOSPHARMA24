@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
 
 import { CIBLE_TACTILE } from '../theme/espacements';
+import { rayons } from '../theme/rayons';
 
 type Props = {
   /** Obligatoire : un bouton-icône n'a pas de texte visible. */
@@ -10,7 +11,7 @@ type Props = {
   children: ReactNode;
   taille?: number;
   fond?: string;
-  /** Les boutons ronds (actions) sont la seule exception aux coins droits. */
+  /** Bouton rond (actions) ; sinon carré arrondi de 14 (charte « cartes »). */
   rond?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -41,7 +42,7 @@ export function BoutonIcone({
         {
           width: cote,
           height: cote,
-          borderRadius: rond ? cote / 2 : 0,
+          borderRadius: rond ? cote / 2 : rayons.moyen,
           backgroundColor: fond,
           alignItems: 'center',
           justifyContent: 'center',

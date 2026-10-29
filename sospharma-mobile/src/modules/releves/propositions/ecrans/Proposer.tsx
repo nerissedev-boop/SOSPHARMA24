@@ -4,7 +4,7 @@ import { ActivityIndicator, Image, KeyboardAvoidingView, Pressable, ScrollView, 
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { alerte, distanceMetres, isoUtc, signalerErreur, t, type Coordonnees, ouvrirReglages } from '@/commun/lib';
-import { ombres, useTheme } from '@/commun/theme';
+import { ombres, rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
   Bouton,
@@ -369,11 +369,11 @@ const styles = StyleSheet.create({
   interligneCourt: { lineHeight: 17 },
   carte: { marginHorizontal: 20, overflow: 'hidden' },
   repere: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', paddingBottom: 40 },
-  pastille: { position: 'absolute', left: 10, top: 10, minHeight: 30, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  ajuster: { position: 'absolute', right: 10, bottom: 10, minHeight: 44, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pastille: { position: 'absolute', left: 10, top: 10, minHeight: 30, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: rayons.pilule },
+  ajuster: { position: 'absolute', right: 10, bottom: 10, minHeight: 44, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: rayons.moyen },
   alerte: { gap: 10 },
   photo: { flexDirection: 'row', gap: 12, alignItems: 'stretch' },
-  vignette: { width: 118, height: 96, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  vignette: { width: 118, height: 96, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: rayons.vignette },
   badge: { position: 'absolute', left: 6, top: 6, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 3 },
   texteVignette: { flex: 1, justifyContent: 'center', gap: 4 },
   boutonPhoto: { alignSelf: 'flex-start', paddingHorizontal: 10, marginTop: 2 },

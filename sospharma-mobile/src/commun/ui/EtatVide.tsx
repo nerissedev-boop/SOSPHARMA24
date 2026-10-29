@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { HiMedicalSearchOutline, HiPharmacyOutline } from './icones/healthicons';
 import { Texte } from './Texte';
@@ -90,6 +91,6 @@ const styles = StyleSheet.create({
   texte: { maxWidth: 290, lineHeight: 21 },
   suggestions: { alignSelf: 'stretch', gap: 8, marginTop: 10 },
   titreSuggestions: { fontSize: 13 },
-  suggestion: { height: 52, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14 },
+  suggestion: { height: 52, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, borderRadius: rayons.moyen },
   texteSuggestion: { fontSize: 14 },
 });

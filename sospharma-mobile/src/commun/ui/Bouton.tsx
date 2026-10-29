@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type Vi
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 
 import { CIBLE_TACTILE } from '../theme/espacements';
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import type { Variante } from '../theme/typographie';
 import { useAppui } from './animations';
@@ -43,7 +44,7 @@ type Props = {
 };
 
 /**
- * Bouton de la charte : rectangle sans arrondi ni bordure.
+ * Bouton de la charte : arrondi de 14 (charte « cartes », 28 oct.), sans bordure.
  * principal = vert plein (actions) ; secondaire = gris ; clair = vert clair ;
  * blanc = fond blanc et texte vert (dans les blocs « la plus proche ») ; lien = texte vert.
  * Tout bouton d'action porte une icône au trait à gauche du libellé (charte, 21 oct.) ;
@@ -134,7 +135,7 @@ export function Bouton({
 }
 
 const styles = StyleSheet.create({
-  base: { flexDirection: 'row', alignItems: 'center', borderRadius: 0 },
+  base: { flexDirection: 'row', alignItems: 'center', borderRadius: rayons.moyen },
   empile: { flexDirection: 'column', paddingVertical: 8 },
   icone: { alignItems: 'center', justifyContent: 'center' },
   libelle: { flexShrink: 1 },

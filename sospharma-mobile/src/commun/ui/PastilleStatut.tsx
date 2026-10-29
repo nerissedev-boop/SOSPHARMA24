@@ -3,6 +3,7 @@ import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated
 
 import type { StatutPharmacie } from '../api/schema';
 import { t } from '../lib/i18n';
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { usePulsation } from './animations';
 import { HiPharmacy, HiPharmacyOutline } from './icones/healthicons';
@@ -94,8 +95,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -7,
     right: -9,
-    paddingHorizontal: 3,
-    borderRadius: 0,
+    paddingHorizontal: 4,
+    borderRadius: rayons.pilule,
     shadowColor: '#000',
     shadowOpacity: 0.25,
     shadowRadius: 2,

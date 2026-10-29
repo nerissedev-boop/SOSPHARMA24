@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { t } from '@/commun/lib';
-import { useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import { IconeFermer, IconePlus, Texte } from '@/commun/ui';
 
 type Puce = { cle: string; libelle: string };
@@ -16,7 +16,7 @@ type Props = {
   hauteur?: number;
 };
 
-/** Puces d'assurances choisies : noires, sans arrondi ni bordure (maquettes Filtres et ReleveFiche). */
+/** Puces d'assurances choisies : noires, en pilule, sans bordure (maquettes Filtres et ReleveFiche). */
 export function PucesAssurances({ puces, onRetirer, action, hauteur = 38 }: Props) {
   const { couleurs: c } = useTheme();
   return (
@@ -64,7 +64,7 @@ export function PucesAssurances({ puces, onRetirer, action, hauteur = 38 }: Prop
 
 const styles = StyleSheet.create({
   puces: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  puce: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, minHeight: 36 },
+  puce: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, minHeight: 36, borderRadius: rayons.pilule },
   puceRetirable: { paddingLeft: 12, paddingRight: 10, gap: 8, minHeight: 44 },
   action: { gap: 6, minHeight: 44 },
   gras: { fontFamily: 'PlusJakartaSans_700Bold' },

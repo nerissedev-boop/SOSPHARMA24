@@ -11,7 +11,8 @@ use Illuminate\Database\Seeder;
 
 /**
  * 20 pharmacies FICTIVES (noms, adresses et numéros inventés, numéros non attribués +22500000001xx).
- * Toutes portent la mention « données de test ». Leurs assurances viennent de AssurancesTestSeeder.
+ * Toutes portent la mention « (test) », courte pour tenir dans les listes de l'app.
+ * Leurs assurances viennent de AssurancesTestSeeder.
  */
 class PharmaciesTestSeeder extends Seeder
 {
@@ -54,7 +55,7 @@ class PharmaciesTestSeeder extends Seeder
             $pharmacie = Pharmacie::query()->updateOrCreate(['id_public' => sprintf('ph_test%02d', $numero)], [
                 'ville_id' => $abidjan->id,
                 'zone_id' => $zone->id,
-                'nom' => "Pharmacie {$nom} (données de test)",
+                'nom' => "Pharmacie {$nom} (test)",
                 'adresse' => "{$numero} rue fictive, {$nomCommune} – adresse de test",
                 'quartier' => "Quartier test {$numero}",
                 'telephone' => sprintf('+22500000001%02d', $numero),

@@ -4,23 +4,33 @@
 // et échoue sous jest-expo ; ce mock minimal couvre ce qu'utilise `commun/ui/animations.ts`.
 // Les animations y prennent tout de suite leur valeur finale : les tests voient l'état au repos.
 jest.mock('react-native-reanimated', () => {
-  const { View } = jest.requireActual('react-native');
+  const { Image, ScrollView, Text, View } = jest.requireActual('react-native');
   const valeur = <T,>(v: T) => v;
   const constructeur = () => {
     const b: Record<string, unknown> = {};
-    for (const m of ['duration', 'delay', 'reduceMotion', 'springify', 'damping']) b[m] = () => b;
+    for (const m of ['duration', 'delay', 'reduceMotion', 'springify', 'damping', 'easing']) b[m] = () => b;
     return b;
   };
   return {
     __esModule: true,
-    default: { View, createAnimatedComponent: valeur },
+    default: { View, Text, Image, ScrollView, createAnimatedComponent: valeur },
     View,
+    Text,
+    Image,
+    ScrollView,
     createAnimatedComponent: valeur,
     useSharedValue: (initiale: number) => {
       const sv = { value: initiale, get: () => sv.value, set: (v: number) => { sv.value = v; } };
       return sv;
     },
     useAnimatedStyle: (fabrique: () => object) => fabrique(),
+    // Défilement : le gestionnaire est rendu tel quel (les tests ne font pas défiler).
+    useAnimatedScrollHandler: valeur,
+    // Réaction : rejouée après chaque rendu (la valeur suivie a déjà sa valeur finale).
+    useAnimatedReaction: <T,>(preparer: () => T, reagir: (v: T, avant: T | null) => void) => {
+      const { useEffect } = jest.requireActual('react');
+      useEffect(() => reagir(preparer(), null));
+    },
     useReducedMotion: () => false,
     cancelAnimation: () => undefined,
     withTiming: valeur,
@@ -28,12 +38,31 @@ jest.mock('react-native-reanimated', () => {
     withRepeat: valeur,
     withSequence: (...valeurs: number[]) => valeurs[valeurs.length - 1],
     withDelay: (_delai: number, v: number) => v,
+    Extrapolation: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
     interpolate: (x: number, [a, b]: number[], [c, d]: number[]) => c + ((x - a) * (d - c)) / (b - a || 1),
-    Easing: { out: valeur, in: valeur, inOut: valeur, quad: valeur, sin: valeur, linear: valeur },
+    Easing: { out: valeur, in: valeur, inOut: valeur, quad: valeur, cubic: valeur, sin: valeur, linear: valeur },
     ReduceMotion: { System: 'system', Always: 'always', Never: 'never' },
     FadeInDown: constructeur(),
+    FadeIn: constructeur(),
+    FadeOut: constructeur(),
+    LinearTransition: constructeur(),
   };
 });
+
+// Worklets : `scheduleOnRN` appelle directement la fonction (pas de fil UI sous Jest).
+jest.mock('react-native-worklets', () => ({
+  scheduleOnRN: (fn: (...args: unknown[]) => unknown, ...args: unknown[]) => fn(...args),
+  scheduleOnUI: (fn: (...args: unknown[]) => unknown, ...args: unknown[]) => fn(...args),
+}));
+
+// Vibrations : module natif, remplacé par des fonctions espionnables.
+jest.mock('expo-haptics', () => ({
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy', Soft: 'soft', Rigid: 'rigid' },
+  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
+  selectionAsync: jest.fn(async () => undefined),
+  impactAsync: jest.fn(async () => undefined),
+  notificationAsync: jest.fn(async () => undefined),
+}));
 
 // NetInfo : module natif, remplacé par son mock officiel.
 jest.mock('@react-native-community/netinfo', () =>

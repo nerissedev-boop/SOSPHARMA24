@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { de, t, usePreferences } from '@/commun/lib';
-import { useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
   ChampRecherche,
@@ -203,7 +203,7 @@ function ChangerZone() {
 
 const styles = StyleSheet.create({
   contenu: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 32, gap: 14 },
-  pays: { height: 36, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 4, minWidth: 44, justifyContent: 'center' },
+  pays: { height: 36, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 4, minWidth: 44, justifyContent: 'center', borderRadius: rayons.pilule },
   texte13: { fontSize: 13 },
   position: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
   rondBlanc: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   aucune: { paddingVertical: 12 },
   titreAutres: { marginBottom: 6 },
   ville: { height: 48, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  bientot: { paddingHorizontal: 8, paddingVertical: 4 },
+  bientot: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: rayons.pilule },
 });
 
 export default avecErrorBoundary(ChangerZone, 'ChangerZone');

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { alerte, signalerErreur, t, ouvrirReglages } from '@/commun/lib';
-import { useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import { avecErrorBoundary, Bouton, Ecran, IconeAppareilPhoto, IconeBouclier, IconeCoche, PiedFixe, Texte, useRetour } from '@/commun/ui';
 
 import { useBrouillonReleve } from '../brouillon';
@@ -165,12 +165,12 @@ const styles = StyleSheet.create({
   contenu: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 24, gap: 12 },
   intro: { gap: 6, marginTop: 8, marginBottom: 4 },
   interligne: { lineHeight: 21 },
-  facade: { height: 200, alignItems: 'center', justifyContent: 'center', gap: 6, overflow: 'hidden' },
+  facade: { height: 200, alignItems: 'center', justifyContent: 'center', gap: 6, overflow: 'hidden', borderRadius: rayons.carte },
   badge: { position: 'absolute', left: 10, top: 10, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  reprendre: { position: 'absolute', right: 10, bottom: 10, minHeight: 44, paddingHorizontal: 12, justifyContent: 'center' },
+  reprendre: { position: 'absolute', right: 10, bottom: 10, minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', borderRadius: rayons.moyen },
   gras: { fontFamily: 'PlusJakartaSans_700Bold' },
   deux: { flexDirection: 'row', gap: 10 },
-  tuile: { flex: 1, height: 130, alignItems: 'center', justifyContent: 'center', gap: 8, overflow: 'hidden' },
+  tuile: { flex: 1, height: 130, alignItems: 'center', justifyContent: 'center', gap: 8, overflow: 'hidden', borderRadius: rayons.carte },
   rond: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   note: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
 });

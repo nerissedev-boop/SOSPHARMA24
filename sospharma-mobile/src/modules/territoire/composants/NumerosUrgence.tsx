@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { NumeroUrgence } from '@/commun/api';
 import { appeler, t } from '@/commun/lib';
-import { useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import { HiAccidentAndEmergency, HiAmbulance, HiEmergencyPost, Texte } from '@/commun/ui';
 
 /** Icône d'un numéro d'urgence selon la configuration pays. */
@@ -77,10 +77,10 @@ export function NumerosUrgence({ urgences, variante = 'liste' }: Props) {
 
 const styles = StyleSheet.create({
   grille: { flexDirection: 'row', gap: 8 },
-  case: { flex: 1, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 },
+  case: { flex: 1, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, borderRadius: rayons.moyen },
   numeroGrille: { fontSize: 20, lineHeight: 24 },
   liste: { gap: 12 },
-  ligne: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, minHeight: 44 },
+  ligne: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, minHeight: 44, borderRadius: rayons.moyen },
   textes: { flex: 1, gap: 2 },
   numero: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontSize: 22 },
 });

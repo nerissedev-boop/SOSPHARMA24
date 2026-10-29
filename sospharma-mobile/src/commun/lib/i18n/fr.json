@@ -16,7 +16,8 @@
     "zoneVille": "{{zone}}, {{ville}}",
     "chargement": "Chargement",
     "ok": "OK",
-    "aucuneZone": "Choisir une zone"
+    "aucuneZone": "Choisir une zone",
+    "votreAssurance": "Votre assurance"
   },
   "statut": {
     "garde": "De garde cette nuit",
@@ -126,7 +127,14 @@
     "maCommune": "Ma commune",
     "conseil": "La nuit, appelez avant de vous déplacer.",
     "confirmee": "Liste confirmée le {{date}}",
-    "aucune": "Aucune pharmacie de garde ne correspond à ce choix."
+    "aucune": "Aucune pharmacie de garde ne correspond à ce choix.",
+    "plusProche": "La plus proche",
+    "partager": "Partager",
+    "partagerA11y": "Partager la liste des pharmacies de garde",
+    "partageTitre": "Pharmacies de garde · {{zone}}",
+    "partageLigne": "• {{pharmacie}} : {{telephone}}",
+    "partageLigneSansTelephone": "• {{pharmacie}}",
+    "partageSignature": "Liste envoyée avec SOS Pharma 24"
   },
   "fiche": {
     "photo": "Photo de la façade",

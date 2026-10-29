@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { distanceMetres, t, type Coordonnees, ouvrirReglages } from '@/commun/lib';
-import { ombres, useTheme } from '@/commun/theme';
+import { ombres, rayons, useTheme } from '@/commun/theme';
 import { useMargeBas, avecErrorBoundary, Bouton, BoutonIcone, Ecran, IconeCoche, IconeHorloge, IconeViseur, Texte, useRetour } from '@/commun/ui';
 import { CarteBase, carteDisponible, PointPosition, Repere, type RefCarte } from '@/commun/ui/carte';
 import { usePharmacie } from '@/modules/pharmacies';
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   statut: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rondStatut: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   tuiles: { flexDirection: 'row', gap: 8 },
-  tuile: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, gap: 2 },
+  tuile: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, gap: 2, borderRadius: rayons.moyen },
 });
 
 export default avecErrorBoundary(Position, 'RelevePosition');

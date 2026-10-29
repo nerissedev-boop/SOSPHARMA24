@@ -4,7 +4,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { donneesOuErreur } from '@/commun/api';
 import { jourMois, t } from '@/commun/lib';
-import { useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import { avecErrorBoundary, Bouton, Ecran, IconeAppareilPhoto, PiedFixe, Texte, useRetour } from '@/commun/ui';
 import { usePaysCourant } from '@/modules/territoire';
 
@@ -114,9 +114,9 @@ const styles = StyleSheet.create({
   intro: { gap: 6, marginTop: 8 },
   interligne: { lineHeight: 21 },
   liste: { paddingTop: 4, gap: 10 },
-  carte: { padding: 14, gap: 12 },
+  carte: { padding: 14, gap: 12, borderRadius: rayons.carte },
   ligne: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  photo: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
+  photo: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: rayons.vignette },
   textes: { flex: 1, gap: 2, minWidth: 0 },
   distance: { fontFamily: 'PlusJakartaSans_800ExtraBold' },
 });

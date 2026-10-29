@@ -4,7 +4,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-n
 
 import { estErreurAppel } from '@/commun/api';
 import { alerte, dateCourte, heure, initiales, t, useSessionAgent } from '@/commun/lib';
-import { useTheme, type Jetons } from '@/commun/theme';
+import { rayons, useTheme, type Jetons } from '@/commun/theme';
 import { avecErrorBoundary, Bouton, Ecran, HiPharmacy, IconeSansReseau, Texte } from '@/commun/ui';
 import { usePaysCourant } from '@/modules/territoire';
 
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   textes: { flex: 1, gap: 1, minWidth: 0 },
   quitter: { height: 44, justifyContent: 'center' },
   gras: { fontFamily: 'PlusJakartaSans_700Bold' },
-  bandeau: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
+  bandeau: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: rayons.moyen },
   compteurs: { flexDirection: 'row', gap: 8 },
   compteur: { flex: 1, padding: 12, gap: 2 },
   nombre: { fontSize: 22, lineHeight: 28 },

@@ -1,7 +1,7 @@
 import type { ViewStyle } from 'react-native';
 
 /**
- * Ombres très légères de la charte (pas de bordure : la séparation se fait par aplats et ombres).
+ * Ombres très légères de la charte (pas de bordure : la séparation se fait par aplats, arrondis et ombres).
  * iOS : shadow* ; Android : elevation (approximation, pas de direction).
  */
 export const ombres = {
@@ -20,6 +20,14 @@ export const ombres = {
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 4,
+  },
+  /** 0 4px 16px rgba(15,31,23,0.06) : cartes blanches des listes (charte « cartes », 28 oct.). */
+  carte: {
+    shadowColor: 'rgb(15,31,23)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   /** 0 8px 24px rgba(0,0,0,0.12) : fiches posées sur la carte. */
   fiche: {

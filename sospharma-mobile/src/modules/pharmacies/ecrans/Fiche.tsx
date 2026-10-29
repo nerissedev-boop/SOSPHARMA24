@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { reactionPour, type AssurancePharmacie } from '@/commun/api';
 import { dateCourte, heureLocale, localeActive, t, telephoneAffiche, usePreferences, useSessionAgent } from '@/commun/lib';
-import { ombres, useTheme } from '@/commun/theme';
+import { ombres, rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
   Bouton,
@@ -356,7 +356,8 @@ const styles = StyleSheet.create({
   chargement: { marginTop: 80 },
   introuvable: { paddingTop: 60, paddingHorizontal: 24 },
   photo: { height: 230, alignItems: 'center', justifyContent: 'center' },
-  contenu: { flexGrow: 1, marginTop: -24, padding: 20, gap: 16 },
+  // Le contenu remonte sur l'en-tête comme une feuille : haut arrondi de 24 (charte « cartes »).
+  contenu: { flexGrow: 1, marginTop: -24, padding: 20, gap: 16, borderTopLeftRadius: rayons.feuille, borderTopRightRadius: rayons.feuille },
   ligneTitre: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   pastille: { marginTop: -34, borderRadius: 26, shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
   titres: { flex: 1, gap: 6, minWidth: 0 },
@@ -368,10 +369,10 @@ const styles = StyleSheet.create({
   rondAction: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
   section: { gap: 12 },
   /** Cartes blanches posées sur le fond sable (palette enrichie), sans bordure. */
-  carteBlanche: { padding: 14 },
+  carteBlanche: { padding: 14, borderRadius: rayons.carte },
   info: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', minHeight: 24 },
   centre: { alignItems: 'center', minHeight: 44 },
-  verifiee: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12 },
+  verifiee: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: rayons.moyen },
   souligne: { textDecorationLine: 'underline' },
   sectionAssurances: { gap: 10 },
   titreAssurances: { flexDirection: 'row', alignItems: 'center', gap: 10 },

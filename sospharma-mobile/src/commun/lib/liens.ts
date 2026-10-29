@@ -2,6 +2,7 @@ import { Linking, Platform } from 'react-native';
 
 import type { Coordonnees, ModeTrajet } from './geo';
 import { alerte } from './dialogues';
+import { vibrationAction } from './haptique';
 import { t } from './i18n';
 import { marquerSortieVersAutreApp } from './premierPlan';
 import { signalerErreur } from './sentry';
@@ -33,6 +34,7 @@ async function ouvrir(url: string): Promise<boolean> {
 }
 
 export function appeler(numero: string, indicatif?: string): Promise<boolean> {
+  vibrationAction();
   // Les numéros courts d'urgence (185, 180) restent tels quels.
   const cible = /^\d{2,4}$/.test(numero) ? numero : numeroInternational(numero, indicatif);
   return ouvrir(`tel:${cible}`);

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { t } from '../lib/i18n';
 import { CIBLE_TACTILE } from '../theme/espacements';
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { HiGeoLocation } from './icones/healthicons';
 import { IconeChevronBas, IconeRepere } from './icones/trait';
@@ -14,15 +15,19 @@ type Props = {
   /**
    * entete : accueil (« Position détectée » au-dessus) ;
    * compacte : en-tête de la carte ;
-   * bandeau : aplat gris de 44 px (carte dézoomée, zone non couverte, garde de nuit) ;
-   * garde : aplat sombre sur l'en-tête rouge de l'écran Garde.
+   * bandeau : aplat gris arrondi de 44 px (carte dézoomée, zone non couverte) ;
+   * pastille : pilule touchable (repère, libellé, chevron) dans l'en-tête de l'écran Garde ;
+   *   translucide sur l'en-tête rouge (`surFonce`), aplat de surface sur le fond de nuit.
    */
-  variante?: 'entete' | 'compacte' | 'bandeau' | 'garde';
+  variante?: 'entete' | 'compacte' | 'bandeau' | 'pastille';
   /** Petit libellé au-dessus (variante entete). */
   surtitre?: string;
   /** Icône contour grise (zone non couverte) au lieu du repère vert. */
   iconeNeutre?: boolean;
-  /** Variante entete posée sur le bandeau vert profond de l'accueil : texte blanc, accents vert tendre. */
+  /**
+   * Posée sur un aplat de couleur : variante entete sur le bandeau vert profond de l'accueil
+   * (texte blanc, accents vert tendre) ; variante pastille sur l'en-tête rouge de l'écran Garde.
+   */
   surFonce?: boolean;
   testID?: string;
 };
@@ -33,22 +38,26 @@ export function BarreZone({ libelle, onChanger, variante = 'entete', surtitre, i
   const changer = t('commun.changer');
   const a11y = `${surtitre ? `${surtitre} : ` : ''}${libelle}. ${changer}`;
 
-  if (variante === 'garde') {
+  if (variante === 'pastille') {
+    // Toute la pilule est touchable ; « Changer » n'est plus écrit (chevron) mais reste lu.
+    const texte = surFonce ? c.blanc : c.texte;
     return (
       <Pressable
         testID={testID}
         onPress={onChanger}
         accessibilityRole="button"
         accessibilityLabel={a11y}
-        style={({ pressed }) => [styles.bandeau, { backgroundColor: c.rougeProfond, opacity: pressed ? 0.85 : 1 }]}
+        hitSlop={{ top: 4, bottom: 4 }}
+        style={({ pressed }) => [
+          styles.pastille,
+          { backgroundColor: surFonce ? 'rgba(255,255,255,0.18)' : c.surface, opacity: pressed ? 0.8 : 1 },
+        ]}
       >
-        <IconeRepere size={20} color={c.blanc} />
-        <Texte variante="corpsFort" couleur={c.blanc} style={[styles.flex, styles.texteBandeau]} numberOfLines={1}>
+        <IconeRepere size={16} color={surFonce ? c.blanc : c.rougeTexte} />
+        <Texte variante="petitFort" couleur={texte} style={styles.textePastille} numberOfLines={1}>
           {libelle}
         </Texte>
-        <Texte variante="libelleFort" couleur={c.blanc} style={styles.souligne}>
-          {changer}
-        </Texte>
+        <IconeChevronBas size={14} color={texte} strokeWidth={2.6} />
       </Pressable>
     );
   }
@@ -125,9 +134,19 @@ const styles = StyleSheet.create({
   surtitre: { fontFamily: 'PlusJakartaSans_400Regular' },
   compacte: { flexDirection: 'row', alignItems: 'center', gap: 6, height: CIBLE_TACTILE, maxWidth: 120, flexShrink: 1 },
   nomCompact: { flexShrink: 1 },
-  bandeau: { height: CIBLE_TACTILE, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12 },
+  bandeau: { height: CIBLE_TACTILE, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, borderRadius: rayons.moyen },
+  pastille: {
+    height: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 10,
+    paddingRight: 12,
+    borderRadius: rayons.pilule,
+    flexShrink: 1,
+  },
+  textePastille: { fontSize: 14, flexShrink: 1 },
   texteBandeau: { fontSize: 14 },
   changerPetit: { fontSize: 13 },
-  souligne: { fontSize: 13, textDecorationLine: 'underline' },
   souligneSimple: { textDecorationLine: 'underline' },
 });

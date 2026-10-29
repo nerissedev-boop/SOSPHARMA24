@@ -4,7 +4,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { alerte, distanceKm, estimerTrajet, ouvrirNavigation, t, type AppNavigation, type ModeTrajet } from '@/commun/lib';
-import { ombres, useTheme } from '@/commun/theme';
+import { ombres, rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
   Bouton,
@@ -184,14 +184,14 @@ const styles = StyleSheet.create({
   chargement: { marginTop: 80 },
   enTete: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: 20, paddingBottom: 16, gap: 12 },
   trajet: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  boiteTrajet: { flex: 1 },
+  boiteTrajet: { flex: 1, borderRadius: rayons.moyen },
   ligneTrajet: { height: 44, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12 },
   pointBleu: { width: 12, height: 12, borderRadius: 6, marginHorizontal: 3, shadowOpacity: 0.3, shadowRadius: 3, shadowOffset: { width: 0, height: 0 } },
   texte14: { fontSize: 14, flex: 1 },
   etiquetteDuree: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5 },
   gras: { fontFamily: 'PlusJakartaSans_800ExtraBold' },
   opaque: { opacity: 0.85 },
-  fiche: { position: 'absolute', left: 12, right: 12, padding: 16, gap: 14 },
+  fiche: { position: 'absolute', left: 12, right: 12, padding: 16, gap: 14, borderRadius: rayons.grandeCarte },
   ligneNom: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   modes: { flexDirection: 'row', gap: 8 },
   mode: { flex: 1, padding: 10, gap: 4 },

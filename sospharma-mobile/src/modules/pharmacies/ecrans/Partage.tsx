@@ -5,7 +5,7 @@ import { Pressable, Share, StyleSheet, View } from 'react-native';
 
 import type { PharmacieResume } from '@/commun/api';
 import { alerte, config, ecrireWhatsApp, envoyerSms, lienPosition, marquerSortieVersAutreApp, minusculeInitiale, signalerErreur, t, telephoneAffiche } from '@/commun/lib';
-import { useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import { avecErrorBoundary, Bouton, Feuille, IconeBulle, IconeCopier, IconePoints, IconeSms, Texte, useRetour } from '@/commun/ui';
 import { usePaysCourant } from '@/modules/territoire';
 
@@ -104,7 +104,7 @@ function Partage() {
 
 const styles = StyleSheet.create({
   plein: { flex: 1 },
-  message: { padding: 14, gap: 6 },
+  message: { padding: 14, gap: 6, borderRadius: rayons.moyen },
   texteMessage: { lineHeight: 22 },
   options: { flexDirection: 'row', gap: 8 },
   option: { flex: 1, alignItems: 'center', gap: 8 },

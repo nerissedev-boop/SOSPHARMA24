@@ -6,16 +6,22 @@ import type { TonStatut } from '../regles/libelles';
 import { distanceKm } from '../lib/format';
 import { t } from '../lib/i18n';
 import { CIBLE_TACTILE } from '../theme/espacements';
+import { ombres } from '../theme/ombres';
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
-import { apparitionLigne } from './animations';
+import { apparitionLigne, transitionListe, useAppui } from './animations';
+import { BadgeAssurance } from './BadgeAssurance';
 import { DistanceMarche } from './DistanceMarche';
+import { FacadeIllustree } from './FacadeIllustree';
 import { HiPhone } from './icones/healthicons';
 import { PastilleStatut } from './PastilleStatut';
+import { PhotoFondu } from './PhotoFondu';
 import { Texte } from './Texte';
 
 export type PropsLignePharmacie = {
   nom: string;
   statut: StatutPharmacie;
+  /** Libellé du statut : 2e ligne visible (sauf si `detail` est donné) et toujours lu par le lecteur d'écran. */
   libelleStatut: string;
   distanceM: number | null;
   marcheMin: number | null;
@@ -24,15 +30,36 @@ export type PropsLignePharmacie = {
   onAppeler?: () => void;
   /** Ton calculé (tonAffiche) : « ocre » quand la pharmacie ferme dans moins de 30 min. */
   ton?: TonStatut;
-  /** Variante « favori » du profil : pastille 38, distance seule. */
+  /** Variante « favori » du profil : pastille 38 (vignette 48), distance seule. */
   variante?: 'liste' | 'favori';
   iconeMarche?: boolean;
   /** Position dans la liste : la ligne apparaît en cascade (fondu et glissement). Absent : pas d'animation. */
   rang?: number;
+  /**
+   * Photo de façade : vignette 56 × 56 à la place de la pastille de statut. `null` (pas encore
+   * de photo validée) : devanture dessinée. Absent : pastille de statut.
+   */
+  photoUrl?: string | null;
+  /**
+   * 2e ligne visible à la place du statut (écran Garde : « Cocody », ou « Cocody · ouverte jusqu'à 02:00 »).
+   * Le statut complet reste dans le libellé d'accessibilité.
+   */
+  detail?: string;
+  /** 2e ligne en ocre (garde qui s'arrête avant le matin). */
+  detailOcre?: boolean;
+  /** Badge « Votre assurance » sous la 2e ligne. */
+  assurance?: boolean;
+  /** Temps de marche affiché seulement en deçà de cette distance (mètres) ; absent : toujours. */
+  marcheJusquA?: number;
+  /** Halo pulsé autour des pastilles de garde (par défaut dans les listes). */
+  pulsation?: boolean;
   testID?: string;
 };
 
-/** Ligne de liste des maquettes Accueil, Garde et Profil (sans bordure ni séparateur). */
+/**
+ * Ligne de liste des maquettes Accueil, Garde et Profil : carte blanche arrondie (16) posée sur
+ * le fond clair, sans bordure ni séparateur ; l'écran espace les cartes de 8.
+ */
 export function LignePharmacie({
   nom,
   statut,
@@ -45,35 +72,71 @@ export function LignePharmacie({
   iconeMarche = true,
   ton,
   rang,
+  photoUrl,
+  detail,
+  detailOcre = false,
+  assurance = false,
+  marcheJusquA,
+  pulsation,
   testID,
 }: PropsLignePharmacie) {
-  const { couleurs: c } = useTheme();
+  const { couleurs: c, estNuit } = useTheme();
   const couleurStatut = ton === 'ocre' ? c.ocreTexte : statut === 'garde' ? c.rougeTexteFort : statut === 'ouverte' ? c.vertTexte : c.texteTertiaire;
+  const couleurDetail = detailOcre ? c.ocreTexte : detail !== undefined ? c.texteSecondaire : couleurStatut;
   const favori = variante === 'favori';
-  const description = [nom, libelleStatut, distanceKm(distanceM)].filter(Boolean).join(', ');
+  const description = [nom, libelleStatut, assurance ? t('commun.votreAssurance') : null, distanceKm(distanceM)].filter(Boolean).join(', ');
+  // La carte entière se comprime sous le doigt (retour tactile façon cartes).
+  const appui = useAppui(0.98);
+  const marcheVisible = marcheJusquA === undefined || (distanceM !== null && distanceM < marcheJusquA) ? marcheMin : null;
   return (
-    <Animated.View entering={apparitionLigne(rang)} style={[styles.ligne, favori && styles.ligneFavori]} testID={testID}>
+    <Animated.View
+      entering={apparitionLigne(rang)}
+      // Dans une liste animée, les cartes glissent vers leur place quand le filtre change.
+      layout={rang === undefined ? undefined : transitionListe.layout}
+      exiting={rang === undefined ? undefined : transitionListe.exiting}
+      style={[styles.ligne, favori && styles.ligneFavori, { backgroundColor: c.carte }, !estNuit && ombres.carte, appui.style]}
+      testID={testID}
+    >
       <Pressable
         onPress={onPress}
+        onPressIn={appui.onPressIn}
+        onPressOut={appui.onPressOut}
         accessibilityRole="button"
         accessibilityLabel={description}
-        style={({ pressed }) => [styles.zone, { opacity: pressed ? 0.7 : 1 }]}
+        style={styles.zone}
       >
-        <PastilleStatut statut={statut} pulsation={!favori} ton={ton === 'ocre' ? 'ocre' : undefined} taille={favori ? 38 : 40} tailleIcone={favori ? (statut === 'fermee' ? 22 : 24) : statut === 'fermee' ? 24 : 26} />
+        {photoUrl ? (
+          <PhotoFondu
+            uri={photoUrl}
+            style={[styles.vignette, favori && styles.vignetteFavori, { backgroundColor: c.surface }]}
+            testID={testID ? `${testID}-photo` : undefined}
+          />
+        ) : photoUrl === null ? (
+          <FacadeIllustree taille="vignette" style={[styles.vignette, favori && styles.vignetteFavori]} testID={testID ? `${testID}-facade` : undefined} />
+        ) : (
+          <PastilleStatut
+            statut={statut}
+            pulsation={pulsation ?? !favori}
+            ton={ton === 'ocre' ? 'ocre' : undefined}
+            taille={favori ? 38 : 40}
+            tailleIcone={favori ? (statut === 'fermee' ? 22 : 24) : statut === 'fermee' ? 24 : 26}
+          />
+        )}
         <View style={styles.textes}>
-          <Texte variante={favori ? 'nom' : 'nomPetit'} numberOfLines={1}>
+          <Texte variante={favori ? 'nom' : 'nomPetit'} numberOfLines={favori ? 1 : 2}>
             {nom}
           </Texte>
-          <Texte variante="libelleMoyen" couleur={couleurStatut} numberOfLines={1}>
-            {libelleStatut}
+          <Texte variante={detail !== undefined ? 'petit' : 'libelleMoyen'} couleur={couleurDetail} numberOfLines={1}>
+            {detail ?? libelleStatut}
           </Texte>
+          {assurance ? <BadgeAssurance petit testID={testID ? `${testID}-assurance` : undefined} /> : null}
         </View>
         {favori ? (
           <Texte variante="boutonPetit" style={styles.distanceFavori}>
             {distanceKm(distanceM)}
           </Texte>
         ) : (
-          <DistanceMarche distanceM={distanceM} marcheMin={marcheMin} icone={iconeMarche} />
+          <DistanceMarche distanceM={distanceM} marcheMin={marcheVisible} icone={iconeMarche} />
         )}
       </Pressable>
       {onAppeler ? (
@@ -92,9 +155,19 @@ export function LignePharmacie({
 }
 
 const styles = StyleSheet.create({
-  ligne: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
-  ligneFavori: { minHeight: 58, paddingVertical: 0 },
+  ligne: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 8,
+    paddingLeft: 8,
+    paddingRight: 10,
+    borderRadius: rayons.carte,
+  },
+  ligneFavori: { minHeight: 58, paddingLeft: 10, paddingRight: 14 },
   zone: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0, minHeight: CIBLE_TACTILE },
+  vignette: { width: 56, height: 56, borderRadius: rayons.vignette, flexShrink: 0 },
+  vignetteFavori: { width: 48, height: 48 },
   textes: { flex: 1, gap: 3, minWidth: 0 },
   distanceFavori: { fontSize: 13 },
   appel: {

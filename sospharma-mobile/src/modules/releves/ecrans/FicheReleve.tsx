@@ -4,7 +4,7 @@ import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'r
 
 import type { NouveauReleve } from '@/commun/api';
 import { alerte, t, useSelectionAssurances, useSessionAgent } from '@/commun/lib';
-import { useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
   Bouton,
@@ -245,13 +245,13 @@ const styles = StyleSheet.create({
   titre: { marginTop: 6 },
   deux: { flexDirection: 'row', gap: 8 },
   moitie: { flex: 1 },
-  horaires: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 8 },
+  horaires: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: rayons.moyen },
   textes: { flex: 1, gap: 2 },
   gras: { fontFamily: 'PlusJakartaSans_700Bold' },
   h24: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12 },
   assurances: { gap: 8 },
   titreAssurances: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  resume: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 12 },
+  resume: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: rayons.moyen },
   pied: { gap: 8 },
 });
 

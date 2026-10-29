@@ -2,7 +2,7 @@ import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 
 import type { PharmacieResume } from '@/commun/api';
 import { t } from '@/commun/lib';
-import { useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import { Bouton, Feuille, IconeAppareilPhoto, IconeLieu, PastilleStatut, Texte } from '@/commun/ui';
 import type { PhotoLocale } from '@/modules/releves/types';
 
@@ -157,12 +157,12 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   bloc: { gap: 8 },
   ligneTitre: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  recap: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
-  vignette: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  recap: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: rayons.moyen },
+  vignette: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: rayons.vignette },
   lieu: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   attente: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
   interligne: { lineHeight: 19 },
-  proche: { padding: 12, gap: 10 },
+  proche: { padding: 12, gap: 10, borderRadius: rayons.moyen },
   ligneProche: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   distance: { fontFamily: 'PlusJakartaSans_800ExtraBold' },
 });

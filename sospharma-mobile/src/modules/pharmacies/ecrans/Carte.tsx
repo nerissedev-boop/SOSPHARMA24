@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PharmacieResume } from '@/commun/api';
 import { dateCourte, distanceKm, distanceNombre, localeActive, t, useEnLigne, usePreferences } from '@/commun/lib';
-import { ombres, useTheme } from '@/commun/theme';
+import { ombres, rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
   BandeauHorsConnexion,
@@ -29,8 +29,10 @@ import {
   IconeViseur,
   LignePharmacie,
   PastilleStatut,
+  ChargementCroix,
   Texte,
   useNavigationOnglets,
+  useChargementVisible,
 } from '@/commun/ui';
 import {
   CarteBase,
@@ -94,6 +96,9 @@ function Carte() {
   const noteChoisie = ficheChoisie.fiche?.id === choisie?.id ? ficheChoisie.fiche?.note : null;
   const communeResumee = compteurs.data?.find((x) => x.zone_id === zone?.zoneId) ?? compteurs.data?.[0];
   const sansCarte = !carteDisponible || !enLigne;
+  // Filtre changé ou carte déplacée : les anciens points restent affichés le temps de la requête.
+  const procheEnCours = useChargementVisible(proches.isPlaceholderData && proches.isFetching);
+  const chargementPoints = useChargementVisible(procheEnCours || (cadre.isPlaceholderData && cadre.isFetching));
 
   const chipsOrdre = estNuit ? (['toutes', 'garde', 'ouvertes'] as const) : (['toutes', 'ouvertes', 'garde'] as const);
   const chips = (
@@ -200,6 +205,17 @@ function Carte() {
         </View>
       ) : null}
       {chips}
+      {chargementPoints && !sansCarte ? (
+        <View
+          style={[styles.chargement, { backgroundColor: c.feuille }, ombres.boutonRond]}
+          accessibilityRole="progressbar"
+          accessibilityLabel={t('commun.chargement')}
+          testID="chargement-carte"
+        >
+          <ChargementCroix taille={16} halo={false} />
+          <Texte variante="petitFort">{t('commun.chargement')}</Texte>
+        </View>
+      ) : null}
     </View>
   );
 
@@ -213,7 +229,8 @@ function Carte() {
           <Texte variante="libelle" couleur={c.texteSecondaire}>
             {enLigne ? t('carte.nonDisponible') : t('carte.horsLigne')}
           </Texte>
-          {(recherche ? (resultats.liste ?? []) : (proches.liste ?? [])).map((p) => (
+          {!recherche && procheEnCours ? <ChargementCroix style={styles.chargementListe} testID="chargement-filtre" /> : null}
+          {(recherche ? (resultats.liste ?? []) : procheEnCours ? [] : (proches.liste ?? [])).map((p) => (
             <LignePharmacie
               key={p.id}
               nom={p.nom}
@@ -470,14 +487,34 @@ function NoteAvis({ note }: { note: { moyenne: number; nombre: number } }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  enTete: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: 20, paddingBottom: 12, zIndex: 2 },
+  enTete: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    zIndex: 2,
+    borderBottomLeftRadius: rayons.feuille,
+    borderBottomRightRadius: rayons.feuille,
+  },
   ligneRecherche: { flexDirection: 'row', gap: 10 },
   filtres: { flexDirection: 'row', gap: 8 },
+  chargementListe: { height: 220 },
+  chargement: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 32,
+    paddingHorizontal: 14,
+    borderRadius: rayons.pilule,
+  },
   boutonsCarte: { position: 'absolute', right: 16, gap: 10 },
   resultats: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  listeResultats: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24 },
-  listeRemplacement: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24, gap: 4 },
-  fiche: { position: 'absolute', left: 12, right: 12, bottom: 20, paddingTop: 16, paddingHorizontal: 18, paddingBottom: 18, gap: 14 },
+  listeResultats: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24, gap: 8 },
+  listeRemplacement: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24, gap: 8 },
+  fiche: { position: 'absolute', left: 12, right: 12, bottom: 20, paddingTop: 16, paddingHorizontal: 18, paddingBottom: 18, gap: 14, borderRadius: rayons.grandeCarte },
   ligneFiche: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   textesFiche: { flex: 1, gap: 3, minWidth: 0 },
   actions3: { flexDirection: 'row', gap: 8 },

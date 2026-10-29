@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { vibrationLegere } from '../lib/haptique';
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { Texte } from './Texte';
 
@@ -19,7 +21,7 @@ type Props = {
   testID?: string;
 };
 
-/** Puce de filtre : 34 px, sans arrondi ni bordure. */
+/** Puce de filtre : pilule de 34 px, sans bordure (charte « cartes », 28 oct.). */
 export function Filtre({ libelle, selectionne, onPress, ton = 'neutre', point, badge24, icone, paddingHorizontal = 14, testID }: Props) {
   const { couleurs: c } = useTheme();
   const fond = selectionne ? (ton === 'garde' ? c.rougeProfond : c.filtreSelection) : c.filtreFond;
@@ -27,7 +29,10 @@ export function Filtre({ libelle, selectionne, onPress, ton = 'neutre', point, b
   return (
     <Pressable
       testID={testID}
-      onPress={onPress}
+      onPress={() => {
+        if (!selectionne) vibrationLegere();
+        onPress();
+      }}
       accessibilityRole="button"
       accessibilityLabel={libelle}
       accessibilityState={{ selected: selectionne }}
@@ -51,8 +56,8 @@ export function Filtre({ libelle, selectionne, onPress, ton = 'neutre', point, b
 }
 
 const styles = StyleSheet.create({
-  puce: { height: 34, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 0 },
+  puce: { height: 34, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: rayons.pilule },
   texte: { fontSize: 13 },
   point: { width: 10, height: 10, borderRadius: 5 },
-  badge: { paddingHorizontal: 4, paddingVertical: 1, borderRadius: 0 },
+  badge: { paddingHorizontal: 5, paddingVertical: 1, borderRadius: rayons.pilule },
 });

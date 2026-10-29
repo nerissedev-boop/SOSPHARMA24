@@ -126,6 +126,8 @@ export type PharmacieResume = {
   accepte_mes_assurances: boolean | null;
   distance_m: number | null;
   marche_min: number | null;
+  /** Photo de façade (relevé terrain validé), présente aussi dans les listes et le tour de garde. */
+  photo_url: string | null;
 };
 
 export type Pharmacie = PharmacieResume & {
@@ -133,7 +135,6 @@ export type Pharmacie = PharmacieResume & {
   services: string[];
   verifiee_le: string | null;
   note: { moyenne: number; nombre: number } | null;
-  photo_url: string | null;
 };
 
 export type TourGarde = {
@@ -303,7 +304,7 @@ export type Proposition = {
 };
 
 /** Doublon possible (GET /agent/pharmacies/proches). */
-export type PharmacieProche = PharmacieResume & { verifiee_le: string | null; photo_url: string | null };
+export type PharmacieProche = PharmacieResume & { verifiee_le: string | null };
 
 export type Pagination = { page: number; per_page: number; total: number; last_page: number };
 

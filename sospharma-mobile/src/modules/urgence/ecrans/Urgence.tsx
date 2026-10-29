@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 're
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 
 import { distanceKm, t } from '@/commun/lib';
-import { ombres, useTheme } from '@/commun/theme';
+import { ombres, rayons, useTheme } from '@/commun/theme';
 import { avecErrorBoundary, DUREES, Ecran, EnTete, HiPharmacy, Texte, useAppui, useNavigationOnglets, usePulsation } from '@/commun/ui';
 import { useTourEnCours } from '@/modules/gardes';
 import { NumerosUrgence, usePaysCourant } from '@/modules/territoire';
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   rond: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   droite: { alignItems: 'flex-end', gap: 2 },
   gras: { fontFamily: 'PlusJakartaSans_800ExtraBold' },
-  carte: { marginHorizontal: 16, marginTop: 'auto', padding: 16, gap: 12 },
+  carte: { marginHorizontal: 16, marginTop: 'auto', padding: 16, gap: 12, borderRadius: rayons.grandeCarte },
 });
 
 export default avecErrorBoundary(Urgence, 'Urgence');

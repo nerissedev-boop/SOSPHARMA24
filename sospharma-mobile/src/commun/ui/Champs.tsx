@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'rea
 
 import { t } from '../lib/i18n';
 import { CIBLE_TACTILE } from '../theme/espacements';
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { policeTexte, type Variante } from '../theme/typographie';
 import { HiGeoLocationOutline, HiPharmacyOutline, HiPhone, HiUiUserProfileOutline } from './icones/healthicons';
@@ -37,7 +38,7 @@ function rendreIconeChamp(nom: IconeChamp, couleur: string, taille: number): Rea
 
 /**
  * État visuel d'un champ : vide = aplat gris et icône grise ; actif (focus) ou rempli =
- * aplat vert clair et icône verte. Jamais de bordure ni d'arrondi.
+ * aplat vert clair et icône verte. Arrondi de 14 (charte « cartes », 28 oct.), jamais de bordure.
  */
 export function useEtatChamp(valeur: string | undefined, props: Pick<TextInputProps, 'onFocus' | 'onBlur'>) {
   const { couleurs: c } = useTheme();
@@ -213,7 +214,7 @@ export function ZoneTexte({ libelle, lignes = 3, erreur, value, onFocus, onBlur,
 
 type PropsCase = { coche: boolean; onChange: (v: boolean) => void; libelle: string; testID?: string };
 
-/** Case à cocher carrée (pas d'arrondi ni de bordure) : gris vide, vert coché. */
+/** Case à cocher (petit arrondi, pas de bordure) : gris vide, vert coché. */
 export function CaseACocher({ coche, onChange, libelle, testID }: PropsCase) {
   const { couleurs: c, estNuit } = useTheme();
   return (
@@ -281,18 +282,18 @@ export function Segments<T extends string>({
 
 const styles = StyleSheet.create({
   champConteneur: { gap: 6 },
-  champ: { flexDirection: 'row', alignItems: 'center', borderRadius: 0 },
+  champ: { flexDirection: 'row', alignItems: 'center', borderRadius: rayons.moyen },
   oeil: { width: CIBLE_TACTILE, height: CIBLE_TACTILE, alignItems: 'center', justifyContent: 'center' },
-  recherche: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, borderRadius: 0 },
+  recherche: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, borderRadius: rayons.moyen },
   // Pas de contour de focus du navigateur (version web) : l'état actif est rendu par le fond vert clair.
   saisie: { flex: 1, minWidth: 0, paddingVertical: 0, height: '100%', outlineWidth: 0 },
   zoneConteneur: { gap: 6 },
-  zone: { padding: 12, fontSize: 14, borderRadius: 0 },
-  case: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderRadius: 0 },
+  zone: { padding: 12, fontSize: 14, borderRadius: rayons.moyen },
+  case: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderRadius: rayons.mini },
   radio: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   radioPoint: { width: 8, height: 8, borderRadius: 4 },
-  segments: { flexDirection: 'row', padding: 4, gap: 4 },
-  segment: { flex: 1, height: 38, alignItems: 'center', justifyContent: 'center', minHeight: 38 },
+  segments: { flexDirection: 'row', padding: 4, gap: 4, borderRadius: rayons.moyen },
+  segment: { flex: 1, height: 38, alignItems: 'center', justifyContent: 'center', minHeight: 38, borderRadius: rayons.petit },
 });
 
 export const HAUTEUR_CIBLE = CIBLE_TACTILE;

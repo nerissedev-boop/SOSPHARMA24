@@ -1,6 +1,7 @@
 export { jetonsJour, jetonsNuit, type Jetons } from './jetons';
 export { espacements, hauteurs, CIBLE_TACTILE } from './espacements';
 export { ombres } from './ombres';
+export { rayons } from './rayons';
 export {
   variantes,
   policeTexte,

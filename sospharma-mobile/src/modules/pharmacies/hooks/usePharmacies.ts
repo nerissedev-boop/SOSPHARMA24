@@ -97,7 +97,8 @@ export function usePharmacie(id: string, actif = true) {
           ? (donnees as PharmacieResume[])
           : ((donnees as { data?: PharmacieResume[] } | undefined)?.data ?? []);
         const trouve = Array.isArray(liste) ? liste.find((p) => p.id === id) : undefined;
-        if (trouve) return { pays_code: '', services: [], verifiee_le: null, note: null, photo_url: null, ...trouve } as Pharmacie;
+        // photo_url : absente des listes mises en cache par une version précédente de l'app.
+        if (trouve) return { pays_code: '', services: [], verifiee_le: null, note: null, ...trouve, photo_url: trouve.photo_url ?? null } as Pharmacie;
       }
       return undefined;
     },

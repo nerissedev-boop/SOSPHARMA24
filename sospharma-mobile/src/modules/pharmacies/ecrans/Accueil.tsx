@@ -1,10 +1,10 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo } from 'react';
-import { ActivityIndicator, BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { PharmacieResume } from '@/commun/api';
 import { bornesCourtes, heure, marquerSortieVolontaire, t, usePreferences } from '@/commun/lib';
-import { useMaintenant, useTheme } from '@/commun/theme';
+import { rayons, useMaintenant, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
   BandeauHorsConnexion,
@@ -19,7 +19,11 @@ import {
   IconeLune,
   LignePharmacie,
   Logo,
+  ChargementCroix,
+  SqueletteBlocProche,
+  SqueletteListe,
   Texte,
+  useChargementVisible,
 } from '@/commun/ui';
 import { useTourEnCours } from '@/modules/gardes';
 import { usePaysCourant, useZoneCourante } from '@/modules/territoire';
@@ -58,6 +62,8 @@ function Accueil() {
   const libelleStatut = useLibelleStatut();
   const tonStatut = useTonStatut();
   const actions = useActionsPharmacie();
+  // Filtre changé : la liste précédente reste en cache le temps de la requête, la croix bat à sa place.
+  const filtreEnCours = useChargementVisible(proches.isPlaceholderData && proches.isFetching);
 
   const gardes = useMemo(
     () => [...(tour?.pharmacies ?? [])].filter((p) => p.statut === 'garde').sort((a, b) => (a.distance_m ?? 0) - (b.distance_m ?? 0)),
@@ -76,6 +82,8 @@ function Accueil() {
       statut={p.statut}
       libelleStatut={libelleStatut(p, contexte)}
       ton={tonStatut(p)}
+      // Photo de façade validée, sinon devanture dessinée (null).
+      photoUrl={p.photo_url ?? null}
       distanceM={p.distance_m}
       marcheMin={p.marche_min}
       iconeMarche={!estNuit}
@@ -112,7 +120,8 @@ function Accueil() {
               testID="bloc-plus-proche"
               garde
               titre={t('accueil.plusProcheGarde')}
-              nom={premiere.nom}
+              photoUrl={premiere.photo_url ?? null}
+            nom={premiere.nom}
               statut={premiere.statut}
               libelleStatut={libelleStatut(premiere, 'garde')}
               distanceM={premiere.distance_m}
@@ -122,7 +131,7 @@ function Accueil() {
               onItineraire={() => actions.itineraire(premiere)}
             />
           ) : (
-            <ActivityIndicator color={c.rouge} />
+            <SqueletteBlocProche />
           )}
           <View style={styles.titreSection}>
             <Texte variante="section" titre>
@@ -148,7 +157,7 @@ function Accueil() {
   }
 
   // ----------------------------- Jour -----------------------------
-  const liste = proches.liste ?? [];
+  const liste = filtreEnCours ? [] : (proches.liste ?? []);
   const premiere = liste.find((p) => p.statut !== 'fermee');
   const reste = liste.filter((p) => p.id !== premiere?.id).slice(0, 10);
   const bornes = tour ? bornesCourtes(tour.debut, tour.fin, fuseau) : null;
@@ -258,12 +267,22 @@ function Accueil() {
           />
         </View>
 
-        {proches.isPending && !proches.liste ? <ActivityIndicator color={c.vert} style={styles.chargement} /> : null}
+        {filtreEnCours ? (
+          // Après un appui sur un filtre : la croix de la marque bat le temps que la liste arrive.
+          <ChargementCroix style={styles.chargementFiltre} testID="chargement-filtre" />
+        ) : proches.isPending && !proches.liste ? (
+          // Cartes grises qui respirent pendant le premier chargement, à la place d'une roue.
+          <View style={styles.chargement} testID="chargement-proches">
+            <SqueletteBlocProche />
+            <SqueletteListe nombre={4} ecart={8} />
+          </View>
+        ) : null}
         {premiere ? (
           <BlocPlusProche
             testID="bloc-plus-proche"
             garde={premiere.statut === 'garde'}
             titre={premiere.statut === 'garde' ? t('accueil.plusProcheGarde') : t('accueil.plusProcheOuverte')}
+            photoUrl={premiere.photo_url ?? null}
             nom={premiere.nom}
             statut={premiere.statut}
             libelleStatut={libelleStatut(premiere)}
@@ -275,7 +294,7 @@ function Accueil() {
           />
         ) : null}
         <View style={styles.liste}>{reste.map((p, i) => ligne(p, 'liste', i))}</View>
-        {proches.isSuccess && liste.length === 0 ? <AucunResultat onActualiser={() => void proches.refetch()} /> : null}
+        {proches.isSuccess && !filtreEnCours && liste.length === 0 ? <AucunResultat onActualiser={() => void proches.refetch()} /> : null}
       </ScrollView>
     </Ecran>
   );
@@ -285,22 +304,31 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   contenu: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 24, gap: 16 },
   contenuJour: { paddingTop: 0 },
-  bandeau: { marginHorizontal: -20, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20, gap: 16 },
+  bandeau: {
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 22,
+    gap: 16,
+    borderBottomLeftRadius: rayons.feuille,
+    borderBottomRightRadius: rayons.feuille,
+  },
   entete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   pointNotif: { position: 'absolute', top: 9, right: 10, width: 9, height: 9, borderRadius: 5 },
   sousTitre: { marginTop: 4 },
   cartes: { flexDirection: 'row', gap: 10 },
-  carte: { flex: 1, padding: 14, gap: 14 },
+  carte: { flex: 1, padding: 14, gap: 14, borderRadius: rayons.carte },
   rond: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   textesCarte: { gap: 3 },
-  etiquetteGarde: { marginTop: 4, paddingHorizontal: 6, paddingVertical: 3, alignSelf: 'flex-start' },
+  etiquetteGarde: { marginTop: 4, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start', borderRadius: rayons.pilule },
   titreSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, marginBottom: -4 },
   lien: { minHeight: 44, justifyContent: 'center' },
   texte13: { fontSize: 13 },
   filtres: { flexDirection: 'row', gap: 8, marginBottom: -4 },
-  chargement: { marginTop: 16 },
-  info: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
-  liste: { marginTop: -4 },
+  chargement: { marginTop: 4, gap: 12 },
+  chargementFiltre: { height: 220 },
+  info: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: rayons.moyen },
+  liste: { gap: 8 },
   fermees: { marginTop: 8 },
 });
 

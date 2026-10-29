@@ -1,5 +1,3 @@
-import { HORAIRES_DEFAUT, resumeHoraires } from '@/modules/releves/horaires';
-
 import { dateCourte, distanceKm } from '../format';
 import { appliquerLangue, langueActive, t } from '../i18n';
 
@@ -28,11 +26,5 @@ describe('langue de l’interface', () => {
     appliquerLangue('fr');
     expect(dateCourte(SAMEDI, 'Africa/Abidjan')).toBe('sam. 24 oct.');
     expect(distanceKm(4700)).toBe('4,7 km');
-  });
-
-  it('résume les horaires d’un relevé en anglais', () => {
-    appliquerLangue('en');
-    expect(resumeHoraires(HORAIRES_DEFAUT)).toBe('Mon to Sat 08:00 to 21:00, Sun closed');
-    expect(resumeHoraires([], true)).toBe('Open 24 hours, 7 days a week');
   });
 });

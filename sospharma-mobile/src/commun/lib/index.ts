@@ -31,5 +31,6 @@ export { stockage, stockageSynchrone } from './stockage';
 export * from './temps';
 export { useSessionAgent, sessionAgentExpiree, DUREE_INACTIVITE_AGENT_MS, type AgentConnecte } from './sessionAgent';
 export { useSelectionAssurances, estContexteAssurances, type ContexteAssurances } from './selectionAssurances';
+export { vibrationAction, vibrationErreur, vibrationLegere, vibrationSucces } from './haptique';
 export { alerte, useDialogues, type BoutonDialogue, type Dialogue, type StyleBoutonDialogue } from './dialogues';
 export { ABSENCE_AVANT_DEMARRAGE_MS, marquerSortieVersAutreApp, marquerSortieVolontaire, noterDepart, rejouerDemarrageAuRetour } from './premierPlan';

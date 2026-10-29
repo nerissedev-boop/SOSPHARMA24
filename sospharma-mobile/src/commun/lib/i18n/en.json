@@ -16,7 +16,8 @@
     "zoneVille": "{{zone}}, {{ville}}",
     "chargement": "Loading",
     "ok": "OK",
-    "aucuneZone": "Choose an area"
+    "aucuneZone": "Choose an area",
+    "votreAssurance": "Your insurance"
   },
   "statut": {
     "garde": "On duty tonight",
@@ -126,7 +127,14 @@
     "maCommune": "My commune",
     "conseil": "At night, call before you go.",
     "confirmee": "List confirmed on {{date}}",
-    "aucune": "No on-duty pharmacy matches this choice."
+    "aucune": "No on-duty pharmacy matches this choice.",
+    "plusProche": "Nearest",
+    "partager": "Share",
+    "partagerA11y": "Share the list of on-duty pharmacies",
+    "partageTitre": "On-duty pharmacies · {{zone}}",
+    "partageLigne": "• {{pharmacie}}: {{telephone}}",
+    "partageLigneSansTelephone": "• {{pharmacie}}",
+    "partageSignature": "List shared with SOS Pharma 24"
   },
   "fiche": {
     "photo": "Storefront photo",

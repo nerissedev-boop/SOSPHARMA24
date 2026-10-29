@@ -4,7 +4,7 @@ import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'r
 
 import type { MotifSignalement } from '@/commun/api';
 import { alerte, t } from '@/commun/lib';
-import { useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import { avecErrorBoundary, Bouton, Ecran, EnTete, PastilleStatut, PiedFixe, PointRadio, Texte, useRetour, ZoneTexte } from '@/commun/ui';
 import { usePharmacie } from '@/modules/pharmacies';
 
@@ -117,7 +117,7 @@ function Signaler() {
 const styles = StyleSheet.create({
   flex: { flex: 1, gap: 2 },
   contenu: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 24, gap: 16 },
-  pharmacie: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14 },
+  pharmacie: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: rayons.moyen },
   titre: { marginBottom: 4 },
   motif: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, marginHorizontal: -12 },
   texteMotif: { flex: 1 },
