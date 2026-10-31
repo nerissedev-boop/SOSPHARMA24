@@ -28,8 +28,8 @@ final class FichePharmacie
         public readonly ?string $quartier,
         public readonly ?string $telephone,
         public readonly ?string $whatsapp,
-        public readonly float $latitude,
-        public readonly float $longitude,
+        public readonly ?float $latitude,
+        public readonly ?float $longitude,
         public readonly bool $h24,
         public readonly array $services,
         public readonly array $horaires,
@@ -56,7 +56,7 @@ final class FichePharmacie
             'services' => $this->services,
             'horaires' => $this->horaires,
             'assurances' => array_map(fn (array $a): array => ['id' => $a['id'], 'tiers_payant' => $a['tiers_payant']], $this->assurances),
-            'position' => ['lat' => $this->latitude, 'lng' => $this->longitude],
+            'position' => $this->latitude !== null && $this->longitude !== null ? ['lat' => $this->latitude, 'lng' => $this->longitude] : null,
         ];
     }
 }

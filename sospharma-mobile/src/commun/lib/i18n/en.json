@@ -18,7 +18,9 @@
     "ok": "OK",
     "aucuneZone": "Choose an area",
     "votreAssurance": "Your insurance",
-    "voirFiche": "View details"
+    "voirFiche": "View details",
+    "positionAConfirmer": "Location to be confirmed",
+    "positionAConfirmerTexte": "Location not checked yet: call the pharmacy to ask for directions."
   },
   "statut": {
     "garde": "On duty tonight",

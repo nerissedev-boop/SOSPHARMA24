@@ -6,6 +6,7 @@ export { HoteDialogues } from './HoteDialogues';
 export { apparitionLigne, DUREES, transitionListe, useAppui, useApparitionImage, useCompteurAnime, useEnTeteRepliable, usePulsation } from './animations';
 export { NombreAnime } from './NombreAnime';
 export { CHARGEMENT_MINIMUM_MS, ChargementCroix, useChargementBref, useChargementVisible } from './ChargementCroix';
+export { BadgePosition } from './BadgePosition';
 export { FacadeIllustree } from './FacadeIllustree';
 export { PhotoFondu } from './PhotoFondu';
 export { PiluleFiltres, type OptionPilule } from './PiluleFiltres';

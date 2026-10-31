@@ -25,7 +25,7 @@ class PharmacieAdminResource extends JsonResource
             'zone' => $this->relationLoaded('zone') && $this->zone !== null ? ['id' => $this->zone->id_public, 'nom' => $this->zone->nom] : null,
             'telephone' => $this->telephone,
             'whatsapp' => $this->whatsapp,
-            'position' => ['lat' => $this->lat(), 'lng' => $this->lng()],
+            'position' => $this->aUnePosition() ? ['lat' => $this->lat(), 'lng' => $this->lng()] : null,
             'h24' => $this->h24,
             'services' => $this->services ?? [],
             'photo_facade' => $this->urlPhotoFacade(),

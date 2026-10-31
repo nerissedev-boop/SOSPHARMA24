@@ -43,7 +43,7 @@ export type PharmacieApi = {
   ville?: Ref | null;
   telephone: string | null;
   whatsapp: string | null;
-  position: Point;
+  position: Point | null;
   h24: boolean;
   statut: StatutPharmacie;
   prochaine_ouverture: string | null;
@@ -99,8 +99,8 @@ export function depuisPharmacieApi(p: PharmacieApi): Pharmacie {
     commune: p.zone?.nom ?? p.quartier ?? '',
     commune_id: p.zone?.id ?? '',
     ville: p.ville?.nom ?? '',
-    latitude: p.position.lat,
-    longitude: p.position.lng,
+    latitude: p.position?.lat ?? null,
+    longitude: p.position?.lng ?? null,
     telephone: p.telephone,
     whatsapp: p.whatsapp,
     h24: p.h24,

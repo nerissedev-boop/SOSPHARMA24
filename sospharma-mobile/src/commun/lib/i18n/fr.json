@@ -18,7 +18,9 @@
     "ok": "OK",
     "aucuneZone": "Choisir une zone",
     "votreAssurance": "Votre assurance",
-    "voirFiche": "Voir la fiche"
+    "voirFiche": "Voir la fiche",
+    "positionAConfirmer": "Position à confirmer",
+    "positionAConfirmerTexte": "Position pas encore relevée : appelez la pharmacie pour connaître le chemin."
   },
   "statut": {
     "garde": "De garde cette nuit",

@@ -28,8 +28,8 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $quartier
  * @property string|null $telephone
  * @property string|null $whatsapp
- * @property string $latitude
- * @property string $longitude
+ * @property string|null $latitude null : position à confirmer (pharmacie de garde absente d'OpenStreetMap)
+ * @property string|null $longitude
  * @property bool $h24
  * @property list<string>|null $services
  * @property string|null $photo_facade
@@ -128,13 +128,19 @@ class Pharmacie extends Model
         return $this->photo_facade !== null ? Storage::disk('public')->url($this->photo_facade) : null;
     }
 
-    public function lat(): float
+    /** Faux tant que la position n'a pas été relevée : ni distance, ni carte, ni itinéraire. */
+    public function aUnePosition(): bool
     {
-        return (float) $this->latitude;
+        return $this->latitude !== null && $this->longitude !== null;
     }
 
-    public function lng(): float
+    public function lat(): ?float
     {
-        return (float) $this->longitude;
+        return $this->latitude !== null ? (float) $this->latitude : null;
+    }
+
+    public function lng(): ?float
+    {
+        return $this->longitude !== null ? (float) $this->longitude : null;
     }
 }

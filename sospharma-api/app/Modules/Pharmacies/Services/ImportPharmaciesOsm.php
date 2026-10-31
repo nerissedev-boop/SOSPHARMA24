@@ -200,7 +200,7 @@ final class ImportPharmaciesOsm
             ->whereBetween('latitude', [$rectangle->minLat, $rectangle->maxLat])
             ->whereBetween('longitude', [$rectangle->minLng, $rectangle->maxLng])
             ->get()
-            ->first(fn (Pharmacie $p): bool => Distance::metres($lat, $lng, $p->lat(), $p->lng()) <= self::RAYON_DOUBLON_M
+            ->first(fn (Pharmacie $p): bool => Distance::metres($lat, $lng, (float) $p->lat(), (float) $p->lng()) <= self::RAYON_DOUBLON_M
                 && ($cle === '' || $this->cleNom($p->nom) === '' || str_contains($this->cleNom($p->nom), $cle) || str_contains($cle, $this->cleNom($p->nom))));
     }
 

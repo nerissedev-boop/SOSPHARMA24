@@ -5,7 +5,7 @@ import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PharmacieResume } from '@/commun/api';
-import { appeler, bornesLongues, commencerVisite, dateCourte, marquerSortieVersAutreApp, signalerErreur, t, vibrationAction } from '@/commun/lib';
+import { appeler, bornesLongues, commencerVisite, comparerDistance, dateCourte, marquerSortieVersAutreApp, signalerErreur, t, vibrationAction } from '@/commun/lib';
 import { libelleStatut, tonAffiche } from '@/commun/regles';
 import { rayons, useTheme } from '@/commun/theme';
 import {
@@ -64,7 +64,7 @@ function ListeGardes() {
         : choix === 'commune'
           ? toutes.filter((p) => !zone || p.commune_id === zone.zoneId)
           : toutes;
-    return filtrees.sort((a, b) => (a.distance_m ?? 0) - (b.distance_m ?? 0));
+    return filtrees.sort(comparerDistance);
   }, [tour, choix, zone]);
 
   const ouvrir = (p: PharmacieResume) => router.push({ pathname: '/pharmacie/[id]', params: { id: p.id } });
@@ -140,6 +140,7 @@ function ListeGardes() {
         // Garde enregistrée par une version précédente : pas de champ photo, on dessine la devanture.
         photoUrl={p.photo_url ?? null}
         assurance={p.accepte_mes_assurances === true}
+        positionAConfirmer={p.latitude === null}
         marcheJusquA={MARCHE_UTILE_M}
         pulsation={false}
         distanceM={p.distance_m}
@@ -213,6 +214,7 @@ function ListeGardes() {
             detail={detailPremiere.texte}
             detailOcre={detailPremiere.restreinte}
             assurance={premiere.accepte_mes_assurances === true}
+            positionAConfirmer={premiere.latitude === null}
             marcheJusquA={MARCHE_UTILE_M}
             distanceM={premiere.distance_m}
             marcheMin={premiere.marche_min}

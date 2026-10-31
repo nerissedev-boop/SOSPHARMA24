@@ -29,3 +29,14 @@ export function estimerTrajet(distanceM: number, mode: ModeTrajet): { distanceM:
   const minutes = mode === 'pied' ? Math.round(route / metresParMinute) : Math.ceil(route / metresParMinute);
   return { distanceM: Math.round(route), minutes: Math.max(1, minutes) };
 }
+
+/** Position d'une pharmacie, ou null tant qu'elle est « à confirmer » (pas encore relevée). */
+export function positionDe(p: { latitude: number | null; longitude: number | null }): Coordonnees | null {
+  return p.latitude !== null && p.longitude !== null ? { latitude: p.latitude, longitude: p.longitude } : null;
+}
+
+/** Tri par distance croissante ; sans distance (position à confirmer), après les autres. */
+export function comparerDistance(a: { distance_m: number | null }, b: { distance_m: number | null }): number {
+  if (a.distance_m === null || b.distance_m === null) return (a.distance_m === null ? 1 : 0) - (b.distance_m === null ? 1 : 0);
+  return a.distance_m - b.distance_m;
+}

@@ -34,7 +34,8 @@ class PharmacieListeResource extends JsonResource
             'ville' => $p->relationLoaded('ville') && $p->ville !== null ? ['id' => $p->ville->id_public, 'nom' => $p->ville->nom] : null,
             'telephone' => $p->telephone,
             'whatsapp' => $p->whatsapp,
-            'position' => ['lat' => $p->lat(), 'lng' => $p->lng()],
+            // null : position à confirmer (l'app affiche la pharmacie sans distance ni point sur la carte).
+            'position' => $p->aUnePosition() ? ['lat' => $p->lat(), 'lng' => $p->lng()] : null,
             'h24' => $p->h24,
             'statut' => $statut->statut->value,
             'prochaine_ouverture' => Dates::iso($statut->prochaineOuverture),

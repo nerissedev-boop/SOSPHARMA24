@@ -19,12 +19,15 @@ export function messagePartage(
 ): string {
   const lien = config.lienPartageBase
     ? `${config.lienPartageBase.replace(/\/$/, '')}/pharmacie/${p.id}`
-    : lienPosition({ latitude: p.latitude, longitude: p.longitude });
+    : // Position à confirmer et pas de lien web : le message garde l'adresse et le téléphone.
+      p.latitude !== null && p.longitude !== null
+      ? lienPosition({ latitude: p.latitude, longitude: p.longitude })
+      : null;
   return [
     `${p.nom}, ${minusculeInitiale(statut)}`,
     p.adresse,
     p.telephone ? t('partage.telephone', { telephone: telephoneAffiche(p.telephone, indicatif) }) : null,
-    t('partage.lien', { lien }),
+    lien ? t('partage.lien', { lien }) : null,
   ]
     .filter(Boolean)
     .join('\n');

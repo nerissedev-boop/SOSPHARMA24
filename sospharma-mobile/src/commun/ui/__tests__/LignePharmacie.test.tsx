@@ -118,3 +118,19 @@ describe('Indices d’action (29 oct.)', () => {
     expect(screen.queryByText('Voir la fiche')).toBeNull();
   });
 });
+
+describe('Position à confirmer (31 oct.)', () => {
+  it('badge sur la ligne, à la place de la distance pour le lecteur d’écran', async () => {
+    await rendre(<LignePharmacie {...base} distanceM={null} marcheMin={null} positionAConfirmer onPress={jest.fn()} />);
+    expect(screen.getByTestId('l-position')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Position à confirmer/ })).toBeTruthy();
+  });
+
+  it('bloc « La plus proche » : badge et pas de bouton Itinéraire', async () => {
+    const bloc = { titre: 'La plus proche de garde', nom: 'Pharmacie Alpha', statut: 'garde' as const, libelleStatut: 'Ouverte toute la nuit', distanceM: null, marcheMin: null, testID: 'b' };
+    await rendre(<BlocPlusProche {...bloc} positionAConfirmer onAppeler={jest.fn()} onItineraire={jest.fn()} />);
+    expect(screen.getByTestId('b-position')).toBeTruthy();
+    expect(screen.queryByText('Itinéraire')).toBeNull();
+    expect(screen.getByTestId('b-appeler')).toBeTruthy();
+  });
+});

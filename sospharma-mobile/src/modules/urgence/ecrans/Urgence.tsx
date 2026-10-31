@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 
-import { distanceKm, t, vibrationAction } from '@/commun/lib';
+import { comparerDistance, distanceKm, t, vibrationAction } from '@/commun/lib';
 import { ombres, rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
@@ -36,7 +36,7 @@ function Urgence() {
   const { tour } = useTourEnCours();
   const plusProche = [...(tour?.pharmacies ?? [])]
     .filter((p) => p.statut === 'garde')
-    .sort((a, b) => (a.distance_m ?? 0) - (b.distance_m ?? 0))[0];
+    .sort(comparerDistance)[0];
   const echelle = Math.min(1, (width - 40) / 300);
   // Les deux anneaux « respirent » autour du bouton SOS, l'intérieur avec un léger retard.
   const exterieur = usePulsation(true, { duree: DUREES.respiration, allerRetour: true });
@@ -156,16 +156,18 @@ function Urgence() {
                 }}
                 testID="sos-appeler"
               />
-              <Bouton
-                libelle={t('commun.itineraire')}
-                variante="blanc"
-                icone={<IconeItineraire size={18} color={c.pastilleActionIcone} />}
-                onPress={() => {
-                  setChoixSos(false);
-                  actions.itineraire(plusProche);
-                }}
-                testID="sos-itineraire"
-              />
+              {plusProche.latitude === null ? null : (
+                <Bouton
+                  libelle={t('commun.itineraire')}
+                  variante="blanc"
+                  icone={<IconeItineraire size={18} color={c.pastilleActionIcone} />}
+                  onPress={() => {
+                    setChoixSos(false);
+                    actions.itineraire(plusProche);
+                  }}
+                  testID="sos-itineraire"
+                />
+              )}
               <Bouton libelle={t('urgence.autresGardes')} variante="lien" onPress={() => { setChoixSos(false); allerOnglet('garde'); }} testID="sos-autres" />
             </View>
           }

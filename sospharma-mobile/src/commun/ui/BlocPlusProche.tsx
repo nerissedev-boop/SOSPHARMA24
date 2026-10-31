@@ -7,6 +7,7 @@ import { ombres } from '../theme/ombres';
 import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { BadgeAssurance } from './BadgeAssurance';
+import { BadgePosition } from './BadgePosition';
 import { Bouton } from './Bouton';
 import { DistanceMarche } from './DistanceMarche';
 import { FacadeIllustree } from './FacadeIllustree';
@@ -40,6 +41,8 @@ type Props = {
   detailOcre?: boolean;
   /** Badge « Votre assurance » à côté de la 2e ligne. */
   assurance?: boolean;
+  /** Badge « Position à confirmer » (pas d'itinéraire possible). */
+  positionAConfirmer?: boolean;
   /** Temps de marche affiché seulement en deçà de cette distance (mètres) ; absent : toujours. */
   marcheJusquA?: number;
   onPress?: () => void;
@@ -65,6 +68,7 @@ export function BlocPlusProche({
   detail,
   detailOcre = false,
   assurance = false,
+  positionAConfirmer = false,
   marcheJusquA,
   onPress,
   onAppeler,
@@ -87,6 +91,7 @@ export function BlocPlusProche({
         {detail ?? libelleStatut}
       </Texte>
       {assurance ? <BadgeAssurance testID={testID ? `${testID}-assurance` : undefined} /> : null}
+      {positionAConfirmer ? <BadgePosition testID={testID ? `${testID}-position` : undefined} /> : null}
     </View>
   );
 
@@ -151,14 +156,17 @@ export function BlocPlusProche({
           style={styles.action}
           testID={testID ? `${testID}-appeler` : undefined}
         />
-        <Bouton
-          libelle={t('commun.itineraire')}
-          variante="blanc"
-          onPress={onItineraire}
-          hauteur={avecPhoto ? 48 : estNuit ? 46 : 44}
-          icone={<IconeItineraire size={16} color={c.pastilleActionIcone} />}
-          style={styles.action}
-        />
+        {/* Sans position, pas d'itinéraire : « Appeler » prend toute la largeur. */}
+        {positionAConfirmer ? null : (
+          <Bouton
+            libelle={t('commun.itineraire')}
+            variante="blanc"
+            onPress={onItineraire}
+            hauteur={avecPhoto ? 48 : estNuit ? 46 : 44}
+            icone={<IconeItineraire size={16} color={c.pastilleActionIcone} />}
+            style={styles.action}
+          />
+        )}
       </View>
     </View>
   );

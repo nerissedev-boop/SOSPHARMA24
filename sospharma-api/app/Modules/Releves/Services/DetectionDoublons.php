@@ -32,7 +32,8 @@ final class DetectionDoublons
             if ($fiche->id === $sauf) {
                 continue;
             }
-            $distance = Distance::metres($lat, $lng, $fiche->latitude, $fiche->longitude);
+            // dansRectangle ne renvoie que des fiches situées.
+            $distance = Distance::metres($lat, $lng, (float) $fiche->latitude, (float) $fiche->longitude);
             if ($distance <= $rayonM) {
                 $proches[] = ['fiche' => $fiche, 'distance_m' => $distance];
             }

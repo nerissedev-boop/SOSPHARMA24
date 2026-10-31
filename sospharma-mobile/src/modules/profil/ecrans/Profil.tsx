@@ -97,6 +97,7 @@ function Profil() {
               key={p.id}
               variante="favori"
               photoUrl={p.photo_url ?? null}
+              positionAConfirmer={p.latitude === null}
               nom={p.nom}
               statut={p.statut}
               libelleStatut={libelleStatut(p, fuseau)}

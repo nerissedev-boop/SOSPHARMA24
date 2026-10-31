@@ -110,7 +110,7 @@ final class RecherchePharmacies
             if ($filtres->statut !== null && $statut->statut !== $filtres->statut) {
                 continue;
             }
-            $distance = $lat !== null && $lng !== null ? Distance::metres($lat, $lng, $pharmacie->lat(), $pharmacie->lng()) : null;
+            $distance = $lat !== null && $lng !== null && $pharmacie->aUnePosition() ? Distance::metres($lat, $lng, (float) $pharmacie->lat(), (float) $pharmacie->lng()) : null;
             $trouvees[] = new PharmacieTrouvee($pharmacie, $statut, $distance);
         }
 

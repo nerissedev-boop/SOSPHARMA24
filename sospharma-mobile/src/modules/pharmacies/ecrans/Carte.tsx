@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PharmacieResume } from '@/commun/api';
-import { dateCourte, distanceKm, distanceNombre, localeActive, t, useEnLigne, usePreferences } from '@/commun/lib';
+import { dateCourte, distanceKm, distanceNombre, localeActive, positionDe, t, useEnLigne, usePreferences } from '@/commun/lib';
 import { ombres, rayons, useTheme } from '@/commun/theme';
 import { estInactive } from '@/commun/regles';
 import {
@@ -96,7 +96,14 @@ function Carte() {
   const compteurs = useCompteurs(modeCommunes ? villeId : null);
   const resultats = useRecherche(recherche);
 
-  const points = useMemo(() => cadre.liste ?? proches.liste ?? [], [cadre.liste, proches.liste]);
+  // Seules les pharmacies situées ont un point sur la carte (les autres sont « position à confirmer »).
+  const points = useMemo(
+    () => (cadre.liste ?? proches.liste ?? []).flatMap((p) => {
+      const position = positionDe(p);
+      return position ? [{ ...p, ...position }] : [];
+    }),
+    [cadre.liste, proches.liste],
+  );
   const choisie = useMemo<PharmacieResume | undefined>(
     () => points.find((p) => p.id === selection) ?? proches.liste?.[0] ?? points[0],
     [points, selection, proches.liste],
@@ -246,6 +253,7 @@ function Carte() {
               statut={p.statut}
               libelleStatut={libelleStatut(p)}
               photoUrl={p.photo_url ?? null}
+                positionAConfirmer={p.latitude === null}
               distanceM={p.distance_m}
               marcheMin={p.marche_min}
               onPress={() => actions.ouvrir(p)}
@@ -343,6 +351,7 @@ function Carte() {
                 statut={p.statut}
                 libelleStatut={libelleStatut(p)}
                 photoUrl={p.photo_url ?? null}
+                positionAConfirmer={p.latitude === null}
                 distanceM={p.distance_m}
                 marcheMin={p.marche_min}
                 onPress={() => actions.ouvrir(p)}

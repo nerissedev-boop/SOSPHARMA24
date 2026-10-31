@@ -52,7 +52,8 @@ final class TourEnCours
                     ));
                 }
             }
-            $distance = $lat !== null && $lng !== null ? Distance::metres($lat, $lng, $pharmacie->lat(), $pharmacie->lng()) : null;
+            // Position à confirmer : pas de distance, la pharmacie passe après celles qu'on sait situer.
+            $distance = $lat !== null && $lng !== null && $pharmacie->aUnePosition() ? Distance::metres($lat, $lng, (float) $pharmacie->lat(), (float) $pharmacie->lng()) : null;
             $lignes[] = new PharmacieTrouvee($pharmacie, $statut, $distance);
         }
 
@@ -60,7 +61,8 @@ final class TourEnCours
             $gardeA = $a->statut->statut === StatutOuverture::Garde ? 0 : 1;
             $gardeB = $b->statut->statut === StatutOuverture::Garde ? 0 : 1;
 
-            return [$gardeA, $a->distanceM ?? 0, $a->pharmacie->nom] <=> [$gardeB, $b->distanceM ?? 0, $b->pharmacie->nom];
+            // Sans distance (position à confirmer, ou usager non localisé) : après les pharmacies situées.
+            return [$gardeA, $a->distanceM ?? PHP_INT_MAX, $a->pharmacie->nom] <=> [$gardeB, $b->distanceM ?? PHP_INT_MAX, $b->pharmacie->nom];
         });
 
         return ['tour' => $tour, 'pharmacies' => $lignes];

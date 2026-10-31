@@ -66,3 +66,14 @@ describe('Message pour le chauffeur', () => {
     expect(lignes[4]).toMatch(/^Tél\. de la pharmacie : /);
   });
 });
+
+describe('Message pour le chauffeur sans position', () => {
+  it('garde l’adresse et le téléphone, sans lien de position', () => {
+    const message = messageChauffeur(
+      { nom: 'Pharmacie Nouvelle', adresse: 'Face grande gare', commune: 'Gagnoa', ville: 'Gagnoa', telephone: '2732772462', latitude: null, longitude: null },
+      '+225',
+    );
+    expect(message).toContain('Face grande gare');
+    expect(message).not.toContain('Position :');
+  });
+});

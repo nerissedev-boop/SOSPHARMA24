@@ -9,6 +9,7 @@ import { dateCourte, heureLocale, localeActive, t, telephoneAffiche, usePreferen
 import { ombres, rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
+  BadgePosition,
   Bouton,
   BoutonIcone,
   DistanceMarche,
@@ -205,6 +206,8 @@ function Fiche() {
   const couleurStatut = ocre ? c.ocreTexte : fiche.statut === 'garde' ? c.rougeTexteFort : fiche.statut === 'ouverte' ? c.blanc : c.texteTertiaire;
   const fondStatut = ocre ? c.ocreClair : fiche.statut === 'garde' ? c.rougeClair : fiche.statut === 'ouverte' ? c.vert : c.surface;
   const jour = heureLocale(new Date(), fuseau).jourSemaine;
+  // Position à confirmer : ni itinéraire ni « Y aller », un badge et un conseil d'appeler.
+  const sansPosition = fiche.latitude === null || fiche.longitude === null;
 
   return (
     <Ecran hautSur={false} barreClaire={!compact || estNuit} testID="ecran-fiche">
@@ -250,17 +253,20 @@ function Fiche() {
                   </View>
                 ) : null}
               </View>
+              {sansPosition ? <BadgePosition testID="fiche-position-a-confirmer" /> : null}
             </View>
             <DistanceMarche distanceM={fiche.distance_m} marcheMin={fiche.marche_min} grande varianteDistance="distanceGrande" />
           </View>
 
           <View style={styles.actions}>
             <ActionRonde libelle={t('commun.appeler')} icone={<HiPhone size={22} color={c.pastilleActionIcone} />} onPress={() => actions.appeler(fiche)} />
-            <ActionRonde
-              libelle={t('commun.itineraire')}
-              icone={<IconeItineraire size={20} color={c.pastilleActionIcone} />}
-              onPress={() => actions.itineraire(fiche)}
-            />
+            {sansPosition ? null : (
+              <ActionRonde
+                libelle={t('commun.itineraire')}
+                icone={<IconeItineraire size={20} color={c.pastilleActionIcone} />}
+                onPress={() => actions.itineraire(fiche)}
+              />
+            )}
             {/* WhatsApp seulement si la pharmacie a donné un numéro ; Favori et Partager restent en haut. */}
             {fiche.whatsapp ? (
               <ActionRonde libelle={t('commun.whatsapp')} icone={<IconeBulle size={20} color={c.pastilleActionIcone} />} onPress={() => actions.whatsapp(fiche)} />
@@ -330,13 +336,15 @@ function Fiche() {
             />
           ) : null}
 
-          <Bouton
-            libelle={t('fiche.yAller')}
-            icone="naviguer"
-            onPress={() => actions.itineraire(fiche)}
-            style={styles.yAller}
-            testID="bouton-y-aller"
-          />
+          {sansPosition ? null : (
+            <Bouton
+              libelle={t('fiche.yAller')}
+              icone="naviguer"
+              onPress={() => actions.itineraire(fiche)}
+              style={styles.yAller}
+              testID="bouton-y-aller"
+            />
+          )}
         </View>
       </ScrollView>
 

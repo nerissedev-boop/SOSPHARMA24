@@ -13,6 +13,7 @@ import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { apparitionLigne, transitionListe, useAppui } from './animations';
 import { BadgeAssurance } from './BadgeAssurance';
+import { BadgePosition } from './BadgePosition';
 import { DistanceMarche } from './DistanceMarche';
 import { FacadeIllustree } from './FacadeIllustree';
 import { HiPhone } from './icones/healthicons';
@@ -52,6 +53,8 @@ export type PropsLignePharmacie = {
   detailOcre?: boolean;
   /** Badge « Votre assurance » sous la 2e ligne. */
   assurance?: boolean;
+  /** Badge « Position à confirmer » : pas de position GPS, donc ni distance ni itinéraire. */
+  positionAConfirmer?: boolean;
   /** Temps de marche affiché seulement en deçà de cette distance (mètres) ; absent : toujours. */
   marcheJusquA?: number;
   /** Halo pulsé autour des pastilles de garde (par défaut dans les listes). */
@@ -79,6 +82,7 @@ export function LignePharmacie({
   detail,
   detailOcre = false,
   assurance = false,
+  positionAConfirmer = false,
   marcheJusquA,
   pulsation,
   testID,
@@ -87,7 +91,7 @@ export function LignePharmacie({
   const couleurStatut = ton === 'ocre' ? c.ocreTexte : statut === 'garde' ? c.rougeTexteFort : statut === 'ouverte' ? c.vertTexte : statut === 'inconnue' ? c.texteSecondaire : c.texteTertiaire;
   const couleurDetail = detailOcre ? c.ocreTexte : detail !== undefined ? c.texteSecondaire : couleurStatut;
   const favori = variante === 'favori';
-  const description = [nom, libelleStatut, assurance ? t('commun.votreAssurance') : null, distanceKm(distanceM)].filter(Boolean).join(', ');
+  const description = [nom, libelleStatut, assurance ? t('commun.votreAssurance') : null, positionAConfirmer ? t('commun.positionAConfirmer') : distanceKm(distanceM)].filter(Boolean).join(', ');
   // La carte entière se comprime sous le doigt (retour tactile façon cartes).
   const appui = useAppui(0.98);
   // Sous le doigt, la carte se teinte de vert pâle : l'appui est confirmé même sur un téléphone lent.
@@ -141,6 +145,7 @@ export function LignePharmacie({
             {detail ?? libelleStatut}
           </Texte>
           {assurance ? <BadgeAssurance petit testID={testID ? `${testID}-assurance` : undefined} /> : null}
+          {positionAConfirmer ? <BadgePosition petit testID={testID ? `${testID}-position` : undefined} /> : null}
         </View>
         {favori ? (
           <Texte variante="boutonPetit" style={styles.distanceFavori}>

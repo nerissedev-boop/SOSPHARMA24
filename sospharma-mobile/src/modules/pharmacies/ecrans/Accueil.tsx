@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { PharmacieResume } from '@/commun/api';
-import { bornesCourtes, heure, marquerSortieVolontaire, t, usePreferences } from '@/commun/lib';
+import { bornesCourtes, comparerDistance, heure, marquerSortieVolontaire, t, usePreferences } from '@/commun/lib';
 import { rayons, useMaintenant, useTheme } from '@/commun/theme';
 import { estInactive } from '@/commun/regles';
 import {
@@ -66,7 +66,7 @@ function Accueil() {
   const filtreEnCours = useChargementVisible(proches.isPlaceholderData && proches.isFetching);
 
   const gardes = useMemo(
-    () => [...(tour?.pharmacies ?? [])].filter((p) => p.statut === 'garde').sort((a, b) => (a.distance_m ?? 0) - (b.distance_m ?? 0)),
+    () => [...(tour?.pharmacies ?? [])].filter((p) => p.statut === 'garde').sort(comparerDistance),
     [tour],
   );
   const prenom = profil.prenom.trim();
@@ -83,6 +83,7 @@ function Accueil() {
       ton={tonStatut(p)}
       // Photo de façade validée, sinon devanture dessinée (null).
       photoUrl={p.photo_url ?? null}
+      positionAConfirmer={p.latitude === null}
       distanceM={p.distance_m}
       marcheMin={p.marche_min}
       iconeMarche={!estNuit}
@@ -120,6 +121,7 @@ function Accueil() {
               garde
               titre={t('accueil.plusProcheGarde')}
               photoUrl={premiere.photo_url ?? null}
+            positionAConfirmer={premiere.latitude === null}
             nom={premiere.nom}
               statut={premiere.statut}
               libelleStatut={libelleStatut(premiere, 'garde')}
@@ -139,6 +141,7 @@ function Accueil() {
             garde={premiere.statut === 'garde'}
             titre={premiere.statut === 'garde' ? t('accueil.plusProcheGarde') : t('accueil.plusProcheOuverte')}
             photoUrl={premiere.photo_url ?? null}
+            positionAConfirmer={premiere.latitude === null}
             nom={premiere.nom}
             statut={premiere.statut}
             libelleStatut={libelleStatut(premiere)}

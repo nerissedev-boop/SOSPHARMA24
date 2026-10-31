@@ -41,7 +41,7 @@ final class ComparaisonReleve
                 'apres' => $valeur,
                 'modifie' => self::normaliser($ancienne) !== self::normaliser($valeur),
             ];
-            if ($champ === 'position' && is_array($ancienne)) {
+            if ($champ === 'position' && is_array($ancienne) && isset($ancienne['lat'], $ancienne['lng'])) {
                 $ligne['ecart_m'] = Distance::metres((float) $ancienne['lat'], (float) $ancienne['lng'], $releve->lat(), $releve->lng());
             }
             $lignes[] = $ligne;

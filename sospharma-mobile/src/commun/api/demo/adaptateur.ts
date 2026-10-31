@@ -507,6 +507,8 @@ function router(r: Requete): Reponse {
       params,
     ).filter(
       (p) =>
+        p.longitude !== null &&
+        p.latitude !== null &&
         p.longitude >= (minLng as number) &&
         p.longitude <= (maxLng as number) &&
         p.latitude >= (minLat as number) &&

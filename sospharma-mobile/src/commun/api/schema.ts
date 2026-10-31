@@ -111,8 +111,9 @@ export type PharmacieResume = {
   commune: string;
   commune_id: string;
   ville: string;
-  latitude: number;
-  longitude: number;
+  /** null : position à confirmer (pharmacie de garde pas encore relevée) : ni distance, ni carte, ni itinéraire. */
+  latitude: number | null;
+  longitude: number | null;
   telephone: string | null;
   whatsapp: string | null;
   h24: boolean;

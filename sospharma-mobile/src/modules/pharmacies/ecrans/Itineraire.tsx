@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   alerte,
   commencerVisite,
+  positionDe,
   distanceKm,
   estimerTrajet,
   marquerSortieVersAutreApp,
@@ -65,7 +66,24 @@ function Itineraire() {
     );
   }
 
-  const destination = { latitude: fiche.latitude, longitude: fiche.longitude };
+  const destination = positionDe(fiche);
+  // Position à confirmer : pas d'itinéraire possible, on propose d'appeler pour demander le chemin.
+  if (!destination) {
+    return (
+      <Ecran testID="itineraire-sans-position">
+        <View style={styles.sansPosition}>
+          <EnTete titre={t('itineraire.titre')} onRetour={retour} />
+          <Texte variante="nomGrand">{fiche.nom}</Texte>
+          <Texte variante="texte" couleur={c.texteSecondaire}>
+            {[fiche.adresse, t('commun.positionAConfirmerTexte')].filter(Boolean).join('\n\n')}
+          </Texte>
+          {fiche.telephone ? (
+            <Bouton libelle={t('commun.appeler')} icone={<HiPhone size={20} color={c.blanc} />} onPress={() => actions.appeler(fiche)} />
+          ) : null}
+        </View>
+      </Ecran>
+    );
+  }
   const distance = fiche.distance_m ?? 0;
   // Voiture : la durée Google avec le trafic quand le serveur l'a, sinon l'estimation par la distance.
   const voitureGoogle = trajet.data?.voiture ?? null;
@@ -238,6 +256,7 @@ const styles = StyleSheet.create({
   fiche: { position: 'absolute', left: 12, right: 12, padding: 16, gap: 14, borderRadius: rayons.grandeCarte },
   ligneNom: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   modes: { flexDirection: 'row', gap: 8 },
+  sansPosition: { padding: 20, gap: 16 },
   mode: { flex: 1, padding: 10, gap: 4 },
 });
 

@@ -10,7 +10,9 @@ export function messageChauffeur(
     t('itineraire.chauffeurDestination', { nom: p.nom }),
     p.adresse,
     [p.commune, p.ville].filter(Boolean).join(', '),
-    t('itineraire.chauffeurPosition', { lien: lienPosition({ latitude: p.latitude, longitude: p.longitude }) }),
+    p.latitude !== null && p.longitude !== null
+      ? t('itineraire.chauffeurPosition', { lien: lienPosition({ latitude: p.latitude, longitude: p.longitude }) })
+      : null,
     p.telephone ? t('itineraire.chauffeurTelephone', { telephone: telephoneAffiche(p.telephone, indicatif) }) : null,
   ]
     .filter(Boolean)

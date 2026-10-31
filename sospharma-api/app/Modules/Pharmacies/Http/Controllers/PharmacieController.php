@@ -101,7 +101,9 @@ class PharmacieController extends Controller
     {
         $modele = Pharmacie::query()->actives()->where('id_public', $pharmacie)->first(['latitude', 'longitude'])
             ?? throw new PharmacieIntrouvable;
-        $voiture = $trajets->calculer($request->latitude(), $request->longitude(), $modele->lat(), $modele->lng());
+        $voiture = $modele->aUnePosition()
+            ? $trajets->calculer($request->latitude(), $request->longitude(), (float) $modele->lat(), (float) $modele->lng())
+            : null;
 
         return ApiResponse::ok(['voiture' => $voiture, 'source' => $voiture !== null ? 'google' : null]);
     }
