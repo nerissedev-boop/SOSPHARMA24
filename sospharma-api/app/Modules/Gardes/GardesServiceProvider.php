@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Gardes;
 
 use App\Commun\FournisseurModule;
+use App\Modules\Gardes\Console\AnalyserListeGarde;
+use App\Modules\Gardes\Console\ImporterListeGarde;
 use App\Modules\Gardes\Models\Garde;
 use App\Modules\Gardes\Models\TourGarde;
 use App\Modules\Gardes\Policies\GardePolicy;
@@ -27,5 +29,9 @@ class GardesServiceProvider extends FournisseurModule
         Route::model('tour', TourGarde::class);
         Gate::policy(TourGarde::class, TourGardePolicy::class);
         Gate::policy(Garde::class, GardePolicy::class);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([AnalyserListeGarde::class, ImporterListeGarde::class]);
+        }
     }
 }

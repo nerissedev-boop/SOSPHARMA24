@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Gardes\Http\Controllers\AdminListeGardeController;
 use App\Modules\Gardes\Http\Controllers\AdminTourGardeController as Admin;
 use App\Modules\Gardes\Http\Controllers\GardePubliqueController;
 use App\Modules\Gardes\Http\Controllers\PharmacienGardeController;
@@ -21,6 +22,12 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,editeur_ville'])
     Route::post('tours-garde/{tour}/publier', [Admin::class, 'publier']);
     Route::post('tours-garde/{tour}/gardes', [Admin::class, 'ajouterGarde']);
     Route::delete('tours-garde/{tour}/gardes', [Admin::class, 'retirerGarde']);
+});
+
+// Liste officielle : plusieurs villes à la fois, donc réservée aux admins.
+Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(function (): void {
+    Route::post('listes-garde/analyse', [AdminListeGardeController::class, 'analyser']);
+    Route::post('listes-garde/import', [AdminListeGardeController::class, 'importer']);
 });
 
 Route::prefix('pharmacien')->middleware(['auth:sanctum', 'role:pharmacien'])->group(function (): void {

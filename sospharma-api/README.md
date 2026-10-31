@@ -95,6 +95,8 @@ Les secrets (clé d'application, accès MySQL, clé Expo) restent dans le `.env`
 | `php artisan route:list --path=api/v1` | Liste des routes |
 | `php artisan notifications:garde-samedi [--maintenant]` | Envoie les notifications « nouveau tour de garde » arrivées à échéance (`--maintenant` : sans attendre l'heure prévue) |
 | `php artisan pharmacies:importer-osm [fichier] [--pays=CI] [--simulation]` | Importe les pharmacies d'OpenStreetMap comme fiches « à vérifier » (fichier Overpass `out tags center`, sinon téléchargement) ; relançable sans doublon |
+| `php artisan gardes:analyser-liste fichier.txt [--json]` | Lit le texte de la liste de garde officielle (copié du PDF, par ex. après PDF24) et retrouve chaque pharmacie dans l'annuaire : trouvée, à vérifier ou inconnue. N'écrit rien |
+| `php artisan gardes:importer-liste fichier.txt [--simulation] [--accepter-a-verifier]` | Importe la liste : un brouillon de tour par ville, les fiches inconnues en « Position à confirmer », les numéros et adresses manquants complétés. Les fiches « à vérifier » sont demandées une par une |
 | `php artisan sauvegarde:base` | Exporte la base, compressée, dans `storage/app/private/sauvegardes` |
 | `php artisan scramble:export` | Exporte le contrat OpenAPI dans `api.json` (voir `openapi-notes.md`) |
 | `php artisan schedule:list` | Tâches planifiées |
@@ -223,6 +225,8 @@ Toutes les routes sont préfixées par `/api/v1`. Légende des colonnes « Qui �
 | POST | `/admin/tours-garde/{id}/controler` | 👥 | — |
 | POST | `/admin/tours-garde/{id}/publier` | 👥 | — |
 | POST / DELETE | `/admin/tours-garde/{id}/gardes` | 👥 | — |
+| POST | `/admin/listes-garde/analyse` (`texte`) : liste officielle lue et rapprochée de l'annuaire, pour la relecture | 🔑 | — |
+| POST | `/admin/listes-garde/import` (`texte`, `decisions[]` `{rang, action, pharmacie?}`, `premier_jour`/`dernier_jour` facultatifs, `simulation`) | 🔑 | — |
 | GET | `/pharmacien/gardes` (`filter[periode]=a_venir\|passees`) | 💊 | par page |
 | POST | `/pharmacien/gardes/{id}/confirmer` | 💊 | — |
 | **Signalements** | | | |
@@ -438,6 +442,7 @@ Les choix faits sans pouvoir demander, à valider :
 53. **Temps de trajet en voiture** (31 oct.) : `GET /pharmacies/{id}/trajet` interroge l'API Routes de Google (`computeRoutes`, voiture, trafic compris si `GOOGLE_ROUTES_TRAFIC`) et renvoie `{voiture: {minutes, distance_m}, source: "google"}`. Sans `GOOGLE_ROUTES_API_KEY`, ou si Google ne répond pas, `voiture` vaut `null` et l'app garde son estimation par la distance. Le départ est arrondi à 3 décimales (environ 100 m) : la position exacte de l'usager ne part pas chez Google, et deux demandes voisines partagent la même réponse, gardée 10 minutes (cache temporaire permis par Google, aucun stockage durable). Limite de 30 appels par heure et par appareil. Clé à restreindre à l'API Routes et à l'adresse IP du serveur, avec un quota journalier dans la console Google Cloud.
 
 54. **Position facultative** (31 oct.) : `latitude` et `longitude` peuvent être nulles, pour publier une pharmacie de la liste de garde absente d'OpenStreetMap (téléphone et repère connus, position pas encore relevée). Dans les réponses, `position` vaut alors `null`, et `distance_m` et `marche_min` aussi. Ces pharmacies n'apparaissent ni dans `proches` ni dans `cadre` (recherche par rectangle) ; dans le tour de garde, elles passent après celles qu'on sait situer. `GET /pharmacies/{id}/trajet` renvoie `voiture: null`. L'app affiche « Position à confirmer », sans point sur la carte ni itinéraire, avec le bouton Appeler. La position se complète par un relevé terrain (la validation la remplit) ou par l'espace pharmacien. La création par l'équipe (`POST /admin/pharmacies`) exige toujours une position.
+55. **Liste de garde officielle** (31 oct.) : la liste de l'Ordre circule en images (chaîne WhatsApp « PHARMACIE DE GARDE CI ») ; on la passe dans PDF24 pour en tirer le texte, sans lecture automatique de WhatsApp ni de Facebook (leurs conditions l'interdisent). `LectureListeGarde` corrige les erreurs de lecture prévisibles : « / » lu « 1 » (un numéro ivoirien a 10 chiffres et commence par 01, 05, 07, 21, 25 ou 27, jamais par 1), lettres prises pour des chiffres (« og »), numéros abrégés (« 36 04/33 82 ») ou coupés en fin de ligne. Tout numéro corrigé est signalé. `RapprochementListeGarde` cherche par téléphone, puis par nom dans la ville ou la commune de la section ; il ne remplace jamais un numéro existant de lui-même (alerte « autre numéro sur la fiche »). `ImportListeGarde` applique ensuite les décisions (par défaut : rattacher les trouvées, créer les inconnues d'une ville connue, écarter les « à vérifier » non confirmées et les villes absentes) : un brouillon par ville, du premier jour 08:00 au lendemain du dernier jour 08:00, heure locale (comme le tour de démonstration ; à ajuster si la relève officielle diffère). Relancé, il remplace son brouillon ; un tour publié n'est pas touché. La publication reste un geste séparé, après contrôle.
 
 ## Incohérences relevées dans le document d'architecture
 
