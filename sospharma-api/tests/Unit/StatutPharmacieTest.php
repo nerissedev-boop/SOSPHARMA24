@@ -39,10 +39,10 @@ it('applique la règle de statut', function (array $cas): void {
         ->and($resultat->prochaineOuverture?->utc()->format('Y-m-d\TH:i:s\Z'))->toBe($cas['attendu']['prochaine_ouverture']);
 })->with('cas-statut');
 
-it('ne trouve pas de prochaine ouverture sans aucun horaire', function (): void {
+it('sans aucun horaire : horaires à confirmer (pas fermée), sans prochaine ouverture', function (): void {
     $resultat = (new StatutPharmacie)->calculer(false, [], [], 'Africa/Abidjan', CarbonImmutable::parse('2026-10-20T10:00:00Z'));
 
-    expect($resultat->statut->value)->toBe('fermee')
+    expect($resultat->statut->value)->toBe('inconnue')
         ->and($resultat->prochaineOuverture)->toBeNull();
 });
 
@@ -51,7 +51,7 @@ it('exclut la fin de garde et inclut son début', function (): void {
     $regle = new StatutPharmacie;
 
     expect($regle->calculer(false, [], $garde, 'UTC', CarbonImmutable::parse('2026-10-17T08:00:00Z'))->statut->value)->toBe('garde')
-        ->and($regle->calculer(false, [], $garde, 'UTC', CarbonImmutable::parse('2026-10-24T08:00:00Z'))->statut->value)->toBe('fermee');
+        ->and($regle->calculer(false, [], $garde, 'UTC', CarbonImmutable::parse('2026-10-24T08:00:00Z'))->statut->value)->toBe('inconnue');
 });
 
 it('refuse une heure invalide', function (): void {

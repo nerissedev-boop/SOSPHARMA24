@@ -42,6 +42,8 @@ export type Jetons = {
   feuille: string;
   /** Cartes des listes et blocs arrondis (charte « cartes », 28 oct.) : blanc le jour, surface sombre la nuit. */
   carte: string;
+  /** Carte sous le doigt : teinte verte très pâle qui confirme l'appui (29 oct.). */
+  carteAppuyee: string;
   enTeteCarte: string;
   champ: string;
   voile: string;
@@ -127,6 +129,7 @@ export const jetonsJour: Jetons = {
   boutonSecondaireTexte: '#1C1F1A',
   feuille: '#FFFFFF',
   carte: '#FFFFFF',
+  carteAppuyee: '#EEF7F1',
   enTeteCarte: '#FFFFFF',
   champ: '#F2EDE4',
   voile: 'rgba(15,31,23,0.55)',
@@ -210,6 +213,7 @@ export const jetonsNuit: Jetons = {
   boutonSecondaireTexte: '#E8EFEA',
   feuille: '#17211B',
   carte: '#17211B',
+  carteAppuyee: '#1E3326',
   enTeteCarte: '#0E1511',
   champ: '#17211B',
   voile: 'rgba(0,0,0,0.6)',

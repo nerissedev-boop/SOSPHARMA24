@@ -17,7 +17,8 @@
     "chargement": "Chargement",
     "ok": "OK",
     "aucuneZone": "Choisir une zone",
-    "votreAssurance": "Votre assurance"
+    "votreAssurance": "Votre assurance",
+    "voirFiche": "Voir la fiche"
   },
   "statut": {
     "garde": "De garde cette nuit",
@@ -37,7 +38,10 @@
     "pastilleFermee": "Pharmacie fermée",
     "fermeDans": "Ferme dans {{minutes}} min",
     "fermeDansHeure": "Ferme dans {{minutes}} min ({{heure}})",
-    "pastilleBientot": "Pharmacie qui ferme bientôt"
+    "pastilleBientot": "Pharmacie qui ferme bientôt",
+    "inconnue": "Horaires à confirmer",
+    "pastilleInconnue": "Horaires à confirmer",
+    "appelerAvant": "Horaires pas encore relevés : appelez avant de vous déplacer."
   },
   "onglets": {
     "accueil": "Accueil",
@@ -163,7 +167,8 @@
     "autresAssurances_one": "+ {{count}} autre",
     "autresAssurances_other": "+ {{count}} autres",
     "servicesListe": "Services : {{services}}.",
-    "mettreAJour": "Mettre à jour cette fiche (agent)"
+    "mettreAJour": "Mettre à jour cette fiche (agent)",
+    "ferme": "Fermée"
   },
   "services": {
     "ordonnances": "Ordonnances",
@@ -188,7 +193,12 @@
     "yango": "Yango",
     "autreApp": "Autre application",
     "estimation": "{{mode}}, environ {{minutes}} minutes, {{distance}}",
-    "impossible": "Impossible d'ouvrir l'application de navigation."
+    "impossible": "Impossible d'ouvrir l'application de navigation.",
+    "envoyerChauffeur": "Envoyer l’adresse au chauffeur",
+    "chauffeurDestination": "Destination : {{nom}}",
+    "chauffeurPosition": "Position : {{lien}}",
+    "chauffeurTelephone": "Tél. de la pharmacie : {{telephone}}",
+    "avecTrafic": "Trafic actuel"
   },
   "partage": {
     "titre": "Partager la pharmacie",
@@ -355,7 +365,8 @@
     "plusProche": "La plus proche de garde",
     "aPied": "{{minutes}} min à pied",
     "besoin": "Besoin d'aide immédiate ?",
-    "appeler": "Appeler {{nom}}, {{numero}}"
+    "appeler": "Appeler {{nom}}, {{numero}}",
+    "autresGardes": "Voir toutes les pharmacies de garde"
   },
   "vide": {
     "titre": "Aucune pharmacie trouvée",
@@ -460,7 +471,8 @@
       "rejete": "Rejeté"
     },
     "aujourdhui": "aujourd’hui {{heure}}",
-    "hier": "hier"
+    "hier": "hier",
+    "monProfil": "Mon profil"
   },
   "releve": {
     "titre": "Nouveau relevé",
@@ -639,5 +651,15 @@
       "pompiers": "Accident, incendie, secours",
       "police": "Agression, vol, danger"
     }
+  },
+  "visite": {
+    "titre": "{{nom}} était-elle ouverte ?",
+    "texte": "Votre réponse aide les autres usagers à ne pas se déplacer pour rien.",
+    "ouverte": "Oui, elle était ouverte",
+    "fermee": "Non, c’était fermé",
+    "pasAllee": "Je n’ai pas pu y aller",
+    "precisions": "Signalé depuis l’app : trouvée fermée après un appel ou un trajet.",
+    "merciTitre": "Merci",
+    "merciTexte": "Votre signalement a été envoyé. Nous vérifions cette pharmacie."
   }
 }

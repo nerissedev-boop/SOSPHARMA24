@@ -1,11 +1,27 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 
-import { distanceKm, t } from '@/commun/lib';
+import { distanceKm, t, vibrationAction } from '@/commun/lib';
 import { ombres, rayons, useTheme } from '@/commun/theme';
-import { avecErrorBoundary, DUREES, Ecran, EnTete, HiPharmacy, Texte, useAppui, useNavigationOnglets, usePulsation } from '@/commun/ui';
+import {
+  avecErrorBoundary,
+  Bouton,
+  DUREES,
+  Ecran,
+  EnTete,
+  Feuille,
+  HiPharmacy,
+  HiPhone,
+  IconeItineraire,
+  Texte,
+  useAppui,
+  useNavigationOnglets,
+  usePulsation,
+} from '@/commun/ui';
 import { useTourEnCours } from '@/modules/gardes';
+import { useActionsPharmacie } from '@/modules/pharmacies';
 import { NumerosUrgence, usePaysCourant } from '@/modules/territoire';
 
 const PressableAnime = Animated.createAnimatedComponent(Pressable);
@@ -28,6 +44,14 @@ function Urgence() {
   const styleExterieur = useAnimatedStyle(() => ({ transform: [{ scale: interpolate(exterieur.valeur.get(), [0, 1], [1, 1.06]) }] }));
   const styleInterieur = useAnimatedStyle(() => ({ transform: [{ scale: interpolate(interieur.valeur.get(), [0, 1], [1, 1.05]) }] }));
   const appuiSos = useAppui(0.95);
+  const actions = useActionsPharmacie();
+  // SOS : la garde la plus proche avec « Appeler » et « Itinéraire » ; sans garde connue, la liste.
+  const [choixSos, setChoixSos] = useState(false);
+  const sos = () => {
+    vibrationAction();
+    if (plusProche) setChoixSos(true);
+    else allerOnglet('garde');
+  };
 
   return (
     <Ecran fond={c.rouge} barreClaire testID="ecran-urgence">
@@ -50,7 +74,7 @@ function Urgence() {
             <View style={[styles.cercle, { width: 300, height: 300 }]}>
               <PressableAnime
                 testID="bouton-sos"
-                onPress={() => allerOnglet('garde')}
+                onPress={sos}
                 onPressIn={appuiSos.onPressIn}
                 onPressOut={appuiSos.onPressOut}
                 accessibilityRole="button"
@@ -110,6 +134,43 @@ function Urgence() {
           </View>
         ) : null}
       </ScrollView>
+
+      {plusProche ? (
+        <Feuille
+          visible={choixSos}
+          onFermer={() => setChoixSos(false)}
+          titre={plusProche.nom}
+          message={[t('urgence.plusProche'), distanceKm(plusProche.distance_m), plusProche.marche_min !== null ? t('urgence.aPied', { minutes: plusProche.marche_min }) : null]
+            .filter(Boolean)
+            .join(' · ')}
+          testID="feuille-sos"
+          pied={
+            <View style={styles.actionsSos}>
+              <Bouton
+                libelle={t('commun.appeler')}
+                accessibilityLabel={`${t('commun.appeler')} ${plusProche.nom}`}
+                icone={<HiPhone size={20} color={c.blanc} />}
+                onPress={() => {
+                  setChoixSos(false);
+                  actions.appeler(plusProche);
+                }}
+                testID="sos-appeler"
+              />
+              <Bouton
+                libelle={t('commun.itineraire')}
+                variante="blanc"
+                icone={<IconeItineraire size={18} color={c.pastilleActionIcone} />}
+                onPress={() => {
+                  setChoixSos(false);
+                  actions.itineraire(plusProche);
+                }}
+                testID="sos-itineraire"
+              />
+              <Bouton libelle={t('urgence.autresGardes')} variante="lien" onPress={() => { setChoixSos(false); allerOnglet('garde'); }} testID="sos-autres" />
+            </View>
+          }
+        />
+      ) : null}
     </Ecran>
   );
 }
@@ -136,6 +197,7 @@ const styles = StyleSheet.create({
   rond: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   droite: { alignItems: 'flex-end', gap: 2 },
   gras: { fontFamily: 'PlusJakartaSans_800ExtraBold' },
+  actionsSos: { gap: 10 },
   carte: { marginHorizontal: 16, marginTop: 'auto', padding: 16, gap: 12, borderRadius: rayons.grandeCarte },
 });
 

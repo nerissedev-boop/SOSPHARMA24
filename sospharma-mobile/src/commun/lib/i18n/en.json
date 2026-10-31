@@ -17,7 +17,8 @@
     "chargement": "Loading",
     "ok": "OK",
     "aucuneZone": "Choose an area",
-    "votreAssurance": "Your insurance"
+    "votreAssurance": "Your insurance",
+    "voirFiche": "View details"
   },
   "statut": {
     "garde": "On duty tonight",
@@ -37,7 +38,10 @@
     "pastilleFermee": "Closed pharmacy",
     "fermeDans": "Closes in {{minutes}} min",
     "fermeDansHeure": "Closes in {{minutes}} min ({{heure}})",
-    "pastilleBientot": "Pharmacy closing soon"
+    "pastilleBientot": "Pharmacy closing soon",
+    "inconnue": "Hours to be confirmed",
+    "pastilleInconnue": "Hours to be confirmed",
+    "appelerAvant": "Hours not checked yet: call before you go."
   },
   "onglets": {
     "accueil": "Home",
@@ -163,7 +167,8 @@
     "autresAssurances_one": "+ {{count}} other",
     "autresAssurances_other": "+ {{count}} others",
     "servicesListe": "Services: {{services}}.",
-    "mettreAJour": "Update this listing (agent)"
+    "mettreAJour": "Update this listing (agent)",
+    "ferme": "Closed"
   },
   "services": {
     "ordonnances": "Prescriptions",
@@ -188,7 +193,12 @@
     "yango": "Yango",
     "autreApp": "Other app",
     "estimation": "{{mode}}, about {{minutes}} minutes, {{distance}}",
-    "impossible": "Unable to open the navigation app."
+    "impossible": "Unable to open the navigation app.",
+    "envoyerChauffeur": "Send the address to the driver",
+    "chauffeurDestination": "Destination: {{nom}}",
+    "chauffeurPosition": "Location: {{lien}}",
+    "chauffeurTelephone": "Pharmacy phone: {{telephone}}",
+    "avecTrafic": "Live traffic"
   },
   "partage": {
     "titre": "Share the pharmacy",
@@ -355,7 +365,8 @@
     "plusProche": "Nearest on duty",
     "aPied": "{{minutes}} min on foot",
     "besoin": "Need help right away?",
-    "appeler": "Call {{nom}}, {{numero}}"
+    "appeler": "Call {{nom}}, {{numero}}",
+    "autresGardes": "See all on-duty pharmacies"
   },
   "vide": {
     "titre": "No pharmacy found",
@@ -460,7 +471,8 @@
       "rejete": "Rejected"
     },
     "aujourdhui": "today {{heure}}",
-    "hier": "yesterday"
+    "hier": "yesterday",
+    "monProfil": "My profile"
   },
   "releve": {
     "titre": "New survey",
@@ -644,5 +656,15 @@
       "pompiers": "Fire brigade",
       "police": "Police"
     }
+  },
+  "visite": {
+    "titre": "Was {{nom}} open?",
+    "texte": "Your answer helps others avoid a wasted trip.",
+    "ouverte": "Yes, it was open",
+    "fermee": "No, it was closed",
+    "pasAllee": "I couldn’t go",
+    "precisions": "Reported from the app: found closed after a call or a trip.",
+    "merciTitre": "Thank you",
+    "merciTexte": "Your report has been sent. We are checking this pharmacy."
   }
 }

@@ -137,6 +137,12 @@ function MesReleves() {
                 {t('releves.role', { ville: agent?.ville ?? '' })}
               </Texte>
             </View>
+            {/* L'onglet Profil laisse sa place à Relevés : favoris, langue et assurances restent à un appui. */}
+            <Pressable onPress={() => router.navigate('/profil')} accessibilityRole="button" style={styles.quitter} testID="bouton-profil">
+              <Texte variante="petitFort" couleur={c.vertTexte} style={styles.gras}>
+                {t('releves.monProfil')}
+              </Texte>
+            </Pressable>
             <Pressable onPress={quitter} accessibilityRole="button" style={styles.quitter} testID="bouton-quitter">
               <Texte variante="petitFort" couleur={c.vertTexte} style={styles.gras}>
                 {t('releves.quitter')}

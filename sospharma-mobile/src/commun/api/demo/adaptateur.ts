@@ -529,6 +529,11 @@ function router(r: Requete): Reponse {
     return ok(versFiche(p, ici));
   }
 
+  // Démo : pas de durée Google, l'app garde son estimation.
+  if (methode === 'GET' && (m = chemin.match(/^\/pharmacies\/(ph_\d+)\/trajet$/))) {
+    return ok({ voiture: null, source: null });
+  }
+
   // ---------------- Gardes ----------------
   if (methode === 'GET' && chemin === '/gardes/en-cours') {
     if (params.ville && params.ville !== 'abj') return erreur(404, 'NOT_FOUND', 'Aucun tour de garde publié pour cette ville.');

@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import type { StatutPharmacie } from '../../api/schema';
+import { estInactive } from '../../regles/statut';
 import { ombres } from '../../theme/ombres';
 import { rayons } from '../../theme/rayons';
 import { useTheme } from '../../theme/Theme';
@@ -17,16 +18,16 @@ type PropsMarqueur = {
 /** Marqueur pharmacie : coupe d'Hygie dans sa pastille + étiquette de distance accolée. */
 export function MarqueurPharmacie({ statut, etiquette, selectionne = false }: PropsMarqueur) {
   const { couleurs: c, estNuit } = useTheme();
-  const taille = selectionne ? 52 : statut === 'fermee' ? 38 : statut === 'garde' ? 42 : 40;
+  const taille = selectionne ? 52 : estInactive(statut) ? 38 : statut === 'garde' ? 42 : 40;
   const fondEtiquette = selectionne ? c.etiquetteSelection : c.etiquetteCarte;
-  const texteEtiquette = selectionne ? c.etiquetteSelectionTexte : statut === 'fermee' ? c.texteTertiaire : c.etiquetteCarteTexte;
+  const texteEtiquette = selectionne ? c.etiquetteSelectionTexte : estInactive(statut) ? c.texteTertiaire : c.etiquetteCarteTexte;
   return (
     <View style={styles.marqueur} pointerEvents="box-none">
       <View style={[selectionne ? ombres.marqueurSelection : ombres.marqueur, { borderRadius: taille / 2 }]}>
         <PastilleStatut
           statut={statut}
           taille={taille}
-          tailleIcone={selectionne ? 32 : statut === 'fermee' ? 22 : taille === 40 ? 24 : 26}
+          tailleIcone={selectionne ? 32 : estInactive(statut) ? 22 : taille === 40 ? 24 : 26}
           badge24={statut === 'garde' && (selectionne || !estNuit)}
           fondFerme={estNuit ? c.surface2 : c.blanc}
         />

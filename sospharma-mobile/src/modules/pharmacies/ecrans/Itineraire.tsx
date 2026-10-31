@@ -1,9 +1,20 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { alerte, distanceKm, estimerTrajet, ouvrirNavigation, t, type AppNavigation, type ModeTrajet } from '@/commun/lib';
+import {
+  alerte,
+  commencerVisite,
+  distanceKm,
+  estimerTrajet,
+  marquerSortieVersAutreApp,
+  ouvrirNavigation,
+  signalerErreur,
+  t,
+  type AppNavigation,
+  type ModeTrajet,
+} from '@/commun/lib';
 import { ombres, rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
@@ -22,10 +33,11 @@ import {
   useRetour,
 } from '@/commun/ui';
 import { CarteBase, PointPosition, Repere, Trace } from '@/commun/ui/carte';
-import { useZoneCourante } from '@/modules/territoire';
+import { usePaysCourant, useZoneCourante } from '@/modules/territoire';
 
+import { messageChauffeur } from '../chauffeur';
 import { useActionsPharmacie } from '../hooks/useActions';
-import { useLibelleStatut, usePharmacie } from '../hooks/usePharmacies';
+import { useLibelleStatut, usePharmacie, useTrajetVoiture } from '../hooks/usePharmacies';
 
 const MODES: ModeTrajet[] = ['voiture', 'moto', 'pied'];
 
@@ -36,7 +48,9 @@ function Itineraire() {
   const { couleurs: c, estNuit } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { fiche } = usePharmacie(id ?? '');
+  const trajet = useTrajetVoiture(id ?? '');
   const { point } = useZoneCourante();
+  const { pays } = usePaysCourant();
   const libelleStatut = useLibelleStatut();
   const actions = useActionsPharmacie();
   const [mode, setMode] = useState<ModeTrajet>('voiture');
@@ -53,7 +67,10 @@ function Itineraire() {
 
   const destination = { latitude: fiche.latitude, longitude: fiche.longitude };
   const distance = fiche.distance_m ?? 0;
-  const estimation = (m: ModeTrajet) => estimerTrajet(distance, m);
+  // Voiture : la durée Google avec le trafic quand le serveur l'a, sinon l'estimation par la distance.
+  const voitureGoogle = trajet.data?.voiture ?? null;
+  const estimation = (m: ModeTrajet) =>
+    m === 'voiture' && voitureGoogle ? { minutes: voitureGoogle.minutes, distanceM: voitureGoogle.distance_m } : estimerTrajet(distance, m);
   const choisi = estimation(mode);
   const milieu = point
     ? { latitude: (point.latitude + destination.latitude) / 2, longitude: (point.longitude + destination.longitude) / 2 }
@@ -62,7 +79,10 @@ function Itineraire() {
   const demarrer = () => {
     const origine = inverse ? destination : (point ?? undefined);
     const cible = inverse && point ? point : destination;
-    const ouvrir = (app: AppNavigation) => void ouvrirNavigation(app, cible, mode, origine, fiche.nom);
+    const ouvrir = (app: AppNavigation) => {
+      if (!inverse) commencerVisite({ id: fiche.id, nom: fiche.nom });
+      void ouvrirNavigation(app, cible, mode, origine, fiche.nom);
+    };
     alerte(t('itineraire.ouvrirAvec'), t('itineraire.ouvrirAvecTexte'), [
       { text: t('itineraire.googleMaps'), onPress: () => ouvrir('google') },
       ...(Platform.OS === 'ios' ? [{ text: t('itineraire.plans'), onPress: () => ouvrir('plans') }] : []),
@@ -70,6 +90,17 @@ function Itineraire() {
       { text: t('itineraire.autreApp'), onPress: () => ouvrir('systeme') },
       { text: t('commun.annuler'), style: 'cancel' },
     ]);
+  };
+
+  // Taxi ou proche qui conduit : adresse, commune et lien de position, par WhatsApp ou SMS.
+  const envoyerAuChauffeur = async () => {
+    try {
+      commencerVisite({ id: fiche.id, nom: fiche.nom });
+      marquerSortieVersAutreApp();
+      await Share.share({ message: messageChauffeur(fiche, pays?.indicatif) });
+    } catch (e) {
+      signalerErreur(e, { etape: 'envoi-chauffeur' });
+    }
   };
 
   const ligneDepart = (
@@ -169,11 +200,24 @@ function Itineraire() {
                 <Texte variante="libelle" couleur={c.texteSecondaire}>
                   {distanceKm(e.distanceM)}
                 </Texte>
+                {m === 'voiture' && voitureGoogle ? (
+                  <Texte variante="libelleFort" couleur={c.vertTexte} testID="trajet-trafic">
+                    {t('itineraire.avecTrafic')}
+                  </Texte>
+                ) : null}
               </Pressable>
             );
           })}
         </View>
         <Bouton libelle={t('itineraire.demarrer')} icone="naviguer" onPress={demarrer} testID="bouton-demarrer" />
+        <Bouton
+          libelle={t('itineraire.envoyerChauffeur')}
+          variante="clair"
+          typo="boutonPetit"
+          hauteur={46}
+          onPress={() => void envoyerAuChauffeur()}
+          testID="bouton-chauffeur"
+        />
       </View>
     </Ecran>
   );

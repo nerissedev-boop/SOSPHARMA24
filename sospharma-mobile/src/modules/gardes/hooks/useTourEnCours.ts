@@ -59,7 +59,12 @@ export function useTourEnCours() {
 export function usePrechargerTour() {
   const client = useQueryClient();
   return useCallback(
-    (villeId: string, point: Coordonnees | null) => client.prefetchQuery(optionsTour(villeId, point)),
+    (villeId: string, point: Coordonnees | null) => {
+      const options = optionsTour(villeId, point);
+      // Tour déjà enregistré : le démarrage n'attend pas le réseau, la mise à jour se fait en fond.
+      const enCache = client.getQueryData(options.queryKey) !== undefined;
+      return { enCache, mise: client.prefetchQuery(options) };
+    },
     [client],
   );
 }

@@ -27,6 +27,7 @@ import { FournisseurTheme, policesACharger, useTheme } from '@/commun/theme';
 import { HoteDialogues, useRetourAuDemarrage } from '@/commun/ui';
 import { useEnregistrementAppareil } from '@/modules/notifications';
 import { useSynchroniserMesAssurances } from '@/modules/pharmacies';
+import { VerificationVisite } from '@/modules/signalements';
 import { useEnvoiAutomatique, useVerifierSessionAgent } from '@/modules/releves';
 import { usePaysCourant, useSynchroniserZone } from '@/modules/territoire';
 
@@ -111,6 +112,7 @@ function Racine() {
         <Services />
         <Navigation />
         <HoteDialogues />
+        <VerificationVisite />
       </ThemePays>
     </PersistQueryClientProvider>
   );

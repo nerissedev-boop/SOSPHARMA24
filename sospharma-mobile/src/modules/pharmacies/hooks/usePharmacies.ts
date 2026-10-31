@@ -7,7 +7,7 @@ import { avecStatutLocal, libelleStatut, tonAffiche, type ContexteLibelle } from
 import { useMaintenant } from '@/commun/theme';
 import { usePaysCourant, useZoneCourante } from '@/modules/territoire';
 
-import { clesPharmacies, lireCadre, lireFiche, lireProches, paramsFiltres, rechercher } from '../api';
+import { clesPharmacies, lireCadre, lireFiche, lireProches, lireTrajet, paramsFiltres, rechercher } from '../api';
 
 /** Recalcule le statut sur le téléphone quand les données viennent du cache hors connexion. */
 function useStatutsLocaux<T extends PharmacieResume>(liste: T[] | undefined, perime: boolean): T[] | undefined {
@@ -81,6 +81,22 @@ export function useRecherche(q: string) {
   });
   const liste = useStatutsLocaux(requete.data, requete.isStale);
   return { ...requete, liste };
+}
+
+/**
+ * Durée en voiture de Google (trafic compris) vers une pharmacie, gardée 10 min.
+ * Hors connexion, sans position ou sans clé côté serveur : `voiture` est nul et l'écran garde son estimation.
+ */
+export function useTrajetVoiture(id: string) {
+  const { point } = useZoneCourante();
+  const enLigne = useEnLigne();
+  return useQuery({
+    queryKey: clesPharmacies.trajet(id, point),
+    queryFn: async () => donneesOuErreur(await lireTrajet(id, point!)),
+    enabled: Boolean(id) && point !== null && enLigne,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  });
 }
 
 /** Fiche complète ; affiche tout de suite le résumé déjà en cache (listes), y compris hors connexion. */

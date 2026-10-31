@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 /**
  * @property int $id
  * @property string $id_public
+ * @property string|null $osm_id
  * @property int $ville_id
  * @property int|null $zone_id
  * @property string $nom
@@ -49,7 +50,7 @@ class Pharmacie extends Model
     protected $table = 'pharmacies';
 
     protected $fillable = [
-        'id_public', 'ville_id', 'zone_id', 'nom', 'adresse', 'quartier', 'telephone', 'whatsapp',
+        'id_public', 'osm_id', 'ville_id', 'zone_id', 'nom', 'adresse', 'quartier', 'telephone', 'whatsapp',
         'latitude', 'longitude', 'h24', 'services', 'photo_facade', 'verifiee_le', 'actif',
     ];
 

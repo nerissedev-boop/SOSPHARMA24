@@ -2,10 +2,10 @@ import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 
 import type { PharmacieResume } from '@/commun/api';
-import { alerte, appeler, ecrireWhatsApp, t } from '@/commun/lib';
+import { alerte, appeler, commencerVisite, ecrireWhatsApp, t } from '@/commun/lib';
 import { usePaysCourant } from '@/modules/territoire';
 
-type Cible = Pick<PharmacieResume, 'id' | 'telephone' | 'whatsapp'>;
+type Cible = Pick<PharmacieResume, 'id' | 'telephone' | 'whatsapp'> & { nom?: string };
 
 /** Actions communes sur une pharmacie : fiche, appel, WhatsApp, itinéraire. */
 export function useActionsPharmacie() {
@@ -17,6 +17,8 @@ export function useActionsPharmacie() {
       itineraire: (p: Cible) => router.push({ pathname: '/pharmacie/[id]/itineraire', params: { id: p.id } }),
       appeler: (p: Cible) => {
         if (!p.telephone) return alerte(t('commun.appeler'), t('fiche.sansTelephone'));
+        // Au retour dans l'app, on demandera si la pharmacie était ouverte.
+        if (p.nom) commencerVisite({ id: p.id, nom: p.nom });
         void appeler(p.telephone, pays?.indicatif);
       },
       whatsapp: (p: Cible) => {

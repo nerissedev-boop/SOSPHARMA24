@@ -5,7 +5,7 @@ import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PharmacieResume } from '@/commun/api';
-import { appeler, bornesLongues, dateCourte, marquerSortieVersAutreApp, signalerErreur, t, vibrationAction } from '@/commun/lib';
+import { appeler, bornesLongues, commencerVisite, dateCourte, marquerSortieVersAutreApp, signalerErreur, t, vibrationAction } from '@/commun/lib';
 import { libelleStatut, tonAffiche } from '@/commun/regles';
 import { rayons, useTheme } from '@/commun/theme';
 import {
@@ -21,7 +21,6 @@ import {
   IconeLune,
   IconePartage,
   LignePharmacie,
-  Logo,
   NombreAnime,
   PiluleFiltres,
   SqueletteBlocProche,
@@ -69,7 +68,11 @@ function ListeGardes() {
   }, [tour, choix, zone]);
 
   const ouvrir = (p: PharmacieResume) => router.push({ pathname: '/pharmacie/[id]', params: { id: p.id } });
-  const tel = (p: PharmacieResume) => p.telephone && appeler(p.telephone, pays?.indicatif);
+  const tel = (p: PharmacieResume) => {
+    if (!p.telephone) return;
+    commencerVisite({ id: p.id, nom: p.nom });
+    void appeler(p.telephone, pays?.indicatif);
+  };
   const nombre = (tour?.pharmacies ?? []).filter((p) => p.statut === 'garde').length;
   const bornes = tour ? bornesLongues(tour.debut, tour.fin, fuseau) : null;
   const [premiere, ...autres] = liste;
@@ -285,11 +288,9 @@ function EnTeteRouge({ resume, rangeeZone, repli }: { resume: ReactNode; rangeeZ
       style={[styles.enteteRouge, { backgroundColor: c.enTeteGarde, paddingTop: 16 + top }, repli.mesuree ? repli.styleEnTete : null]}
     >
       <View style={styles.ligneTitre}>
-        <Logo largeur={28} variante="inverse" />
         <Texte variante="titre" couleur={c.blanc} titre style={styles.flex}>
           {t('garde.titre')}
         </Texte>
-        <IconeLune size={24} color={c.blanc} plein />
       </View>
       <Animated.View style={[styles.resumeEnTete, repli.styleResume]}>
         {rangeeZone}

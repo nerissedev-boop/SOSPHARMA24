@@ -17,6 +17,7 @@ Route::middleware('appareil.optionnel')->group(function (): void {
     Route::get('pharmacies/cadre', [PharmacieController::class, 'cadre']);
     Route::get('pharmacies/recherche', [PharmacieController::class, 'rechercher']);
     Route::get('pharmacies/{pharmacie}', [PharmacieController::class, 'show'])->where('pharmacie', 'ph_[a-z0-9]+');
+    Route::get('pharmacies/{pharmacie}/trajet', [PharmacieController::class, 'trajet'])->where('pharmacie', 'ph_[a-z0-9]+')->middleware('throttle:trajets');
 });
 Route::get('villes/{ville}/compteurs', [PharmacieController::class, 'compteurs']);
 Route::get('pays/{pays}/assurances', [AssuranceController::class, 'index']);

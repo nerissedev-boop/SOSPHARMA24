@@ -1,10 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { PharmacieResume } from '@/commun/api';
 import { bornesCourtes, heure, marquerSortieVolontaire, t, usePreferences } from '@/commun/lib';
 import { rayons, useMaintenant, useTheme } from '@/commun/theme';
+import { estInactive } from '@/commun/regles';
 import {
   avecErrorBoundary,
   BandeauHorsConnexion,
@@ -14,11 +15,12 @@ import {
   Ecran,
   Filtre,
   HiPharmacy,
-  IconeCloche,
+  ChampRecherche,
+  IconeChevronDroite,
+  HiMedicalSearchOutline,
   IconeHorloge,
   IconeLune,
   LignePharmacie,
-  Logo,
   ChargementCroix,
   SqueletteBlocProche,
   SqueletteListe,
@@ -54,8 +56,6 @@ function Accueil() {
   const filtreRapide = usePreferences((e) => e.filtreRapide);
   const definirFiltreRapide = usePreferences((e) => e.definirFiltreRapide);
   const definirModeNuit = usePreferences((e) => e.definirModeNuit);
-  const notificationsVues = usePreferences((e) => e.notificationsVues);
-  const marquerNotificationsVues = usePreferences((e) => e.marquerNotificationsVues);
   const proches = usePharmaciesProches();
   const toutes = usePharmaciesProches({ rapide: 'toutes', actif: true });
   const { tour, dateEnregistree } = useTourEnCours();
@@ -69,9 +69,8 @@ function Accueil() {
     () => [...(tour?.pharmacies ?? [])].filter((p) => p.statut === 'garde').sort((a, b) => (a.distance_m ?? 0) - (b.distance_m ?? 0)),
     [tour],
   );
-  const cleTour = tour ? `${tour.id}:${tour.debut}` : null;
-  const nouveauTour = cleTour !== null && cleTour !== notificationsVues;
   const prenom = profil.prenom.trim();
+  const [saisie, setSaisie] = useState('');
 
   const ligne = (p: PharmacieResume, contexte: 'liste' | 'garde' = 'liste', rang?: number) => (
     <LignePharmacie
@@ -133,7 +132,25 @@ function Accueil() {
           ) : (
             <SqueletteBlocProche />
           )}
-          <View style={styles.titreSection}>
+          {/* La plus proche juste sous le bandeau : visible sans faire défiler. */}
+        {premiere ? (
+          <BlocPlusProche
+            testID="bloc-plus-proche"
+            garde={premiere.statut === 'garde'}
+            titre={premiere.statut === 'garde' ? t('accueil.plusProcheGarde') : t('accueil.plusProcheOuverte')}
+            photoUrl={premiere.photo_url ?? null}
+            nom={premiere.nom}
+            statut={premiere.statut}
+            libelleStatut={libelleStatut(premiere)}
+            distanceM={premiere.distance_m}
+            marcheMin={premiere.marche_min}
+            onPress={() => actions.ouvrir(premiere)}
+            onAppeler={() => actions.appeler(premiere)}
+            onItineraire={() => actions.itineraire(premiere)}
+          />
+        ) : null}
+
+        <View style={styles.titreSection}>
             <Texte variante="section" titre>
               {t('accueil.autresGarde')}
             </Texte>
@@ -158,7 +175,8 @@ function Accueil() {
 
   // ----------------------------- Jour -----------------------------
   const liste = filtreEnCours ? [] : (proches.liste ?? []);
-  const premiere = liste.find((p) => p.statut !== 'fermee');
+  // La plus proche ouverte ou de garde : ni fermée, ni « horaires à confirmer ».
+  const premiere = liste.find((p) => !estInactive(p.statut));
   const reste = liste.filter((p) => p.id !== premiere?.id).slice(0, 10);
   const bornes = tour ? bornesCourtes(tour.debut, tour.fin, fuseau) : null;
 
@@ -170,28 +188,30 @@ function Accueil() {
         <View style={[styles.bandeau, { backgroundColor: c.vertProfond }]} testID="bandeau-accueil">
           <View style={styles.entete}>
             <BarreZone libelle={libelle} onChanger={() => router.push('/zone')} surFonce testID="barre-zone" />
-            <Logo largeur={28} variante="inverse" />
-            <BoutonIcone
-              accessibilityLabel={nouveauTour ? t('accueil.notificationsNouvelles') : t('accueil.notifications')}
-              rond
-              onPress={() => {
-                if (cleTour) marquerNotificationsVues(cleTour);
-                router.navigate('/garde');
-              }}
-            >
-              <IconeCloche size={24} color={c.blanc} />
-              {nouveauTour ? <View style={[styles.pointNotif, { backgroundColor: c.rougeVif }]} /> : null}
-            </BoutonIcone>
           </View>
 
           <View>
             <Texte variante="titreEcran" titre couleur={c.blanc}>
               {prenom ? t('accueil.bonjour', { prenom }) : t('accueil.bonjourSeul')}
             </Texte>
-            <Texte variante="corps" couleur={c.vertTendre} style={styles.sousTitre}>
-              {t('accueil.aide')}
-            </Texte>
           </View>
+
+          {/* Recherche par nom : les résultats s'ouvrent sur la carte. */}
+          <ChampRecherche
+            libelle={t('carte.rechercheA11y')}
+            placeholder={t('carte.recherche')}
+            value={saisie}
+            onChangeText={setSaisie}
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              const q = saisie.trim();
+              if (!q) return;
+              setSaisie('');
+              router.navigate({ pathname: '/carte', params: { q, n: String(Date.now()) } });
+            }}
+            rendreIcone={(couleur) => <HiMedicalSearchOutline size={22} color={couleur} />}
+            testID="champ-recherche-accueil"
+          />
 
           <View style={styles.cartes}>
             <Pressable
@@ -201,6 +221,9 @@ function Accueil() {
               accessibilityLabel={`${t('accueil.proches')}, ${t('accueil.trouvees', { count: toutes.nombre })}`}
               style={({ pressed }) => [styles.carte, { backgroundColor: c.vert, opacity: pressed ? 0.9 : 1 }]}
             >
+              <View style={styles.flecheCarte}>
+                <IconeChevronDroite size={18} color={c.blanc} strokeWidth={2.6} />
+              </View>
               <View style={[styles.rond, { backgroundColor: c.blanc }]}>
                 <HiPharmacy size={28} color={c.vert} />
               </View>
@@ -220,6 +243,9 @@ function Accueil() {
               accessibilityLabel={`${t('accueil.garde')}, ${t('accueil.gardeOuvertes', { count: gardes.length })}`}
               style={({ pressed }) => [styles.carte, { backgroundColor: c.rouge, opacity: pressed ? 0.9 : 1 }]}
             >
+              <View style={styles.flecheCarte}>
+                <IconeChevronDroite size={18} color={c.blanc} strokeWidth={2.6} />
+              </View>
               <View style={[styles.rond, { backgroundColor: c.blanc }]}>
                 <IconeLune size={22} color={c.rouge} plein />
               </View>
@@ -277,22 +303,6 @@ function Accueil() {
             <SqueletteListe nombre={4} ecart={8} />
           </View>
         ) : null}
-        {premiere ? (
-          <BlocPlusProche
-            testID="bloc-plus-proche"
-            garde={premiere.statut === 'garde'}
-            titre={premiere.statut === 'garde' ? t('accueil.plusProcheGarde') : t('accueil.plusProcheOuverte')}
-            photoUrl={premiere.photo_url ?? null}
-            nom={premiere.nom}
-            statut={premiere.statut}
-            libelleStatut={libelleStatut(premiere)}
-            distanceM={premiere.distance_m}
-            marcheMin={premiere.marche_min}
-            onPress={() => actions.ouvrir(premiere)}
-            onAppeler={() => actions.appeler(premiere)}
-            onItineraire={() => actions.itineraire(premiere)}
-          />
-        ) : null}
         <View style={styles.liste}>{reste.map((p, i) => ligne(p, 'liste', i))}</View>
         {proches.isSuccess && !filtreEnCours && liste.length === 0 ? <AucunResultat onActualiser={() => void proches.refetch()} /> : null}
       </ScrollView>
@@ -308,18 +318,17 @@ const styles = StyleSheet.create({
     marginHorizontal: -20,
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 22,
-    gap: 16,
+    paddingBottom: 18,
+    gap: 14,
     borderBottomLeftRadius: rayons.feuille,
     borderBottomRightRadius: rayons.feuille,
   },
   entete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  pointNotif: { position: 'absolute', top: 9, right: 10, width: 9, height: 9, borderRadius: 5 },
-  sousTitre: { marginTop: 4 },
   cartes: { flexDirection: 'row', gap: 10 },
-  carte: { flex: 1, padding: 14, gap: 14, borderRadius: rayons.carte },
-  rond: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  carte: { flex: 1, padding: 12, gap: 10, borderRadius: rayons.carte },
+  rond: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   textesCarte: { gap: 3 },
+  flecheCarte: { position: 'absolute', top: 12, right: 12 },
   etiquetteGarde: { marginTop: 4, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start', borderRadius: rayons.pilule },
   titreSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, marginBottom: -4 },
   lien: { minHeight: 44, justifyContent: 'center' },

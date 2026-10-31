@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { StatutPharmacie } from '../api/schema';
 import type { TonStatut } from '../regles/libelles';
+import { estInactive } from '../regles/statut';
 import { distanceKm } from '../lib/format';
 import { t } from '../lib/i18n';
 import { CIBLE_TACTILE } from '../theme/espacements';
@@ -14,6 +16,7 @@ import { BadgeAssurance } from './BadgeAssurance';
 import { DistanceMarche } from './DistanceMarche';
 import { FacadeIllustree } from './FacadeIllustree';
 import { HiPhone } from './icones/healthicons';
+import { IconeChevronDroite } from './icones/trait';
 import { PastilleStatut } from './PastilleStatut';
 import { PhotoFondu } from './PhotoFondu';
 import { Texte } from './Texte';
@@ -81,12 +84,14 @@ export function LignePharmacie({
   testID,
 }: PropsLignePharmacie) {
   const { couleurs: c, estNuit } = useTheme();
-  const couleurStatut = ton === 'ocre' ? c.ocreTexte : statut === 'garde' ? c.rougeTexteFort : statut === 'ouverte' ? c.vertTexte : c.texteTertiaire;
+  const couleurStatut = ton === 'ocre' ? c.ocreTexte : statut === 'garde' ? c.rougeTexteFort : statut === 'ouverte' ? c.vertTexte : statut === 'inconnue' ? c.texteSecondaire : c.texteTertiaire;
   const couleurDetail = detailOcre ? c.ocreTexte : detail !== undefined ? c.texteSecondaire : couleurStatut;
   const favori = variante === 'favori';
   const description = [nom, libelleStatut, assurance ? t('commun.votreAssurance') : null, distanceKm(distanceM)].filter(Boolean).join(', ');
   // La carte entière se comprime sous le doigt (retour tactile façon cartes).
   const appui = useAppui(0.98);
+  // Sous le doigt, la carte se teinte de vert pâle : l'appui est confirmé même sur un téléphone lent.
+  const [appuyee, setAppuyee] = useState(false);
   const marcheVisible = marcheJusquA === undefined || (distanceM !== null && distanceM < marcheJusquA) ? marcheMin : null;
   return (
     <Animated.View
@@ -94,13 +99,19 @@ export function LignePharmacie({
       // Dans une liste animée, les cartes glissent vers leur place quand le filtre change.
       layout={rang === undefined ? undefined : transitionListe.layout}
       exiting={rang === undefined ? undefined : transitionListe.exiting}
-      style={[styles.ligne, favori && styles.ligneFavori, { backgroundColor: c.carte }, !estNuit && ombres.carte, appui.style]}
+      style={[styles.ligne, favori && styles.ligneFavori, { backgroundColor: appuyee ? c.carteAppuyee : c.carte }, !estNuit && ombres.carte, appui.style]}
       testID={testID}
     >
       <Pressable
         onPress={onPress}
-        onPressIn={appui.onPressIn}
-        onPressOut={appui.onPressOut}
+        onPressIn={() => {
+          setAppuyee(true);
+          appui.onPressIn();
+        }}
+        onPressOut={() => {
+          setAppuyee(false);
+          appui.onPressOut();
+        }}
         accessibilityRole="button"
         accessibilityLabel={description}
         style={styles.zone}
@@ -119,7 +130,7 @@ export function LignePharmacie({
             pulsation={pulsation ?? !favori}
             ton={ton === 'ocre' ? 'ocre' : undefined}
             taille={favori ? 38 : 40}
-            tailleIcone={favori ? (statut === 'fermee' ? 22 : 24) : statut === 'fermee' ? 24 : 26}
+            tailleIcone={favori ? (estInactive(statut) ? 22 : 24) : estInactive(statut) ? 24 : 26}
           />
         )}
         <View style={styles.textes}>
@@ -138,6 +149,8 @@ export function LignePharmacie({
         ) : (
           <DistanceMarche distanceM={distanceM} marcheMin={marcheVisible} icone={iconeMarche} />
         )}
+        {/* Flèche : la carte s'ouvre (le rond vert, lui, appelle tout de suite). */}
+        {onPress ? <IconeChevronDroite size={16} color={c.texteTertiaire} strokeWidth={2.4} /> : null}
       </Pressable>
       {onAppeler ? (
         <Pressable

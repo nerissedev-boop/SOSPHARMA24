@@ -11,7 +11,7 @@ import { Bouton } from './Bouton';
 import { DistanceMarche } from './DistanceMarche';
 import { FacadeIllustree } from './FacadeIllustree';
 import { HiPhone } from './icones/healthicons';
-import { IconeItineraire } from './icones/trait';
+import { IconeChevronDroite, IconeItineraire } from './icones/trait';
 import { PastilleStatut } from './PastilleStatut';
 import { PhotoFondu } from './PhotoFondu';
 import { Texte } from './Texte';
@@ -130,6 +130,15 @@ export function BlocPlusProche({
           </View>
           <DistanceMarche distanceM={distanceM} marcheMin={marcheVisible} grande />
         </View>
+        {/* Indice explicite : toute la carte ouvre la fiche, les boutons dessous agissent. */}
+        {onPress ? (
+          <View style={[styles.voirFiche, avecPhoto && styles.lignePhoto]} testID={testID ? `${testID}-voir-fiche` : undefined}>
+            <Texte variante="petitFort" couleur={c.vertTexte}>
+              {t('commun.voirFiche')}
+            </Texte>
+            <IconeChevronDroite size={16} color={c.vertTexte} strokeWidth={2.6} />
+          </View>
+        ) : null}
       </Pressable>
       <View style={[styles.actions, avecPhoto && styles.actionsPhoto]}>
         <Bouton
@@ -170,6 +179,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ligne: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  voirFiche: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: -6, alignSelf: 'flex-start' },
   lignePhoto: { paddingHorizontal: 6 },
   textes: { flex: 1, gap: 4, minWidth: 0 },
   nomPhoto: { fontSize: 17, lineHeight: 22 },

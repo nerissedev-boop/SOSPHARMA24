@@ -12,6 +12,7 @@ export const clesPharmacies = {
     ['pharmacies', 'cadre', bornes.map((b) => b.toFixed(3)).join(','), params] as const,
   recherche: (q: string, villeId: string | null, point: Coordonnees | null) => ['pharmacies', 'recherche', q, villeId, cle(point)] as const,
   fiche: (id: string) => ['pharmacies', 'fiche', id] as const,
+  trajet: (id: string, point: Coordonnees | null) => ['pharmacies', 'trajet', id, cle(point)] as const,
   assurances: (paysCode: string) => ['pays', paysCode, 'assurances'] as const,
 };
 
@@ -63,6 +64,15 @@ export function rechercher(q: string, villeId: string | null, point: Coordonnees
 export function lireFiche(id: string, point: Coordonnees | null): Promise<ApiResult<Pharmacie>> {
   return appeler<Pharmacie>(`/pharmacies/${encodeURIComponent(id)}`, {
     params: { lat: point?.latitude, lng: point?.longitude },
+  });
+}
+
+/** Durée en voiture donnée par Google (trafic compris) ; `voiture` nul : garder l'estimation. */
+export type TrajetApi = { voiture: { minutes: number; distance_m: number } | null; source: 'google' | null };
+
+export function lireTrajet(id: string, point: Coordonnees): Promise<ApiResult<TrajetApi>> {
+  return appeler<TrajetApi>(`/pharmacies/${encodeURIComponent(id)}/trajet`, {
+    params: { lat: point.latitude, lng: point.longitude },
   });
 }
 

@@ -94,6 +94,7 @@ Les secrets (clé d'application, accès MySQL, clé Expo) restent dans le `.env`
 | `vendor/bin/pint` | Mise en forme du code |
 | `php artisan route:list --path=api/v1` | Liste des routes |
 | `php artisan notifications:garde-samedi [--maintenant]` | Envoie les notifications « nouveau tour de garde » arrivées à échéance (`--maintenant` : sans attendre l'heure prévue) |
+| `php artisan pharmacies:importer-osm [fichier] [--pays=CI] [--simulation]` | Importe les pharmacies d'OpenStreetMap comme fiches « à vérifier » (fichier Overpass `out tags center`, sinon téléchargement) ; relançable sans doublon |
 | `php artisan sauvegarde:base` | Exporte la base, compressée, dans `storage/app/private/sauvegardes` |
 | `php artisan scramble:export` | Exporte le contrat OpenAPI dans `api.json` (voir `openapi-notes.md`) |
 | `php artisan schedule:list` | Tâches planifiées |
@@ -197,6 +198,7 @@ Toutes les routes sont préfixées par `/api/v1`. Légende des colonnes « Qui �
 | GET | `/pharmacies/cadre?bbox=minLng,minLat,maxLng,maxLat` (mêmes filtres) | 🌐 (📱 facultatif) | carte (300 au plus) |
 | GET | `/pharmacies/recherche?q=&ville=[&lat&lng&limite]` | 🌐 (📱 facultatif) | limite |
 | GET | `/pharmacies/{id}` | 🌐 (📱 facultatif) | — |
+| GET | `/pharmacies/{id}/trajet?lat=&lng=` (30/heure/appareil) | 🌐 | — |
 | GET / POST | `/admin/pharmacies` (`filter[ville\|zone\|actif\|h24\|assurances]`, `q`, `sort=nom`) | 👥 (création 🔑) | par page |
 | GET / PATCH / DELETE | `/admin/pharmacies/{id}` | 👥 (suppression 🔑) | — |
 | PUT | `/admin/pharmacies/{id}/horaires` | 👥 | — |
@@ -426,6 +428,14 @@ Les choix faits sans pouvoir demander, à valider :
 48. **Champs pour l'app hors connexion** : chaque pharmacie des listes, de la fiche, des gardes et des favoris renvoie `ville` (`{id, nom}`), `horaires`, `gardes` (la garde en cours, `[{debut, fin}]`) et `ferme_a` (heure locale de fermeture si ouverte selon ses horaires, sinon `null`). L'app recalcule le statut sans réseau avec la même règle (`cas-statut.json`).
 49. **Pays et villes pour l'app** : `GET /pays` renvoie `resume` (« Abidjan ouvert, autres villes bientôt », calculé depuis les villes actives et gardé dans le cache de la configuration) et `support` (`{whatsapp, telephone, email}`, colonnes `support_*` de `pays`, saisies par `POST/PATCH /admin/pays` au format E.164 ; vides tant que l'équipe ne les a pas renseignées). `GET /pays/{code}/villes` renvoie `nombre_communes`.
 50. **Langue des réponses** (28 oct.) : le middleware `DefinirLangue` choisit le français ou l'anglais d'après `Accept-Language` (français par défaut et pour toute autre langue, quelle que soit `APP_LOCALE`) et renvoie `Content-Language`. Les messages restent écrits en français dans le code ; `ApiResponse::error` les traduit avec `lang/en.json` (clé = phrase française), y compris les messages par champ. Une phrase absente de `en.json` reste en français. Les messages de validation du framework existent déjà en anglais ; `lang/en/validation.php` ne fait que nommer les champs. Le résumé du pays est construit à chaque requête : le cache ne garde que les villes. Les tests envoient `Accept-Language: fr`, comme l'app.
+
+
+**Données réelles** (31 oct.) :
+
+51. **Import OpenStreetMap** (`pharmacies:importer-osm`) : 1 000 pharmacies en Côte d'Ivoire dans OSM au 31 oct. 2026, dont 96 % avec un nom mais 3 % avec un téléphone et 3,5 % avec des horaires. L'import crée des fiches non vérifiées (`verifiee_le` nul, adresse « Adresse à vérifier » si OSM n'en a pas), rattachées à la commune qui contient le point ; un point hors des communes connues est ignoré. Colonne `osm_id` (« n123 », « w456 ») : une relance met à jour les fiches importées tant qu'elles ne sont pas vérifiées, et rattache une fiche existante à moins de 80 m dont le nom concorde au lieu de la dupliquer (ses valeurs saisies priment). Licence ODbL : mention « © les contributeurs d'OpenStreetMap » et base dérivée sous la même licence si elle est redistribuée.
+52. **Statut `inconnue`** (31 oct.) : une pharmacie sans garde en cours, sans 24h/24 et sans aucune plage horaire n'est plus « fermée » mais `inconnue` ; l'app affiche « Horaires à confirmer » et conseille d'appeler. C'est le cas des fiches importées d'OpenStreetMap tant qu'un agent n'a pas relevé leurs horaires. Elle sort du filtre « Ouvertes » (`filter[statut]=ouverte,garde`) mais reste dans « Toutes » ; `filter[statut]=inconnue` la retrouve. Cas ajouté à `cas-statut.json`, partagé avec l'app.
+
+53. **Temps de trajet en voiture** (31 oct.) : `GET /pharmacies/{id}/trajet` interroge l'API Routes de Google (`computeRoutes`, voiture, trafic compris si `GOOGLE_ROUTES_TRAFIC`) et renvoie `{voiture: {minutes, distance_m}, source: "google"}`. Sans `GOOGLE_ROUTES_API_KEY`, ou si Google ne répond pas, `voiture` vaut `null` et l'app garde son estimation par la distance. Le départ est arrondi à 3 décimales (environ 100 m) : la position exacte de l'usager ne part pas chez Google, et deux demandes voisines partagent la même réponse, gardée 10 minutes (cache temporaire permis par Google, aucun stockage durable). Limite de 30 appels par heure et par appareil. Clé à restreindre à l'API Routes et à l'adresse IP du serveur, avec un quota journalier dans la console Google Cloud.
 
 ## Incohérences relevées dans le document d'architecture
 

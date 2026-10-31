@@ -1,4 +1,4 @@
-export { calculerStatut, type DonneesStatut, type ResultatStatut, type Statut, type Plage, type PeriodeGarde } from './statut';
+export { calculerStatut, estInactive, type DonneesStatut, type ResultatStatut, type Statut, type Plage, type PeriodeGarde } from './statut';
 export {
   libelleStatut,
   tonDuStatut,

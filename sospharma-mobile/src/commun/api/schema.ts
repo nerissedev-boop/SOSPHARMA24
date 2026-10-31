@@ -11,7 +11,8 @@
  * durées en minutes, identifiants préfixés (ph_0142), donnée inconnue = null.
  */
 
-export type StatutPharmacie = 'garde' | 'ouverte' | 'fermee';
+/** « inconnue » : aucun horaire connu (fiche importée, pas encore relevée) ; affiché « Horaires à confirmer ». */
+export type StatutPharmacie = 'garde' | 'ouverte' | 'fermee' | 'inconnue';
 
 export type NumeroUrgence = {
   code: string;

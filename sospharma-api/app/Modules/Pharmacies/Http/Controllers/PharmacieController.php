@@ -6,8 +6,10 @@ namespace App\Modules\Pharmacies\Http\Controllers;
 
 use App\Commun\Erreurs\RequeteInvalide;
 use App\Commun\Geo\Geometrie;
+use App\Commun\Geo\TrajetVoiture;
 use App\Commun\Http\ApiResponse;
 use App\Commun\Http\Requetes\ParametresListe;
+use App\Commun\Http\Requetes\PositionRequest;
 use App\Http\Controllers\Controller;
 use App\Modules\Pharmacies\Exceptions\PharmacieIntrouvable;
 use App\Modules\Pharmacies\Http\Requests\CadreRequest;
@@ -89,6 +91,19 @@ class PharmacieController extends Controller
             ?? throw new PharmacieIntrouvable;
 
         return ApiResponse::ok(new PharmacieFicheResource(new PharmacieTrouvee($modele, $statuts->pourUne($modele))));
+    }
+
+    /**
+     * Trajet en voiture depuis la position de l'usager (API Routes de Google, trafic compris).
+     * `voiture` vaut null sans clé configurée ou si Google ne répond pas : l'app garde son estimation.
+     */
+    public function trajet(string $pharmacie, PositionRequest $request, TrajetVoiture $trajets): JsonResponse
+    {
+        $modele = Pharmacie::query()->actives()->where('id_public', $pharmacie)->first(['latitude', 'longitude'])
+            ?? throw new PharmacieIntrouvable;
+        $voiture = $trajets->calculer($request->latitude(), $request->longitude(), $modele->lat(), $modele->lng());
+
+        return ApiResponse::ok(['voiture' => $voiture, 'source' => $voiture !== null ? 'google' : null]);
     }
 
     public function compteurs(Ville $ville, CompteurZones $compteurs): JsonResponse

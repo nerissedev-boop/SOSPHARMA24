@@ -52,6 +52,11 @@ final class StatutPharmacie
             ];
         }
 
+        // Aucune plage connue : on ne sait pas, ce qui n'est pas « fermée » (fiches importées d'OpenStreetMap).
+        if ($plages === []) {
+            return new ResultatStatut(StatutOuverture::Inconnue);
+        }
+
         $local = $instant->setTimezone($fuseau);
         $jour = $local->dayOfWeek;
         $minute = $local->hour * 60 + $local->minute;

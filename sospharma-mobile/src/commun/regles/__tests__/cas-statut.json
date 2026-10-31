@@ -1,5 +1,5 @@
 {
-  "description": "Cas de test partagés de la règle de statut (API Laravel + app mobile). Priorité : garde > ouverte > fermée. jour : 0 = dimanche ... 6 = samedi, heure locale du fuseau. Une plage dont la fermeture est avant l'ouverture passe minuit. prochaine_ouverture : ISO UTC de la prochaine ouverture si fermée, sinon null.",
+  "description": "Cas de test partagés de la règle de statut (API Laravel + app mobile). Priorité : garde > ouverte > fermée ; sans garde, sans 24h/24 et sans aucune plage : inconnue (horaires à confirmer). jour : 0 = dimanche ... 6 = samedi, heure locale du fuseau. Une plage dont la fermeture est avant l'ouverture passe minuit. prochaine_ouverture : ISO UTC de la prochaine ouverture si fermée, sinon null.",
   "cas": [
     {
       "nom": "Ouverte dans sa plage du mardi",
@@ -63,6 +63,13 @@
       "fuseau": "Africa/Abidjan",
       "pharmacie": { "h24": false, "horaires": [{ "jour": 1, "ouverture": "08:00", "fermeture": "20:00" }], "gardes": [] },
       "attendu": { "statut": "fermee", "prochaine_ouverture": "2026-10-19T08:00:00Z" }
+    },
+    {
+      "nom": "Aucune plage connue : horaires à confirmer, pas fermée",
+      "maintenant": "2026-10-20T10:00:00Z",
+      "fuseau": "Africa/Abidjan",
+      "pharmacie": { "h24": false, "horaires": [], "gardes": [] },
+      "attendu": { "statut": "inconnue", "prochaine_ouverture": null }
     }
   ]
 }

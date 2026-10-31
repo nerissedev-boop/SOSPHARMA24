@@ -30,6 +30,8 @@ return [
         'messages_par_jour' => 5,
         'connexions_par_minute' => 5,
         'api_par_minute' => 120,
+        // Temps de trajet Google (payant) : par appareil ou adresse IP.
+        'trajets_par_heure' => 30,
         // Agents terrain : relevés et photos par jour et par agent.
         'releves_par_jour' => 200,
         'photos_releves_par_jour' => 1000,

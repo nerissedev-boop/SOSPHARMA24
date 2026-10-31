@@ -2,6 +2,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 
 import type { StatutPharmacie } from '../api/schema';
+import { estInactive } from '../regles/statut';
 import { t } from '../lib/i18n';
 import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
@@ -49,15 +50,19 @@ export function PastilleStatut({
   testID,
 }: Props) {
   const { couleurs: c } = useTheme();
-  const fond = ton === 'ocre' && statut !== 'fermee' ? c.ocrePoint : statut === 'garde' ? c.rouge : statut === 'ouverte' ? c.vert : (fondFerme ?? c.fermeFond);
+  const fond = ton === 'ocre' && !estInactive(statut) ? c.ocrePoint : statut === 'garde' ? c.rouge : statut === 'ouverte' ? c.vert : (fondFerme ?? c.fermeFond);
   const { valeur, enMarche } = usePulsation(pulsation && statut === 'garde');
   const styleHalo = useAnimatedStyle(() => ({
     opacity: interpolate(valeur.get(), [0, 1], [0.45, 0]),
     transform: [{ scale: interpolate(valeur.get(), [0, 1], [1, 1.6]) }],
   }));
-  const icone = tailleIcone ?? Math.round(taille * (statut === 'fermee' ? 0.6 : 0.65));
+  const icone = tailleIcone ?? Math.round(taille * (estInactive(statut) ? 0.6 : 0.65));
   const libelle =
-    statut === 'garde' ? t('statut.pastilleGarde') : statut === 'ouverte' ? t('statut.pastilleOuverte') : t('statut.pastilleFermee');
+    statut === 'garde' ? t('statut.pastilleGarde') : statut === 'ouverte'
+        ? t('statut.pastilleOuverte')
+        : statut === 'inconnue'
+          ? t('statut.pastilleInconnue')
+          : t('statut.pastilleFermee');
   return (
     <View
       testID={testID ?? `pastille-${statut}`}
@@ -73,7 +78,7 @@ export function PastilleStatut({
           style={[StyleSheet.absoluteFill, { borderRadius: taille / 2, backgroundColor: fond }, styleHalo]}
         />
       ) : null}
-      {statut === 'fermee' ? (
+      {estInactive(statut) ? (
         <HiPharmacyOutline size={icone} color={c.fermeIcone} />
       ) : (
         <HiPharmacy size={icone} color={c.blanc} />

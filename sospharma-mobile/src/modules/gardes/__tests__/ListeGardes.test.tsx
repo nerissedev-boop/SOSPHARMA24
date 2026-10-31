@@ -21,7 +21,8 @@ describe('Écran Pharmacies de garde', () => {
   it('jour : en-tête rouge, nombre de gardes, la plus proche en premier', async () => {
     await rendre(<ListeGardes />);
     expect(await screen.findByText('6 pharmacies ouvertes cette nuit')).toBeTruthy();
-    expect(screen.getByText(/^Tour de garde du sam\. \d+ au sam\. \d+ \w+\.$/)).toBeTruthy();
+    // Le mois du début n'apparaît que si le tour chevauche deux mois (« du sam. 31 oct. au sam. 7 nov. »).
+    expect(screen.getByText(/^Tour de garde du sam\. \d+( \w+\.)? au sam\. \d+ \w+\.$/)).toBeTruthy();
     // Pas encore de photo validée : bandeau dessiné avec l’étiquette, comme la maquette B.
     expect(screen.getByText('La plus proche')).toBeTruthy();
     expect(screen.getByTestId('bloc-garde-plus-proche-facade')).toBeTruthy();
@@ -59,7 +60,7 @@ describe('Écran Pharmacies de garde', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Partager la liste des pharmacies de garde' }));
     const message = (partage.mock.calls[0]?.[0] as { message: string }).message;
     expect(message).toMatch(/^Pharmacies de garde · /);
-    expect(message).toMatch(/\nTour de garde du sam\. \d+ au sam\. \d+ \w+\.\n/);
+    expect(message).toMatch(/\nTour de garde du sam\. \d+( \w+\.)? au sam\. \d+ \w+\.\n/);
     expect(message).toMatch(/• Pharmacie de la Paix \(Cocody\) : \+225 01 23 45 67 89/);
     // Le filtre « Toute la nuit » s'applique aussi au partage.
     expect(message).not.toMatch(/Pharmacie des Nations/);

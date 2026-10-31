@@ -28,7 +28,8 @@ it('trie par distance dans le rayon, avec statut, distance et temps de marche', 
         ->and($json['data'][0]['distance_m'])->toBeGreaterThan(100)->toBeLessThan(130)
         ->and($json['data'][0]['marche_min'])->toBe(2)
         ->and($json['data'][0]['id'])->toStartWith('ph_')
-        ->and($json['data'][1]['statut'])->toBe('fermee')
+        // Aucun horaire connu : « horaires à confirmer », pas « fermée ».
+        ->and($json['data'][1]['statut'])->toBe('inconnue')
         ->and($json['data'][1]['prochaine_ouverture'])->toBeNull()
         // null jamais omis
         ->and($json['data'][1])->toHaveKeys(['whatsapp', 'quartier', 'garde', 'verifiee_le']);
@@ -46,7 +47,7 @@ it('filtre par assurance, 24h/24 et statut', function (): void {
     $this->getJson('/api/v1/pharmacies/proches?lat=5.43&lng=-3.97&rayon=5000&filter[h24]=true')
         ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.nom', 'Lointaine');
 
-    $this->getJson('/api/v1/pharmacies/proches?lat=5.355&lng=-3.97&filter[statut]=fermee')
+    $this->getJson('/api/v1/pharmacies/proches?lat=5.355&lng=-3.97&filter[statut]=inconnue')
         ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.nom', 'Moyenne');
 });
 

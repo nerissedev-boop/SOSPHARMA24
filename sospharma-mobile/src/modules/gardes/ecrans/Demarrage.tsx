@@ -10,6 +10,7 @@ import { usePays, usePosition, useZoneCourante } from '@/modules/territoire';
 
 import { usePrechargerTour, useVilleSuivie } from '../hooks/useTourEnCours';
 
+/** Premier lancement seulement : le temps de lire le slogan. Ensuite, aucune attente forcée. */
 const DUREE_MINIMALE = 1400;
 /** Halo extérieur du logo (maquette 01). */
 const HALO = '#F6FBF8';
@@ -42,11 +43,15 @@ function Demarrage() {
   useEffect(() => {
     if (fait.current) return;
     const debut = Date.now();
+    const premierLancement = !localisationDemandee && !zone;
     const minuterie = setTimeout(async () => {
       if (fait.current) return;
       fait.current = true;
       try {
-        if (villeId) await precharger(villeId, point);
+        if (villeId) {
+          const { enCache, mise } = precharger(villeId, point);
+          if (!enCache) await mise;
+        }
       } catch (e) {
         signalerErreur(e, { etape: 'demarrage' });
       }
@@ -54,7 +59,7 @@ function Demarrage() {
         terminer();
         router.replace(!localisationDemandee && !zone ? '/localisation' : '/');
       });
-    }, Math.max(0, DUREE_MINIMALE - (Date.now() - debut)));
+    }, premierLancement ? Math.max(0, DUREE_MINIMALE - (Date.now() - debut)) : 0);
     return () => clearTimeout(minuterie);
     // Lancé une seule fois au montage.
     // eslint-disable-next-line react-hooks/exhaustive-deps

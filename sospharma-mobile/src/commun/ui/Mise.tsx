@@ -51,7 +51,8 @@ export function LigneMenu({ libelle, sousTitre, valeur, onPress, droite, chevron
         ) : null}
       </View>
       {valeur ? (
-        <Texte variante="boutonPetit" couleur={c.texteSecondaire}>
+        // Valeur longue (plusieurs assurances) : une ligne, coupée, sans écraser le libellé.
+        <Texte variante="boutonPetit" couleur={c.texteSecondaire} numberOfLines={1} style={styles.valeurMenu}>
           {valeur}
         </Texte>
       ) : null}
@@ -85,4 +86,5 @@ const styles = StyleSheet.create({
   ligneHaute: { minHeight: 58 },
   textesMenu: { flex: 1, gap: 2 },
   libelleMenu: { lineHeight: 20 },
+  valeurMenu: { flexShrink: 1, maxWidth: '45%', textAlign: 'right' },
 });

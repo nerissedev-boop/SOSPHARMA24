@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
 import { rendre } from '../../lib/tests/rendu';
@@ -97,5 +97,24 @@ describe('Bloc « La plus proche »', () => {
     expect(screen.getByText('La plus proche de garde')).toBeTruthy();
     expect(screen.getByTestId('badge-24', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.queryByTestId('b-assurance')).toBeNull();
+  });
+});
+
+describe('Indices d’action (29 oct.)', () => {
+  it('la carte se teinte de vert pâle sous le doigt', async () => {
+    await rendre(<LignePharmacie {...base} onPress={jest.fn()} />);
+    const zone = screen.getByRole('button', { name: /Pharmacie Gazelle/ });
+    await fireEvent(zone, 'pressIn');
+    expect(StyleSheet.flatten(screen.getByTestId('l').props.style).backgroundColor).toBe(jetonsJour.carteAppuyee);
+    await fireEvent(zone, 'pressOut');
+    expect(StyleSheet.flatten(screen.getByTestId('l').props.style).backgroundColor).toBe(jetonsJour.carte);
+  });
+
+  it('« Voir la fiche » sur le bloc qui s’ouvre, absent sans action', async () => {
+    const bloc = { titre: 'La plus proche de garde', nom: 'Pharmacie Alpha', statut: 'garde' as const, libelleStatut: 'Ouverte toute la nuit', distanceM: 4700, marcheMin: 59, testID: 'b' };
+    await rendre(<BlocPlusProche {...bloc} onPress={jest.fn()} />);
+    expect(screen.getByText('Voir la fiche')).toBeTruthy();
+    await rendre(<BlocPlusProche {...bloc} />);
+    expect(screen.queryByText('Voir la fiche')).toBeNull();
   });
 });

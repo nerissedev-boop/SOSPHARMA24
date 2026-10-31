@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PharmacieResume } from '@/commun/api';
 import { dateCourte, distanceKm, distanceNombre, localeActive, t, useEnLigne, usePreferences } from '@/commun/lib';
 import { ombres, rayons, useTheme } from '@/commun/theme';
+import { estInactive } from '@/commun/regles';
 import {
   avecErrorBoundary,
   BandeauHorsConnexion,
@@ -66,6 +67,14 @@ function Carte() {
   const [selection, setSelection] = useState<string | null>(null);
   const [saisie, setSaisie] = useState('');
   const [recherche, setRecherche] = useState('');
+  // Recherche lancée depuis l'Accueil (?q=…&n=…) : reprise ici une fois par envoi.
+  const { q, n } = useLocalSearchParams<{ q?: string; n?: string }>();
+  const [envoiVu, setEnvoiVu] = useState<string | undefined>(undefined);
+  if (q && n && n !== envoiVu) {
+    setEnvoiVu(n);
+    setSaisie(q);
+    setRecherche(q);
+  }
   const [hauteurEnTete, setHauteurEnTete] = useState(180);
   const [hauteurFiche, setHauteurFiche] = useState(200);
 
@@ -236,6 +245,7 @@ function Carte() {
               nom={p.nom}
               statut={p.statut}
               libelleStatut={libelleStatut(p)}
+              photoUrl={p.photo_url ?? null}
               distanceM={p.distance_m}
               marcheMin={p.marche_min}
               onPress={() => actions.ouvrir(p)}
@@ -332,6 +342,7 @@ function Carte() {
                 nom={p.nom}
                 statut={p.statut}
                 libelleStatut={libelleStatut(p)}
+                photoUrl={p.photo_url ?? null}
                 distanceM={p.distance_m}
                 marcheMin={p.marche_min}
                 onPress={() => actions.ouvrir(p)}
@@ -422,7 +433,7 @@ function Carte() {
             ) : (
               <>
                 <View style={styles.ligneFiche}>
-                  <PastilleStatut statut={choisie.statut} taille={46} tailleIcone={choisie.statut === 'fermee' ? 28 : 30} />
+                  <PastilleStatut statut={choisie.statut} taille={46} tailleIcone={estInactive(choisie.statut) ? 28 : 30} />
                   <View style={styles.textesFiche}>
                     <Texte variante="nomGrand" numberOfLines={1}>
                       {choisie.nom}

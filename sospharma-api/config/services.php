@@ -14,6 +14,12 @@ return [
     |
     */
 
+    // Durée des trajets en voiture (fiche Itinéraire de l'app). Clé restreinte à l'API Routes.
+    'google_routes' => [
+        'cle' => env('GOOGLE_ROUTES_API_KEY'),
+        'trafic' => (bool) env('GOOGLE_ROUTES_TRAFIC', true),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

@@ -33,4 +33,5 @@ export { useSessionAgent, sessionAgentExpiree, DUREE_INACTIVITE_AGENT_MS, type A
 export { useSelectionAssurances, estContexteAssurances, type ContexteAssurances } from './selectionAssurances';
 export { vibrationAction, vibrationErreur, vibrationLegere, vibrationSucces } from './haptique';
 export { alerte, useDialogues, type BoutonDialogue, type Dialogue, type StyleBoutonDialogue } from './dialogues';
+export { ABSENCE_MIN_VISITE_MS, commencerVisite, useVisite, type Visite } from './visite';
 export { ABSENCE_AVANT_DEMARRAGE_MS, marquerSortieVersAutreApp, marquerSortieVolontaire, noterDepart, rejouerDemarrageAuRetour } from './premierPlan';

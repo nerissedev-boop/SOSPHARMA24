@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { reactionPour, type AssurancePharmacie } from '@/commun/api';
+import { reactionPour, type AssurancePharmacie, type PlageHoraire } from '@/commun/api';
 import { dateCourte, heureLocale, localeActive, t, telephoneAffiche, usePreferences, useSessionAgent } from '@/commun/lib';
 import { ombres, rayons, useTheme } from '@/commun/theme';
 import {
@@ -17,7 +17,7 @@ import {
   HiGeoLocation,
   HiInsuranceCardOutline,
   HiPhone,
-  IconeAppareilPhoto,
+  FacadeIllustree,
   IconeBouclier,
   IconeBulle,
   IconeCoche,
@@ -29,6 +29,7 @@ import {
   IconeRetour,
   IconeTelephoneTrait,
   PastilleStatut,
+  PhotoFondu,
   Texte,
   useRetour,
   useMargeBas,
@@ -45,6 +46,34 @@ const MAX_PUCES = 3;
 const HAUTEUR_PHOTO = 230;
 /** Taille des boutons ronds du haut (retour, favori, partager). */
 const BOUTON_HAUT = 44;
+
+/** Lundi en tête, comme un calendrier. */
+const ORDRE_JOURS = [1, 2, 3, 4, 5, 6, 0];
+
+/** Horaires des 7 jours, aujourd'hui en gras : savoir si la pharmacie ouvre demain ou dimanche. */
+function HorairesSemaine({ horaires, aujourdhui }: { horaires: PlageHoraire[]; aujourdhui: number }) {
+  const { couleurs: c } = useTheme();
+  return (
+    <View style={styles.semaine} testID="horaires-semaine">
+      {ORDRE_JOURS.map((jour) => {
+        const plages = horaires.filter((h) => h.jour === jour).map((h) => `${h.ouverture}–${h.fermeture}`);
+        const fort = jour === aujourdhui;
+        const nom = t(`horaires.jours.${jour}`);
+        const valeur = plages.length ? plages.join(', ') : t('fiche.ferme');
+        return (
+          <View key={jour} style={styles.jourHoraire} accessible accessibilityLabel={`${nom} ${valeur}`}>
+            <Texte variante={fort ? 'nomPetit' : 'texte'} style={styles.nomJour}>
+              {nom.charAt(0).toUpperCase() + nom.slice(1)}
+            </Texte>
+            <Texte variante={fort ? 'nomPetit' : 'texte'} couleur={plages.length ? undefined : c.texteSecondaire}>
+              {valeur}
+            </Texte>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
 
 /** Section « Assurances acceptées (N) » : 3 puces au plus puis « + N autres » qui déplie. */
 function SectionAssurances({ fiche }: { fiche: { assurances: AssurancePharmacie[]; accepte_mes_assurances?: boolean | null; services: string[] } }) {
@@ -176,8 +205,6 @@ function Fiche() {
   const couleurStatut = ocre ? c.ocreTexte : fiche.statut === 'garde' ? c.rougeTexteFort : fiche.statut === 'ouverte' ? c.blanc : c.texteTertiaire;
   const fondStatut = ocre ? c.ocreClair : fiche.statut === 'garde' ? c.rougeClair : fiche.statut === 'ouverte' ? c.vert : c.surface;
   const jour = heureLocale(new Date(), fuseau).jourSemaine;
-  const plages = fiche.horaires.filter((h) => h.jour === jour).map((h) => `${h.ouverture}–${h.fermeture}`);
-  const horaires = fiche.h24 ? t('fiche.h24') : plages.length ? t('fiche.aujourdhui', { plages: plages.join(', ') }) : t('fiche.fermeAujourdhui');
 
   return (
     <Ecran hautSur={false} barreClaire={!compact || estNuit} testID="ecran-fiche">
@@ -190,8 +217,13 @@ function Fiche() {
           if (passe !== compact) setCompact(passe);
         }}
       >
-        <View style={[styles.photo, { backgroundColor: c.vertProfond }]} accessibilityLabel={t('fiche.photo')}>
-          <IconeAppareilPhoto size={40} color={c.vertTendre} />
+        {/* Photo de façade validée, sinon la devanture dessinée (comme dans les listes). */}
+        <View style={[styles.photo, { backgroundColor: c.surface }]} accessible accessibilityRole="image" accessibilityLabel={t('fiche.photo')}>
+          {fiche.photo_url ? (
+            <PhotoFondu uri={fiche.photo_url} style={StyleSheet.absoluteFill} testID="fiche-photo" />
+          ) : (
+            <FacadeIllustree taille="grande" largeur={260} style={StyleSheet.absoluteFill} testID="fiche-facade" />
+          )}
         </View>
         <View style={[styles.contenu, { backgroundColor: c.fond }]}>
           <View style={styles.ligneTitre}>
@@ -229,13 +261,10 @@ function Fiche() {
               icone={<IconeItineraire size={20} color={c.pastilleActionIcone} />}
               onPress={() => actions.itineraire(fiche)}
             />
-            <ActionRonde libelle={t('commun.whatsapp')} icone={<IconeBulle size={20} color={c.pastilleActionIcone} />} onPress={() => actions.whatsapp(fiche)} />
-            <ActionRonde
-              libelle={t('fiche.favori')}
-              a11y={favori.estFavori ? t('fiche.favoriRetirer') : t('fiche.favoriAjouter')}
-              icone={<IconeCoeur size={20} color={c.pastilleActionIcone} plein />}
-              onPress={favori.basculer}
-            />
+            {/* WhatsApp seulement si la pharmacie a donné un numéro ; Favori et Partager restent en haut. */}
+            {fiche.whatsapp ? (
+              <ActionRonde libelle={t('commun.whatsapp')} icone={<IconeBulle size={20} color={c.pastilleActionIcone} />} onPress={() => actions.whatsapp(fiche)} />
+            ) : null}
           </View>
 
           <View style={[styles.section, styles.carteBlanche, { backgroundColor: c.feuille }]}>
@@ -257,9 +286,18 @@ function Fiche() {
                 <Texte variante="texte">{telephoneAffiche(fiche.telephone, pays?.indicatif)}</Texte>
               </Pressable>
             ) : null}
-            <View style={[styles.info, styles.centre]}>
+            <View style={[styles.info, fiche.h24 ? styles.centre : null]}>
               <IconeHorloge size={22} color={c.fermeIcone} accessibilityLabel={t('fiche.horaires')} />
-              <Texte variante="texte">{horaires}</Texte>
+              {fiche.h24 ? (
+                <Texte variante="texte">{t('fiche.h24')}</Texte>
+              ) : fiche.horaires.length === 0 ? (
+                // Fiche importée, pas encore relevée : on ne montre pas sept jours « Fermée ».
+                <Texte variante="texte" couleur={c.texteSecondaire} style={styles.flex} testID="horaires-a-confirmer">
+                  {t('statut.appelerAvant')}
+                </Texte>
+              ) : (
+                <HorairesSemaine horaires={fiche.horaires} aujourdhui={jour} />
+              )}
             </View>
             <View style={[styles.verifiee, { backgroundColor: c.vertClair }]}>
               <IconeBouclier size={20} color={c.vert} />
@@ -355,7 +393,10 @@ const styles = StyleSheet.create({
   retourPlein: { marginLeft: -10 },
   chargement: { marginTop: 80 },
   introuvable: { paddingTop: 60, paddingHorizontal: 24 },
-  photo: { height: 230, alignItems: 'center', justifyContent: 'center' },
+  photo: { height: 230, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  semaine: { flex: 1, gap: 4 },
+  jourHoraire: { flexDirection: 'row', gap: 12 },
+  nomJour: { width: 52 },
   // Le contenu remonte sur l'en-tête comme une feuille : haut arrondi de 24 (charte « cartes »).
   contenu: { flexGrow: 1, marginTop: -24, padding: 20, gap: 16, borderTopLeftRadius: rayons.feuille, borderTopRightRadius: rayons.feuille },
   ligneTitre: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },

@@ -8,13 +8,19 @@ import { heureLocale, isoUtc, localVersUtc, minutesDepuisMinuit } from '../lib/t
  * - garde : une garde dont la période [debut, fin[ couvre l'instant ;
  * - ouverte : h24, ou l'heure locale tombe dans une plage du jour (une plage dont la
  *   fermeture est avant l'ouverture passe minuit) ;
+ * - inconnue : aucune plage connue (horaires à confirmer : on ne dit pas « fermée ») ;
  * - fermée : sinon, avec la prochaine ouverture (ISO UTC).
  *
  * L'app ne s'en sert que hors connexion (ou sur des données en cache) : en ligne,
  * le statut vient de l'API.
  */
 
-export type Statut = 'garde' | 'ouverte' | 'fermee';
+export type Statut = 'garde' | 'ouverte' | 'fermee' | 'inconnue';
+
+/** Ni de garde ni ouverte : fermée ou horaires à confirmer (pastille grise, pas « la plus proche ouverte »). */
+export function estInactive(statut: Statut): boolean {
+  return statut === 'fermee' || statut === 'inconnue';
+}
 
 export type Plage = { jour: number; ouverture: string; fermeture: string };
 export type PeriodeGarde = { debut: string; fin: string };
@@ -44,6 +50,7 @@ export function calculerStatut(p: DonneesStatut, maintenant: Date, fuseau: strin
   const enGarde = p.gardes.some((g) => Date.parse(g.debut) <= t && t < Date.parse(g.fin));
   if (enGarde) return { statut: 'garde', prochaine_ouverture: null, ferme_a: null };
   if (p.h24) return { statut: 'ouverte', prochaine_ouverture: null, ferme_a: null };
+  if (p.horaires.length === 0) return { statut: 'inconnue', prochaine_ouverture: null, ferme_a: null };
 
   const local = heureLocale(maintenant, fuseau);
   const m = local.heures * 60 + local.minutes;

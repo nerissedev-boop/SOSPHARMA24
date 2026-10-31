@@ -62,6 +62,8 @@ export function libelleStatut(
       if (p.h24) return t('statut.h24');
       if (p.ferme_a) return t('statut.ouverteJusqua', { heure: p.ferme_a });
       return t('statut.ouverte');
+    case 'inconnue':
+      return t('statut.inconnue');
     case 'fermee':
     default: {
       if (!p.prochaine_ouverture) return t('statut.fermee');

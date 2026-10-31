@@ -118,7 +118,7 @@ function Profil() {
           </Texte>
           <LigneMenu
             libelle={t('profil.mesAssurances')}
-            valeur={mesAssurances.length ? mesAssurances.map((a) => a.nom).join(', ') : t('profil.aucune')}
+            valeur={resumeAssurances(mesAssurances.map((a) => a.nom))}
             onPress={() => router.push({ pathname: '/assurances', params: { contexte: 'profil' } })}
             testID="ligne-mes-assurances"
           />
@@ -192,6 +192,13 @@ function Profil() {
       />
     </Ecran>
   );
+}
+
+/** « MUGEF-CI, CMU + 2 » : deux noms au plus, puis le nombre des autres. */
+function resumeAssurances(noms: string[]): string {
+  if (noms.length === 0) return t('profil.aucune');
+  const debut = noms.slice(0, 2).join(', ');
+  return noms.length > 2 ? `${debut} + ${noms.length - 2}` : debut;
 }
 
 const styles = StyleSheet.create({

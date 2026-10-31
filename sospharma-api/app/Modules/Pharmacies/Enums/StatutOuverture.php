@@ -10,4 +10,6 @@ enum StatutOuverture: string
     case Garde = 'garde';
     case Ouverte = 'ouverte';
     case Fermee = 'fermee';
+    /** Ni garde, ni 24h/24, ni horaires connus (fiche importée, pas encore relevée) : « Horaires à confirmer ». */
+    case Inconnue = 'inconnue';
 }

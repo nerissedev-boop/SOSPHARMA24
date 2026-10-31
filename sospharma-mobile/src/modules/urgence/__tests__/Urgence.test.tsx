@@ -33,11 +33,21 @@ describe('Écran Urgence', () => {
     expect(ouvrir).toHaveBeenCalledWith('tel:185');
   });
 
-  it('montre la garde la plus proche et mène à la liste de garde via SOS', async () => {
+  it('SOS : propose d’appeler la garde la plus proche ou d’y aller', async () => {
     await rendre(<Urgence />);
     expect(await screen.findByText('Pharmacie de la Paix')).toBeTruthy();
     expect(screen.getByText('9 min à pied')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('bouton-sos'));
+    expect(screen.getByTestId('sos-appeler')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('sos-itineraire'));
+    expect(mockRouteur.push).toHaveBeenCalledWith(expect.objectContaining({ pathname: '/pharmacie/[id]/itineraire' }));
+  });
+
+  it('SOS : « Voir toutes les pharmacies de garde » mène à la liste', async () => {
+    await rendre(<Urgence />);
+    await screen.findByText('Pharmacie de la Paix');
+    await fireEvent.press(screen.getByTestId('bouton-sos'));
+    await fireEvent.press(screen.getByTestId('sos-autres'));
     expect(mockRouteur.navigate).toHaveBeenCalledWith('/garde');
   });
 });
