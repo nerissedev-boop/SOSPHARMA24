@@ -12,7 +12,7 @@ use Throwable;
 
 /**
  * Lecture d'un CSV d'import (séparateur « ; » ou « , » détecté, UTF-8 avec ou sans BOM).
- * La première ligne contient les noms de colonnes.
+ * La première ligne contient les noms de colonnes. Une ligne qui commence par « # » est une remarque, ignorée.
  */
 final class LecteurCsv
 {
@@ -43,6 +43,10 @@ final class LecteurCsv
                     $champs[0] = preg_replace('/^\xEF\xBB\xBF/', '', $champs[0]) ?? $champs[0];
                     $entete = array_map(fn (string $c): string => mb_strtolower($c), $champs);
 
+                    continue;
+                }
+                // « # À vérifier : … » : remarque ajoutée à la main ou par l'outil de conversion, pas une donnée.
+                if (str_starts_with($champs[0], '#')) {
                     continue;
                 }
                 if (count($lignes) >= self::LIGNES_MAX) {

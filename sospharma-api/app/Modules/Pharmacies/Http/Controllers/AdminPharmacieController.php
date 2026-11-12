@@ -92,6 +92,10 @@ class AdminPharmacieController extends Controller
         Gate::authorize('import', Pharmacie::class);
         $ville = Ville::query()->where('id_public', $request->validated('ville'))->firstOrFail();
 
-        return ApiResponse::created($import->importer($ville, $request->file('fichier')));
+        $simulation = $request->boolean('simulation');
+        $exclure = array_map('intval', (array) $request->validated('exclure', []));
+        $bilan = $import->importer($ville, $request->file('fichier'), $simulation, $exclure);
+
+        return $simulation ? ApiResponse::ok($bilan) : ApiResponse::created($bilan);
     }
 }
