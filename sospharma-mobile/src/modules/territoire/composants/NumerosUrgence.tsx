@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { NumeroUrgence } from '@/commun/api';
 import { appeler, t } from '@/commun/lib';
 import { rayons, useTheme } from '@/commun/theme';
-import { HiAccidentAndEmergency, HiAmbulance, HiEmergencyPost, Texte } from '@/commun/ui';
+import { HiAccidentAndEmergency, HiAmbulance, HiEmergencyPost, HiPhone, Texte } from '@/commun/ui';
 
 /** Icône d'un numéro d'urgence selon la configuration pays. */
 export function IconeUrgence({ icone, taille }: { icone: NumeroUrgence['icone']; taille: number }) {
@@ -15,12 +15,14 @@ export function IconeUrgence({ icone, taille }: { icone: NumeroUrgence['icone'];
 
 type Props = {
   urgences: NumeroUrgence[];
-  /** grille : deux cases (zone non couverte) ; liste : lignes pleines (écran Urgence). */
+  /** grille : deux cases (zone non couverte) ; liste : un seul bloc, un filet entre deux numéros. */
   variante?: 'grille' | 'liste';
+  /** Lignes hautes et numéros plus grands (écran Urgence). */
+  grand?: boolean;
 };
 
-/** Numéros d'urgence lus dans la configuration du pays (jamais en dur). */
-export function NumerosUrgence({ urgences, variante = 'liste' }: Props) {
+/** Numéros d'urgence lus dans la configuration du pays (jamais en dur). Un appui compose le numéro. */
+export function NumerosUrgence({ urgences, variante = 'liste', grand = false }: Props) {
   const { couleurs: c } = useTheme();
   if (variante === 'grille') {
     return (
@@ -49,26 +51,32 @@ export function NumerosUrgence({ urgences, variante = 'liste' }: Props) {
     );
   }
   return (
-    <View style={styles.liste}>
-      {urgences.map((u) => (
+    <View style={[styles.bloc, { backgroundColor: c.rougeClair }]} testID="numeros-urgence">
+      {urgences.map((u, i) => (
         <Pressable
           key={u.code}
           testID={`urgence-${u.code}`}
-          onPress={() => appeler(u.numero)}
+          // appeler() vibre déjà (action franche) : pas de second retour haptique ici.
+          onPress={() => void appeler(u.numero)}
           accessibilityRole="button"
           accessibilityLabel={t('urgence.appeler', { nom: u.libelle, numero: u.numero })}
-          style={({ pressed }) => [styles.ligne, { backgroundColor: c.rougeClair, opacity: pressed ? 0.8 : 1 }]}
+          accessibilityHint={u.description || undefined}
+          style={({ pressed }) => [styles.ligne, grand && styles.ligneGrande, { opacity: pressed ? 0.7 : 1 }]}
         >
-          <IconeUrgence icone={u.icone} taille={34} />
+          {i > 0 ? <View style={[styles.filet, { backgroundColor: c.separateur }]} /> : null}
+          <IconeUrgence icone={u.icone} taille={30} />
           <View style={styles.textes}>
-            <Texte variante="nom">{u.libelle}</Texte>
-            <Texte variante="libelle" couleur={c.texteSecondaire}>
-              {u.description}
-            </Texte>
+            <Texte variante="nomGrand">{u.libelle_court || u.libelle}</Texte>
+            {u.description ? (
+              <Texte variante="petit" couleur={c.texteSecondaire}>
+                {u.description}
+              </Texte>
+            ) : null}
           </View>
-          <Texte variante="titre" couleur={c.rougeTexteFort} style={styles.numero}>
+          <Texte variante={grand ? 'titreEcran' : 'titre'} titre couleur={c.rougeTexteFort} style={[styles.numero, grand && styles.numeroGrand]}>
             {u.numero}
           </Texte>
+          <HiPhone size={20} color={c.rougeTexteFort} />
         </Pressable>
       ))}
     </View>
@@ -77,10 +85,13 @@ export function NumerosUrgence({ urgences, variante = 'liste' }: Props) {
 
 const styles = StyleSheet.create({
   grille: { flexDirection: 'row', gap: 8 },
-  case: { flex: 1, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, borderRadius: rayons.moyen },
+  case: { flex: 1, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, borderRadius: rayons.touche },
   numeroGrille: { fontSize: 20, lineHeight: 24 },
-  liste: { gap: 12 },
-  ligne: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, minHeight: 44, borderRadius: rayons.moyen },
-  textes: { flex: 1, gap: 2 },
-  numero: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontSize: 22 },
+  bloc: { paddingHorizontal: 16, borderRadius: rayons.surface },
+  ligne: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 72, paddingVertical: 10 },
+  ligneGrande: { minHeight: 84 },
+  filet: { position: 'absolute', top: 0, left: 0, right: 0, height: 1 },
+  textes: { flex: 1, minWidth: 0, gap: 1 },
+  numero: { fontVariant: ['tabular-nums'] },
+  numeroGrand: { fontSize: 34, lineHeight: 38 },
 });

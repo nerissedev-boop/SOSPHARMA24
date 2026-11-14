@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   disque: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center' },
   titre: { marginTop: 8 },
   texte: { maxWidth: 310, lineHeight: 21 },
-  frise: { marginTop: 16, padding: 16, borderRadius: rayons.carte },
+  frise: { marginTop: 16, padding: 16, borderRadius: rayons.surface },
   etape: { flexDirection: 'row', gap: 12 },
   colonne: { width: 22, alignItems: 'center' },
   point: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   trait: { width: 2, flex: 1, minHeight: 18 },
   textesEtape: { flex: 1, gap: 2 },
   espaceEtape: { paddingBottom: 12 },
-  mes: { minHeight: 56, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: rayons.moyen },
+  mes: { minHeight: 56, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: rayons.touche },
   pastille: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   pied: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28, gap: 10 },
 });

@@ -7,13 +7,15 @@ type DonneesDetail = Pick<PharmacieResume, 'commune' | 'statut' | 'h24' | 'ferme
 /**
  * 2e ligne d'une pharmacie de garde (maquette « cartes arrondies ») : sa commune, et son statut
  * seulement s'il diffère de « Ouverte toute la nuit » (« Cocody · ouverte jusqu'à 02:00 »).
- * `restreinte` : la garde s'arrête avant le matin (ligne en ocre).
+ * `restreinte` : la garde s'arrête avant le matin ; `restriction` le dit en minuscules (« ouverte
+ * jusqu'à 02:00 »), seule mention en ocre de la ligne (refonte v2).
  */
-export function detailGarde(p: DonneesDetail, fuseau: string, maintenant: Date = new Date()): { texte: string; restreinte: boolean } {
+export function detailGarde(p: DonneesDetail, fuseau: string, maintenant: Date = new Date()): { texte: string; restreinte: boolean; restriction: string | null } {
   const statut = libelleStatut(p, fuseau, 'garde', maintenant);
   const restreinte = statut !== t('statut.gardeTouteNuit');
-  if (!p.commune) return { texte: statut, restreinte };
-  return { texte: restreinte ? `${p.commune} · ${minusculeInitiale(statut)}` : p.commune, restreinte };
+  const restriction = restreinte ? minusculeInitiale(statut) : null;
+  if (!p.commune) return { texte: statut, restreinte, restriction };
+  return { texte: restriction ? `${p.commune} · ${restriction}` : p.commune, restreinte, restriction };
 }
 
 type DonneesPartage = {

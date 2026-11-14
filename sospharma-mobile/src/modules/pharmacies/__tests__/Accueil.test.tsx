@@ -19,11 +19,21 @@ describe('Accueil', () => {
     useSession.setState({ position: { latitude: 5.36, longitude: -3.98 } });
   });
 
-  it('jour : la plus proche sous le bandeau, puis 5 lignes au plus', async () => {
+  it('jour : la plus proche sous le bandeau, la recherche juste dessous, puis 5 lignes au plus', async () => {
     await rendre(<Accueil />);
     expect(await screen.findByTestId('bloc-plus-proche')).toBeTruthy();
     expect(screen.getAllByTestId('bloc-plus-proche')).toHaveLength(1);
+    expect(screen.getByTestId('champ-recherche-accueil')).toBeTruthy();
     expect(screen.getAllByTestId(/^ligne-ph_[a-z0-9]+$/)).toHaveLength(5);
+  });
+
+  it('jour : le titre donne l’état du moment, sans salutation ni raccourci vers la garde', async () => {
+    await rendre(<Accueil />);
+    expect(await screen.findByText(/pharmacies? ouvertes? autour de vous/)).toBeTruthy();
+    expect(screen.queryByText(/Bonjour|Bonsoir/)).toBeNull();
+    expect(screen.queryByTestId('carte-gardes')).toBeNull();
+    expect(screen.getByText('Y aller')).toBeTruthy();
+    expect(screen.queryByText('Itinéraire')).toBeNull();
   });
 
   it.each([
@@ -39,9 +49,12 @@ describe('Accueil', () => {
     expect(screen.getByTestId('bloc-plus-proche')).toBeTruthy();
   });
 
-  it('nuit : un seul bloc « La plus proche de garde »', async () => {
+  it('nuit : l’heure en titre, une seule carte « la plus proche » de garde, le conseil au-dessus d’Appeler', async () => {
     await rendre(<Accueil />, { theme: 'nuit' });
-    expect(await screen.findByText('La plus proche de garde')).toBeTruthy();
+    expect(await screen.findByTestId('bloc-plus-proche-statut-24', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getAllByTestId('bloc-plus-proche')).toHaveLength(1);
+    expect(screen.getByText(/^Il est .*Les pharmacies de garde passent en premier/)).toBeTruthy();
+    expect(screen.getByTestId('conseil-garde')).toBeTruthy();
+    expect(screen.queryByTestId('champ-recherche-accueil')).toBeNull();
   });
 });

@@ -21,17 +21,16 @@ describe('Écran Profil (piste A)', () => {
     usePreferences.setState({ profil: { prenom: '', nom: '', telephone: '' }, zone: null, mesAssurances: [], modeNuit: 'auto' });
   });
 
-  it('garde toutes les lignes et fonctions du Profil', async () => {
+  it('garde toutes les lignes et fonctions du Profil, sans bandeau ni avatar', async () => {
     await rendre(<Profil />);
     for (const texte of [
-      'Ajouter votre nom',
-      'Reste sur votre téléphone',
+      'Profil',
+      'Mes pharmacies',
+      'Mes assurances',
       'Modifier',
-      'Pharmacies favorites',
       'Préférences',
       'Commune par défaut',
       'Pays',
-      'Mes assurances',
       'Langue',
       'Mode nuit',
       'Nouveau tour de garde',
@@ -45,34 +44,25 @@ describe('Écran Profil (piste A)', () => {
       expect(await screen.findByText(texte)).toBeTruthy();
     }
     expect(screen.getByTestId('case-notification-garde')).toBeTruthy();
+    expect(screen.queryByTestId('bandeau-profil')).toBeNull();
+    expect(screen.queryByTestId('avatar-profil')).toBeNull();
   });
 
-  it('bandeau vert profond (jetons jour et nuit), carte des favoris posée dessus', async () => {
+  it('groupes à plat, aux couleurs des jetons jour et nuit', async () => {
     const { unmount } = await rendre(<Profil />);
-    expect(await screen.findByTestId('bandeau-profil')).toHaveStyle({ backgroundColor: jetonsJour.vertProfond });
-    expect(screen.getByTestId('bouton-modifier-profil')).toHaveStyle({ backgroundColor: jetonsJour.profilBandeauBouton });
-    expect(screen.getByTestId('carte-favoris')).toHaveStyle({ backgroundColor: jetonsJour.carte, marginTop: -40 });
+    expect(await screen.findByTestId('carte-favoris')).toHaveStyle({ backgroundColor: jetonsJour.carte });
+    expect(screen.getByTestId('carte-favoris').props.style).not.toEqual(expect.arrayContaining([expect.objectContaining({ elevation: expect.any(Number) })]));
     await unmount();
     await rendre(<Profil />, { theme: 'nuit' });
-    expect(await screen.findByTestId('bandeau-profil')).toHaveStyle({ backgroundColor: jetonsNuit.vertProfond });
-    expect(screen.getByTestId('carte-favoris')).toHaveStyle({ backgroundColor: jetonsNuit.carte });
+    expect(await screen.findByTestId('carte-favoris')).toHaveStyle({ backgroundColor: jetonsNuit.carte });
   });
 
-  it('bandeau : nom, initiales et téléphone enregistrés', async () => {
-    usePreferences.setState({ profil: { prenom: 'Awa', nom: 'Koné', telephone: '07 08 09 10 11' } });
+  it('mes assurances : leurs noms en puces, « Modifier » ouvre le choix', async () => {
+    usePreferences.setState({ mesAssurances: [{ slug: 'cmu', nom: 'CMU' }] });
     await rendre(<Profil />);
-    expect(await screen.findByText('Awa Koné')).toBeTruthy();
-    // Initiales décoratives : visibles, mais masquées au lecteur d'écran (le nom est lu juste à côté).
-    expect(screen.queryByText('AK')).toBeNull();
-    expect(screen.getByText('AK', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByText('07 08 09 10 11')).toBeTruthy();
-    expect(screen.queryByText('Ajouter votre nom')).toBeNull();
-  });
-
-  it('« Modifier » ouvre l’édition du profil', async () => {
-    await rendre(<Profil />);
-    await fireEvent.press(await screen.findByTestId('bouton-modifier-profil'));
-    expect(await screen.findByText('Votre profil')).toBeTruthy();
+    expect(await screen.findByText('CMU')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('ligne-mes-assurances'));
+    expect(mockRouteur.push).toHaveBeenLastCalledWith({ pathname: '/assurances', params: { contexte: 'profil' } });
   });
 
   it('affiche les favoris de l’appareil et ouvre leur fiche', async () => {
@@ -117,10 +107,14 @@ describe('Écran Profil (piste A)', () => {
     expect(mockRouteur.push).toHaveBeenLastCalledWith('/agent/connexion');
   });
 
-  it('mode nuit : la ligne passe d’automatique à activé', async () => {
+  it('mode nuit : les trois choix sont visibles, un appui choisit', async () => {
     await rendre(<Profil />);
-    expect(await screen.findByText('Automatique')).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('ligne-mode-nuit'));
+    expect(await screen.findByText('Auto')).toBeTruthy();
+    expect(screen.getByText('Jour')).toBeTruthy();
+    expect(screen.getByTestId('mode-auto').props.accessibilityState).toEqual({ selected: true });
+    await fireEvent.press(screen.getByTestId('mode-nuit'));
     expect(usePreferences.getState().modeNuit).toBe('nuit');
+    await fireEvent.press(screen.getByTestId('mode-jour'));
+    expect(usePreferences.getState().modeNuit).toBe('jour');
   });
 });

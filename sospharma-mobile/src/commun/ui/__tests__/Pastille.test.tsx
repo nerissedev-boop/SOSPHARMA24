@@ -35,52 +35,37 @@ describe('PastilleStatut', () => {
 });
 
 describe('LignePharmacie', () => {
-  it('affiche nom, statut coloré, distance et minutes à pied', async () => {
+  it('affiche nom, état coloré, distance et minutes à pied (variante garde)', async () => {
     await rendre(
-      <LignePharmacie nom="Pharmacie de la Paix" statut="garde" libelleStatut="De garde cette nuit" distanceM={700} marcheMin={9} />,
+      <LignePharmacie variante="garde" nom="Pharmacie de la Paix" statut="garde" libelleStatut="De garde cette nuit" distanceM={700} marcheMin={9} commune="Cocody" />,
     );
     expect(screen.getByText('Pharmacie de la Paix')).toBeTruthy();
     expect(screen.getByText('0,7 km')).toBeTruthy();
-    expect(screen.getByText('9 min')).toBeTruthy();
-    const statut = screen.getByText('De garde cette nuit');
-    expect(StyleSheet.flatten(statut.props.style).color).toBe(jetonsJour.rougeTexteFort);
+    expect(screen.getByText(/9 min · Cocody/)).toBeTruthy();
   });
 
-  it('statut fermé en gris', async () => {
-    await rendre(
-      <LignePharmacie nom="Grande Pharmacie" statut="fermee" libelleStatut="Fermée, ouvre à 07:00" distanceM={1180} marcheMin={15} />,
-    );
-    expect(StyleSheet.flatten(screen.getByText('Fermée, ouvre à 07:00').props.style).color).toBe(jetonsJour.texteTertiaire);
+  it('état coloré dans la variante dense : rouge pour la garde, gris pour la fermée', async () => {
+    await rendre(<LignePharmacie nom="Pharmacie de la Paix" statut="garde" libelleStatut="De garde cette nuit" distanceM={700} marcheMin={9} />);
+    expect(StyleSheet.flatten(screen.getByText('De garde cette nuit').props.style).color).toBe(jetonsJour.rougeTexteFort);
+    await rendre(<LignePharmacie nom="Grande Pharmacie" statut="fermee" libelleStatut="Fermée, ouvre à 07:00" distanceM={1180} marcheMin={15} />);
+    expect(StyleSheet.flatten(screen.getByText('Fermée, ouvre à 07:00').props.style).color).toBe(jetonsJour.texteSecondaire);
     expect(screen.getByText('1,2 km')).toBeTruthy();
   });
 
-  it('bouton Appeler accessible (rôle, libellé, cible 44 px) et actions', async () => {
+  it('appui sur la ligne : la fiche ; appui sur le rond : l’appel', async () => {
     const appeler = jest.fn();
     const ouvrir = jest.fn();
     await rendre(
-      <LignePharmacie
-        nom="Pharmacie du Centre"
-        statut="ouverte"
-        libelleStatut="Ouverte 24h/24"
-        distanceM={440}
-        marcheMin={6}
-        onPress={ouvrir}
-        onAppeler={appeler}
-      />,
+      <LignePharmacie nom="Pharmacie du Centre" statut="ouverte" libelleStatut="Ouverte 24h/24" distanceM={440} marcheMin={6} onPress={ouvrir} onAppeler={appeler} />,
     );
-    const bouton = screen.getByRole('button', { name: 'Appeler Pharmacie du Centre' });
-    const style = StyleSheet.flatten(
-      typeof bouton.props.style === 'function' ? bouton.props.style({ pressed: false }) : bouton.props.style,
-    );
-    expect(style.width).toBeGreaterThanOrEqual(44);
-    await fireEvent.press(bouton);
+    await fireEvent.press(screen.getByRole('button', { name: 'Appeler Pharmacie du Centre' }));
     expect(appeler).toHaveBeenCalledTimes(1);
     await fireEvent.press(screen.getByRole('button', { name: 'Pharmacie du Centre, Ouverte 24h/24, 0,4 km' }));
     expect(ouvrir).toHaveBeenCalledTimes(1);
   });
 
-  it('variante favori : pas de bouton d\'appel', async () => {
-    await rendre(<LignePharmacie variante="favori" nom="Pharmacie du Centre" statut="ouverte" libelleStatut="Ouverte 24h/24" distanceM={440} marcheMin={6} />);
+  it('sans numéro : pas de bouton d’appel', async () => {
+    await rendre(<LignePharmacie nom="Pharmacie du Centre" statut="ouverte" libelleStatut="Ouverte 24h/24" distanceM={440} marcheMin={6} />);
     expect(screen.queryByRole('button', { name: /Appeler/ })).toBeNull();
   });
 });

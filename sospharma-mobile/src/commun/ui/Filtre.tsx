@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { vibrationLegere } from '../lib/haptique';
 import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
+import { Badge24 } from './RepereStatut';
 import { Texte } from './Texte';
 
 type Props = {
@@ -21,7 +22,7 @@ type Props = {
   testID?: string;
 };
 
-/** Puce de filtre : pilule de 34 px, sans bordure (charte « cartes », 28 oct.). */
+/** Puce de filtre : 40 dp de haut (48 de zone tactile), rayon de 12, sans bordure. */
 export function Filtre({ libelle, selectionne, onPress, ton = 'neutre', point, badge24, icone, paddingHorizontal = 14, testID }: Props) {
   const { couleurs: c } = useTheme();
   const fond = selectionne ? (ton === 'garde' ? c.rougeProfond : c.filtreSelection) : c.filtreFond;
@@ -36,7 +37,7 @@ export function Filtre({ libelle, selectionne, onPress, ton = 'neutre', point, b
       accessibilityRole="button"
       accessibilityLabel={libelle}
       accessibilityState={{ selected: selectionne }}
-      hitSlop={{ top: 5, bottom: 5 }}
+      hitSlop={{ top: 4, bottom: 4 }}
       style={({ pressed }) => [styles.puce, { backgroundColor: fond, paddingHorizontal, opacity: pressed ? 0.85 : 1 }]}
     >
       {point ? <View style={[styles.point, { backgroundColor: point === 'vert' ? c.vert : c.rouge }]} /> : null}
@@ -44,20 +45,13 @@ export function Filtre({ libelle, selectionne, onPress, ton = 'neutre', point, b
       <Texte variante={selectionne && ton === 'garde' ? 'boutonPetit' : 'petitFort'} couleur={texte} style={styles.texte}>
         {libelle}
       </Texte>
-      {badge24 ? (
-        <View style={[styles.badge, { backgroundColor: c.rouge }]}>
-          <Texte variante="miniFort" couleur={c.blanc}>
-            24
-          </Texte>
-        </View>
-      ) : null}
+      {badge24 ? <Badge24 /> : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  puce: { height: 34, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: rayons.pilule },
+  puce: { height: 40, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: rayons.touche },
   texte: { fontSize: 13 },
   point: { width: 10, height: 10, borderRadius: 5 },
-  badge: { paddingHorizontal: 5, paddingVertical: 1, borderRadius: rayons.pilule },
 });

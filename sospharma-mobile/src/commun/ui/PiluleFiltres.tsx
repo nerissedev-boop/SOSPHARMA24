@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent, type S
 import Animated, { Easing, ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { vibrationLegere } from '../lib/haptique';
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { DUREES } from './animations';
 import { Texte } from './Texte';
@@ -23,7 +24,7 @@ type Props<C extends string> = {
   testID?: string;
 };
 
-const HAUTEUR = 36;
+const HAUTEUR = 40;
 const ANIMATION = { duration: DUREES.glissement, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System };
 
 type Place = { x: number; largeur: number };
@@ -181,7 +182,7 @@ const styles = StyleSheet.create({
   defilement: { flexGrow: 0 },
   contenu: { paddingHorizontal: 16 },
   rangee: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  couche: { position: 'absolute', top: 0, left: 0, height: HAUTEUR, borderRadius: 999 },
-  pilule: { height: HAUTEUR, paddingHorizontal: 16, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  couche: { position: 'absolute', top: 0, left: 0, height: HAUTEUR, borderRadius: rayons.touche },
+  pilule: { height: HAUTEUR, paddingHorizontal: 16, borderRadius: rayons.touche, alignItems: 'center', justifyContent: 'center' },
   libelleSelection: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
 });

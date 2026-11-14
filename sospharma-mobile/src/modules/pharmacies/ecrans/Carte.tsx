@@ -4,8 +4,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PharmacieResume } from '@/commun/api';
-import { dateCourte, distanceKm, distanceNombre, localeActive, positionDe, t, useEnLigne, usePreferences } from '@/commun/lib';
-import { ombres, rayons, useTheme } from '@/commun/theme';
+import { distanceKm, distanceNombre, positionDe, t, useEnLigne, usePreferences } from '@/commun/lib';
+import { estInactive } from '@/commun/regles';
+import { CIBLE_TACTILE, espacements, ombres, rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
   BandeauHorsConnexion,
@@ -14,14 +15,11 @@ import {
   BoutonIcone,
   ChampRecherche,
   Ecran,
-  EnTete,
   Filtre,
   HiMedicalSearchOutline,
   IconeCalques,
-  IconeEtoile,
   IconeFermer,
   IconeFiltres,
-  IconeLune,
   IconeViseur,
   LignePharmacie,
   ChargementCroix,
@@ -39,18 +37,21 @@ import {
   type RefCarte,
   type VueCarte,
 } from '@/commun/ui/carte';
-import { useTourEnCours } from '@/modules/gardes';
 import { useCompteurs, usePaysCourant, useVilles, useZoneCourante } from '@/modules/territoire';
 
 import { AucunResultat } from '../composants/AucunResultat';
 import { FeuillePharmacieCarte } from '../composants/FeuillePharmacieCarte';
 import { useActionsPharmacie } from '../hooks/useActions';
-import { useLibelleStatut, usePharmacie, usePharmaciesCadre, usePharmaciesProches, useRecherche } from '../hooks/usePharmacies';
+import { useLibelleStatut, usePharmaciesCadre, usePharmaciesProches, useRecherche, useTonStatut } from '../hooks/usePharmacies';
 
 /** En dessous de ce zoom, la carte bascule sur les compteurs par commune (maquette 11). */
 const ZOOM_COMMUNES = 12.5;
 
-/** 04 Carte, 11 Carte dézoomée, 21 Carte nuit. */
+/**
+ * 04 Carte, 11 Carte dézoomée, 21 Carte nuit (refonte v2) : l'en-tête se réduit à la recherche et
+ * aux filtres, et la plus proche est choisie dès l'ouverture. La carte donne le même signal que
+ * l'Accueil sans qu'on cherche un marqueur ; toucher un autre marqueur la remplace.
+ */
 function Carte() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -81,8 +82,10 @@ function Carte() {
   const villes = useVilles(paysCode);
   const ville = villes.data?.find((v) => v.id === villeId);
   const libelleStatut = useLibelleStatut();
+  const tonStatut = useTonStatut();
   const actions = useActionsPharmacie();
-  const { dateEnregistree } = useTourEnCours();
+  // L'aperçu fermé à la main (appui sur le fond de carte) ne revient pas tout seul sur la plus proche.
+  const [apercuFerme, setApercuFerme] = useState(false);
 
   const modeCommunes = vue !== null && vue.zoom < ZOOM_COMMUNES;
   const proches = usePharmaciesProches();
@@ -99,10 +102,12 @@ function Carte() {
     }),
     [cadre.liste, proches.liste],
   );
+  // La plus proche ouverte ou de garde, située : choisie d'office à l'ouverture.
+  const plusProche = useMemo(() => (proches.liste ?? []).find((p) => !estInactive(p.statut) && positionDe(p) !== null), [proches.liste]);
   // Pharmacie touchée : rafraîchie depuis les points chargés, gardée si la carte bouge et qu'elle sort du cadre.
   const choisie = useMemo<PharmacieResume | undefined>(
-    () => (selection ? (points.find((p) => p.id === selection.id) ?? selection) : undefined),
-    [points, selection],
+    () => (selection ? (points.find((p) => p.id === selection.id) ?? selection) : apercuFerme ? undefined : plusProche),
+    [points, selection, apercuFerme, plusProche],
   );
   // Sur certains téléphones, toucher un marqueur déclenche aussi l'appui sur le fond de carte.
   // On ignore donc l'appui sur le fond qui suit de près un toucher de marqueur.
@@ -114,12 +119,13 @@ function Carte() {
     }, 400);
     setSelection(p);
   };
+  const fermer = useCallback(() => {
+    setSelection(null);
+    setApercuFerme(true);
+  }, []);
   const fermerApercu = () => {
-    if (!marqueurVientDEtreTouche.current) setSelection(null);
+    if (!marqueurVientDEtreTouche.current) fermer();
   };
-  const fermer = useCallback(() => setSelection(null), []);
-  const ficheChoisie = usePharmacie(choisie?.id ?? '', Boolean(choisie) && !modeCommunes);
-  const noteChoisie = ficheChoisie.fiche?.id === choisie?.id ? ficheChoisie.fiche?.note : null;
   const communeResumee = compteurs.data?.find((x) => x.zone_id === zone?.zoneId) ?? compteurs.data?.[0];
   const sansCarte = !carteDisponible || !enLigne;
   // Filtre changé ou carte déplacée : les anciens points restent affichés le temps de la requête.
@@ -129,73 +135,43 @@ function Carte() {
   const chipsOrdre = estNuit ? (['toutes', 'garde', 'ouvertes'] as const) : (['toutes', 'ouvertes', 'garde'] as const);
   const chips = (
     <View style={styles.filtres}>
-      {chipsOrdre.map((cle) => {
-        if (cle === 'toutes') {
-          return (
-            <Filtre
-              key={cle}
-              paddingHorizontal={12}
-              libelle={!modeCommunes && !estNuit ? t('carte.toutesN', { count: toutes.nombre }) : t('accueil.toutes')}
-              selectionne={filtreRapide === 'toutes'}
-              onPress={() => definirFiltreRapide('toutes')}
-            />
-          );
-        }
-        if (cle === 'ouvertes') {
-          return (
-            <Filtre
-              key={cle}
-              paddingHorizontal={12}
-              libelle={t('accueil.ouvertes')}
-              point="vert"
-              selectionne={filtreRapide === 'ouvertes'}
-              onPress={() => definirFiltreRapide('ouvertes')}
-            />
-          );
-        }
-        return (
+      {chipsOrdre.map((cle) =>
+        cle === 'garde' ? (
           <Filtre
             key={cle}
             paddingHorizontal={12}
             libelle={t('accueil.deGarde')}
             ton="garde"
-            point={estNuit ? undefined : 'rouge'}
-            icone={estNuit ? <IconeLune size={14} color={filtreRapide === 'garde' ? c.blanc : c.texte} plein /> : undefined}
+            badge24={filtreRapide !== 'garde'}
             selectionne={filtreRapide === 'garde'}
             onPress={() => definirFiltreRapide('garde')}
           />
-        );
-      })}
+        ) : (
+          <Filtre
+            key={cle}
+            paddingHorizontal={12}
+            libelle={cle === 'ouvertes' ? t('accueil.ouvertes') : modeCommunes ? t('accueil.toutes') : t('carte.toutesN', { count: toutes.nombre })}
+            selectionne={filtreRapide === cle}
+            onPress={() => definirFiltreRapide(cle)}
+          />
+        ),
+      )}
     </View>
   );
 
+  // En-tête posé sur le plan : la recherche suffit (ni titre ni zone), puis les filtres.
   const enTete = (
     <View
       onLayout={(e) => setHauteurEnTete(e.nativeEvent.layout.height)}
-      style={[
-        styles.enTete,
-        { backgroundColor: c.enTeteCarte, paddingTop: insets.top + 16, gap: modeCommunes ? 10 : 12 },
-        !estNuit && ombres.enTete,
-      ]}
+      style={[styles.enTete, { backgroundColor: c.enTeteCarte, paddingTop: insets.top + 12 }, !estNuit && ombres.enTete]}
     >
-      <EnTete
-        titre={t('carte.titre')}
-        onRetour={() => allerOnglet('accueil')}
-        logo={false}
-        varianteTitre="titreBarre"
-        droite={
-          modeCommunes ? undefined : (
-            <BarreZone variante="compacte" libelle={zone?.nom ?? t('commun.aucuneZone')} onChanger={() => router.push('/zone')} />
-          )
-        }
-      />
       {modeCommunes ? (
         <BarreZone
           variante="bandeau"
           libelle={t('carte.toutesCommunes', { ville: ville?.nom ?? zone?.villeNom ?? '' })}
           onChanger={() => router.push('/zone')}
         />
-      ) : !estNuit ? (
+      ) : (
         <View style={styles.ligneRecherche}>
           <View style={styles.flex}>
             <ChampRecherche
@@ -215,7 +191,7 @@ function Carte() {
             <BoutonIcone
               accessibilityLabel={t('commun.fermer')}
               fond={c.surface}
-              taille={46}
+              style={styles.boutonCarre}
               onPress={() => {
                 setSaisie('');
                 setRecherche('');
@@ -224,12 +200,12 @@ function Carte() {
               <IconeFermer size={20} color={c.texte} />
             </BoutonIcone>
           ) : (
-            <BoutonIcone accessibilityLabel={t('carte.filtres')} fond={c.surface} taille={46} onPress={() => router.push('/filtres')} testID="bouton-filtres">
+            <BoutonIcone accessibilityLabel={t('carte.filtres')} fond={c.surface} style={styles.boutonCarre} onPress={() => router.push('/filtres')} testID="bouton-filtres">
               <IconeFiltres size={20} color={c.texte} />
             </BoutonIcone>
           )}
         </View>
-      ) : null}
+      )}
       {chips}
       {chargementPoints && !sansCarte ? (
         <View
@@ -245,32 +221,40 @@ function Carte() {
     </View>
   );
 
+  /** Résultats ou liste de remplacement : une liste imprimée, comme sur l'Accueil. */
+  const listePlate = (pharmacies: PharmacieResume[]) =>
+    pharmacies.map((p, i) => (
+      <LignePharmacie
+        key={p.id}
+        testID={`ligne-${p.id}`}
+        premiere={i === 0}
+        derniere={i === pharmacies.length - 1}
+        nom={p.nom}
+        statut={p.statut}
+        libelleStatut={libelleStatut(p)}
+        ton={tonStatut(p)}
+        commune={p.commune}
+        positionAConfirmer={p.latitude === null}
+        distanceM={p.distance_m}
+        marcheMin={p.marche_min}
+        onPress={() => actions.ouvrir(p)}
+        onAppeler={p.telephone ? () => actions.appeler(p) : undefined}
+      />
+    ));
+
   // Liste à la place de la carte (web ou hors connexion : pas de fonds de carte hors ligne en V1).
   if (sansCarte) {
     return (
       <Ecran hautSur={false} testID="ecran-carte">
-        {enTete}
-        <BandeauHorsConnexion dateGarde={dateEnregistree} />
-        <ScrollView contentContainerStyle={styles.listeRemplacement}>
-          <Texte variante="libelle" couleur={c.texteSecondaire}>
+        <ScrollView contentContainerStyle={[styles.listeRemplacement, { paddingTop: hauteurEnTete + 12 }]}>
+          <BandeauHorsConnexion misAJourLe={proches.dataUpdatedAt} fuseau={fuseau} />
+          <Texte variante="libelle" couleur={c.texteSecondaire} style={styles.remplacement}>
             {enLigne ? t('carte.nonDisponible') : t('carte.horsLigne')}
           </Texte>
           {!recherche && procheEnCours ? <ChargementCroix style={styles.chargementListe} testID="chargement-filtre" /> : null}
-          {(recherche ? (resultats.liste ?? []) : procheEnCours ? [] : (proches.liste ?? [])).map((p) => (
-            <LignePharmacie
-              key={p.id}
-              nom={p.nom}
-              statut={p.statut}
-              libelleStatut={libelleStatut(p)}
-              photoUrl={p.photo_url ?? null}
-                positionAConfirmer={p.latitude === null}
-              distanceM={p.distance_m}
-              marcheMin={p.marche_min}
-              onPress={() => actions.ouvrir(p)}
-              onAppeler={p.telephone ? () => actions.appeler(p) : undefined}
-            />
-          ))}
+          {listePlate(recherche ? (resultats.liste ?? []) : procheEnCours ? [] : (proches.liste ?? []))}
         </ScrollView>
+        {enTete}
       </Ecran>
     );
   }
@@ -355,20 +339,7 @@ function Carte() {
       {recherche ? (
         <View style={[styles.resultats, { top: hauteurEnTete, backgroundColor: c.fond }]}>
           <ScrollView contentContainerStyle={styles.listeResultats} keyboardShouldPersistTaps="handled">
-            {(resultats.liste ?? []).map((p) => (
-              <LignePharmacie
-                key={p.id}
-                nom={p.nom}
-                statut={p.statut}
-                libelleStatut={libelleStatut(p)}
-                photoUrl={p.photo_url ?? null}
-                positionAConfirmer={p.latitude === null}
-                distanceM={p.distance_m}
-                marcheMin={p.marche_min}
-                onPress={() => actions.ouvrir(p)}
-                onAppeler={p.telephone ? () => actions.appeler(p) : undefined}
-              />
-            ))}
+            {listePlate(resultats.liste ?? [])}
             {resultats.isSuccess && (resultats.liste ?? []).length === 0 ? (
               <AucunResultat onActualiser={() => void resultats.refetch()} />
             ) : null}
@@ -408,41 +379,22 @@ function Carte() {
           <Texte variante="petit" couleur={c.texteSecondaire}>
             {t('carte.zoomez')}
           </Texte>
-          <Bouton libelle={t('carte.voirGardes')} icone="lune" hauteur={50} onPress={() => allerOnglet('garde')} />
+          <Bouton libelle={t('carte.voirGardes')} icone="lune" onPress={() => allerOnglet('garde')} />
         </View>
       ) : null}
 
       <FeuillePharmacieCarte
         pharmacie={!recherche && !modeCommunes ? (choisie ?? null) : null}
-        libelleStatut={(p) => libelleStatut(p, estNuit ? 'carte' : undefined)}
-        complement={
-          estNuit && choisie?.garde?.confirmee_le ? (
-            <Texte variante="libelle" couleur={c.texteSecondaire}>
-              {t('statut.confirmeeLe', { date: dateCourte(choisie.garde.confirmee_le, fuseau) })}
-            </Texte>
-          ) : !estNuit && noteChoisie ? (
-            <NoteAvis note={noteChoisie} />
-          ) : null
-        }
+        plusProche={choisie !== undefined && choisie.id === plusProche?.id}
+        libelleStatut={(p) => libelleStatut(p, 'carte')}
+        tonStatut={tonStatut}
         onOuvrir={actions.ouvrir}
         onAppeler={actions.appeler}
-        onItineraire={actions.itineraire}
+        onYAller={actions.itineraire}
         onFermer={fermer}
         onHauteur={setHauteurFiche}
       />
     </Ecran>
-  );
-}
-
-function NoteAvis({ note }: { note: { moyenne: number; nombre: number } }) {
-  const { couleurs: c } = useTheme();
-  return (
-    <View style={styles.note}>
-      <IconeEtoile size={14} color={c.etoile} />
-      <Texte variante="libelle" couleur={c.texteSecondaire}>
-        <Texte variante="libelleFort">{note.moyenne.toLocaleString(localeActive())}</Texte> {t('carte.avis', { count: note.nombre })}
-      </Texte>
-    </View>
   );
 }
 
@@ -453,14 +405,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
-    paddingHorizontal: 20,
+    paddingHorizontal: espacements.gouttiere,
     paddingBottom: 12,
+    gap: 10,
     zIndex: 2,
-    borderBottomLeftRadius: rayons.feuille,
-    borderBottomRightRadius: rayons.feuille,
+    borderBottomLeftRadius: rayons.surface,
+    borderBottomRightRadius: rayons.surface,
   },
   ligneRecherche: { flexDirection: 'row', gap: 10 },
-  filtres: { flexDirection: 'row', gap: 8 },
+  boutonCarre: { width: CIBLE_TACTILE, height: CIBLE_TACTILE, borderRadius: rayons.touche },
+  filtres: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chargementListe: { height: 220 },
   chargement: {
     alignSelf: 'center',
@@ -469,14 +423,14 @@ const styles = StyleSheet.create({
     gap: 8,
     height: 32,
     paddingHorizontal: 14,
-    borderRadius: rayons.pilule,
+    borderRadius: rayons.rond,
   },
   boutonsCarte: { position: 'absolute', right: 16, gap: 10 },
   resultats: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  listeResultats: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24, gap: 8 },
-  listeRemplacement: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24, gap: 8 },
-  fiche: { position: 'absolute', left: 12, right: 12, bottom: 20, paddingTop: 16, paddingHorizontal: 18, paddingBottom: 18, gap: 14, borderRadius: rayons.grandeCarte },
-  note: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  listeResultats: { paddingHorizontal: espacements.gouttiere, paddingTop: 12, paddingBottom: 24 },
+  listeRemplacement: { paddingHorizontal: espacements.gouttiere, paddingBottom: 24 },
+  remplacement: { marginTop: 12, marginBottom: 8, paddingHorizontal: 4 },
+  fiche: { position: 'absolute', left: 12, right: 12, bottom: 20, paddingTop: 16, paddingHorizontal: 18, paddingBottom: 18, gap: 14, borderRadius: rayons.surface },
   legende: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   elementLegende: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pointLegende: { width: 16, height: 16 },

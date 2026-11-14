@@ -22,14 +22,14 @@ type Props = {
   /**
    * Icône d'action : un nom du jeu commun (`'envoyer'`, `'valider'`…) donne l'icône au trait
    * de la charte (20 px, couleur du texte, écart 10 px). Un élément React reste possible pour
-   * les petits boutons colorés des maquettes (Appeler, Itinéraire), avec un écart de 8 px.
+   * les petits boutons colorés des maquettes (Appeler, Y aller), avec un écart de 8 px.
    */
   icone?: NomIcone | ReactNode;
   /** Icône à droite du libellé (par défaut pour « continuer » et « se connecter »). */
   iconeADroite?: boolean;
   /**
    * Icône au-dessus du libellé : pour plusieurs boutons étroits côte à côte (Appeler,
-   * Itinéraire, WhatsApp sur la carte), où le libellé ne tient pas à côté de l'icône.
+   * Y aller, WhatsApp sur la carte), où le libellé ne tient pas à côté de l'icône.
    */
   empile?: boolean;
   tailleIcone?: number;
@@ -44,9 +44,9 @@ type Props = {
 };
 
 /**
- * Bouton de la charte : arrondi de 14 (charte « cartes », 28 oct.), sans bordure.
+ * Bouton de la charte : arrondi de 12 (refonte v2), sans bordure.
  * principal = vert plein (actions) ; secondaire = gris ; clair = vert clair ;
- * blanc = fond blanc et texte vert (dans les blocs « la plus proche ») ; lien = texte vert.
+ * blanc = fond vert pâle et texte vert, clair la nuit (Y aller, partout) ; lien = texte vert.
  * Tout bouton d'action porte une icône au trait à gauche du libellé (charte, 21 oct.) ;
  * les liens texte (« Mot de passe oublié », « Modifier », « Quitter ») restent sans icône.
  */
@@ -135,7 +135,7 @@ export function Bouton({
 }
 
 const styles = StyleSheet.create({
-  base: { flexDirection: 'row', alignItems: 'center', borderRadius: rayons.moyen },
+  base: { flexDirection: 'row', alignItems: 'center', borderRadius: rayons.touche },
   empile: { flexDirection: 'column', paddingVertical: 8 },
   icone: { alignItems: 'center', justifyContent: 'center' },
   libelle: { flexShrink: 1 },

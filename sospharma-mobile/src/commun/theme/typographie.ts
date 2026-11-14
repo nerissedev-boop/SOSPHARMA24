@@ -61,6 +61,10 @@ export function policeTitre(graisse: 600 | 700 | 800 = 800): string {
 export const variantes = {
   logotype: { fontFamily: policeTitre(800), fontSize: 52, lineHeight: 52, letterSpacing: -1 },
   titreEcran: { fontFamily: policeTitre(800), fontSize: 24, lineHeight: 30 },
+  /** Nom de la carte « la plus proche » : le plus gros texte de l'écran après le titre du bandeau. */
+  nomPlusProche: { fontFamily: policeTitre(800), fontSize: 25, lineHeight: 29, letterSpacing: -0.3 },
+  /** Titre d'un bandeau qui n'a rien d'autre à dire (Urgence). */
+  titreFort: { fontFamily: policeTitre(800), fontSize: 30, lineHeight: 34 },
   titre: { fontFamily: policeTitre(800), fontSize: 22, lineHeight: 28 },
   titreBarre: { fontFamily: policeTitre(800), fontSize: 19, lineHeight: 24 },
   titreModal: { fontFamily: policeTitre(800), fontSize: 20, lineHeight: 26 },
@@ -76,6 +80,8 @@ export const variantes = {
   texte: { fontFamily: policeTexte(400), fontSize: 14, lineHeight: 20 },
   bouton: { fontFamily: policeTexte(700), fontSize: 15, lineHeight: 20 },
   boutonGrand: { fontFamily: policeTexte(700), fontSize: 16, lineHeight: 21 },
+  /** Appeler et Y aller : 19 px gras, grand texte au sens WCAG (blanc sur le vert : 4,42:1, seuil 3:1). */
+  boutonAction: { fontFamily: policeTexte(800), fontSize: 19, lineHeight: 24 },
   boutonPetit: { fontFamily: policeTexte(700), fontSize: 14, lineHeight: 19 },
   petitFort: { fontFamily: policeTexte(600), fontSize: 13, lineHeight: 18 },
   petit: { fontFamily: policeTexte(400), fontSize: 13, lineHeight: 18 },

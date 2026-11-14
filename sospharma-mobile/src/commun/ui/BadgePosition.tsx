@@ -24,7 +24,7 @@ export function BadgePosition({ petit = false, testID }: { petit?: boolean; test
 }
 
 const styles = StyleSheet.create({
-  badge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderRadius: rayons.pilule, flexShrink: 1 },
+  badge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderRadius: rayons.repere, flexShrink: 1 },
   normal: { height: 22, paddingHorizontal: 8, gap: 4 },
   petit: { height: 20, paddingHorizontal: 7, gap: 3 },
 });

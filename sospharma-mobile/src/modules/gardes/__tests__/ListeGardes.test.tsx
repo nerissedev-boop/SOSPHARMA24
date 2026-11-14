@@ -22,31 +22,33 @@ describe('Écran Pharmacies de garde', () => {
   it('jour : bandeau rouge foncé, nombre de gardes, la plus proche en grande carte', async () => {
     await rendre(<ListeGardes />);
     expect(await screen.findByText('6 pharmacies ouvertes cette nuit')).toBeTruthy();
+    // Période du tour et date de confirmation en tête, dans le bandeau, comme sur la liste de l'Ordre.
     // Le mois du début n'apparaît que si le tour chevauche deux mois (« du sam. 31 oct. au sam. 7 nov. »).
-    expect(screen.getByText(/^Tour de garde du sam\. \d+( \w+\.)? au sam\. \d+ \w+\.$/)).toBeTruthy();
+    expect(screen.getByTestId('garde-periode')).toHaveTextContent(/^Tour du sam\. \d+( \w+\.)? au sam\. \d+ \w+\. · liste confirmée le \d+ \w+\.$/);
     expect(screen.getByTestId('bandeau-garde')).toHaveStyle({ backgroundColor: jetonsJour.bandeauGarde });
-    // Piste A : la carte de la plus proche (sans photo), avec son étiquette, son statut et sa distance.
+    // La même carte que sur l'Accueil : état, nom, distance, repère, puis Appeler et Y aller.
     const carte = within(screen.getByTestId('bloc-garde-plus-proche'));
-    expect(carte.getByText('La plus proche de garde')).toBeTruthy();
+    expect(carte.getByText('La plus proche')).toBeTruthy();
     expect(carte.getByText('Pharmacie de la Paix')).toBeTruthy();
-    expect(carte.getByText('Ouverte toute la nuit')).toBeTruthy();
-    expect(carte.getByText(/^Cocody · 0,7 km · \d+ min à pied$/)).toBeTruthy();
-    expect(screen.queryByTestId('bloc-garde-plus-proche-facade')).toBeNull();
-    // Le conseil suit la carte, puis la liste ; la date de confirmation clôt la liste.
-    expect(screen.getByText('La nuit, appelez avant de vous déplacer.')).toBeTruthy();
+    expect(carte.getByText('De garde, ouverte toute la nuit')).toBeTruthy();
+    expect(screen.getByTestId('bloc-garde-plus-proche-details')).toHaveTextContent(/^0,7 km · \d+ min à pied$/);
+    expect(screen.getByTestId('bloc-garde-plus-proche-repere')).toHaveTextContent(/Cocody$/);
+    // Le conseil, en texte simple, juste au-dessus d'Appeler ; puis la liste, avec les numéros.
+    expect(carte.getByText('La nuit, appelez avant de vous déplacer.')).toBeTruthy();
     expect(screen.getByText('Pharmacie des Nations')).toBeTruthy();
-    expect(screen.getByText(/^Liste confirmée le /)).toBeTruthy();
+    expect(screen.getAllByTestId(/^garde-ph_\w+-numero$/).length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('garde-confirmee')).toBeNull();
   });
 
-  it('la carte : « Appeler » lance l’appel, « Itinéraire » ouvre l’itinéraire, le reste ouvre la fiche', async () => {
+  it('la carte : « Appeler » lance l’appel, « Y aller » ouvre l’itinéraire, le reste ouvre la fiche', async () => {
     const ouvrirLien = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     await rendre(<ListeGardes />);
     await screen.findByTestId('bloc-garde-plus-proche');
     await fireEvent.press(screen.getByRole('button', { name: 'Appeler Pharmacie de la Paix' }));
     expect(ouvrirLien).toHaveBeenCalledWith('tel:+2250123456789');
-    await fireEvent.press(screen.getByRole('button', { name: 'Itinéraire vers Pharmacie de la Paix' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Aller jusqu’à Pharmacie de la Paix' }));
     expect(mockRouteur.push).toHaveBeenCalledWith({ pathname: '/pharmacie/[id]/itineraire', params: { id: 'ph_0142' } });
-    await fireEvent.press(screen.getByRole('button', { name: /^La plus proche de garde : Pharmacie de la Paix, Ouverte toute la nuit, Cocody, 0,7 km/ }));
+    await fireEvent.press(screen.getByRole('button', { name: /^La plus proche : Pharmacie de la Paix, De garde, ouverte toute la nuit, 0,7 km/ }));
     expect(mockRouteur.push).toHaveBeenCalledWith({ pathname: '/pharmacie/[id]', params: { id: 'ph_0142' } });
     ouvrirLien.mockRestore();
   });
@@ -102,9 +104,9 @@ describe('Écran Pharmacies de garde', () => {
 
   it('nuit : même mise en page que le jour, bandeau plus sombre', async () => {
     await rendre(<ListeGardes />, { theme: 'nuit' });
-    expect(await screen.findByText(/^Liste confirmée le /)).toBeTruthy();
+    expect(await screen.findByTestId('garde-periode')).toHaveTextContent(/liste confirmée le /);
     expect(screen.getByTestId('bandeau-garde')).toHaveStyle({ backgroundColor: jetonsNuit.bandeauGarde });
-    expect(screen.getByText('La plus proche de garde')).toBeTruthy();
+    expect(screen.getByText('La plus proche')).toBeTruthy();
     expect(screen.getByTestId('pastille-zone-garde')).toBeTruthy();
     expect(screen.getByTestId('bouton-partager-gardes')).toBeTruthy();
     expect(screen.getByTestId('conseil-garde')).toBeTruthy();

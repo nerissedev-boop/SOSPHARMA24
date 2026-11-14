@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   statut: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rondStatut: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   tuiles: { flexDirection: 'row', gap: 8 },
-  tuile: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, gap: 2, borderRadius: rayons.moyen },
+  tuile: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, gap: 2, borderRadius: rayons.touche },
 });
 
 export default avecErrorBoundary(Position, 'RelevePosition');

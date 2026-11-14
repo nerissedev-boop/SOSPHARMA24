@@ -50,14 +50,14 @@ describe('2e ligne d’une pharmacie de garde', () => {
   const soir = new Date('2026-10-24T20:00:00Z');
 
   it('toute la nuit : la commune seule', () => {
-    expect(detailGarde(garde(null), ABIDJAN, soir)).toEqual({ texte: 'Cocody', restreinte: false });
+    expect(detailGarde(garde(null), ABIDJAN, soir)).toEqual({ texte: 'Cocody', restreinte: false, restriction: null });
   });
 
   it('garde qui s’arrête avant le matin : commune et statut, en ocre', () => {
-    expect(detailGarde(garde('02:00'), ABIDJAN, soir)).toEqual({ texte: 'Cocody · ouverte jusqu’à 02:00', restreinte: true });
+    expect(detailGarde(garde('02:00'), ABIDJAN, soir)).toEqual({ texte: 'Cocody · ouverte jusqu’à 02:00', restreinte: true, restriction: 'ouverte jusqu’à 02:00' });
   });
 
   it('sans commune : le statut seul', () => {
-    expect(detailGarde({ ...garde(null), commune: '' }, ABIDJAN, soir)).toEqual({ texte: 'Ouverte toute la nuit', restreinte: false });
+    expect(detailGarde({ ...garde(null), commune: '' }, ABIDJAN, soir)).toEqual({ texte: 'Ouverte toute la nuit', restreinte: false, restriction: null });
   });
 });

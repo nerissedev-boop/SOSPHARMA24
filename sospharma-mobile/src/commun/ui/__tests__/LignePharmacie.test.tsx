@@ -1,10 +1,11 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
 import { rendre } from '../../lib/tests/rendu';
 import { jetonsJour, jetonsNuit } from '../../theme/jetons';
+import { ombres } from '../../theme/ombres';
 import { rayons } from '../../theme/rayons';
-import { BlocPlusProche } from '../BlocPlusProche';
+import { CartePlusProche } from '../CartePlusProche';
 import { LignePharmacie } from '../LignePharmacie';
 
 const base = {
@@ -16,129 +17,150 @@ const base = {
   testID: 'l',
 };
 
-describe('Ligne de pharmacie en carte (charte « cartes », 28 oct.)', () => {
-  it('carte blanche arrondie (16) le jour, surface sombre la nuit, sans bordure', async () => {
+const style = (testID: string) => StyleSheet.flatten(screen.getByTestId(testID).props.style);
+
+describe('Ligne de liste imprimée (refonte v2)', () => {
+  it('à plat : surface blanche le jour, sombre la nuit, ni ombre ni bordure', async () => {
     await rendre(<LignePharmacie {...base} />);
-    const style = StyleSheet.flatten(screen.getByTestId('l').props.style);
-    expect(style.borderRadius).toBe(rayons.carte);
-    expect(style.backgroundColor).toBe(jetonsJour.carte);
-    expect(style.borderWidth ?? 0).toBe(0);
+    expect(style('l').backgroundColor).toBe(jetonsJour.carte);
+    expect(style('l').elevation ?? 0).toBe(0);
+    expect(style('l').borderWidth ?? 0).toBe(0);
     await rendre(<LignePharmacie {...base} />, { theme: 'nuit' });
-    expect(StyleSheet.flatten(screen.getByTestId('l').props.style).backgroundColor).toBe(jetonsNuit.carte);
+    expect(style('l').backgroundColor).toBe(jetonsNuit.carte);
   });
 
-  it('sans les nouvelles props : pastille, statut en 2e ligne, marche affichée (rétrocompatible)', async () => {
-    await rendre(<LignePharmacie {...base} distanceM={4200} marcheMin={52} />);
-    expect(screen.getByTestId('pastille-garde', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.queryByTestId('l-photo')).toBeNull();
-    expect(screen.getByText('Ouverte jusqu’à 23:00')).toBeTruthy();
-    expect(screen.getByText('52 min')).toBeTruthy();
-  });
-
-  it('sans photo validée (null) : devanture dessinée à la place de la pastille', async () => {
-    await rendre(<LignePharmacie {...base} photoUrl={null} />);
-    expect(screen.getByTestId('l-facade')).toBeTruthy();
-    expect(screen.queryByTestId('l-photo')).toBeNull();
-    expect(screen.queryByTestId('pastille-garde', { includeHiddenElements: true })).toBeNull();
-  });
-
-  it('photo qui ne charge pas : la devanture dessinée prend sa place ; voile sombre la nuit', async () => {
-    await rendre(<LignePharmacie {...base} photoUrl="https://exemple.test/cassee.jpg" />, { theme: 'nuit' });
-    expect(screen.getByTestId('l-photo-voile')).toBeTruthy();
-    fireEvent(screen.getByTestId('l-photo'), 'error');
-    await waitFor(() => expect(screen.queryByTestId('l-photo')).toBeNull());
-    expect(screen.getByTestId('l-facade')).toBeTruthy();
-  });
-
-  it('photo, détail, badge assurance ; marche masquée au-delà de 2 km', async () => {
+  it('une surface par liste : coins arrondis en haut de la première, en bas de la dernière', async () => {
     await rendre(
-      <LignePharmacie
-        {...base}
-        photoUrl="https://exemple.test/facade.jpg"
-        detail="Cocody · ouverte jusqu’à 23:00"
-        detailOcre
-        assurance
-        marcheJusquA={2000}
-        distanceM={4200}
-        marcheMin={52}
-      />,
+      <>
+        <LignePharmacie {...base} testID="a" premiere derniere={false} />
+        <LignePharmacie {...base} testID="b" premiere={false} derniere />
+      </>,
     );
-    expect(screen.getByTestId('l-photo').props.source).toEqual({ uri: 'https://exemple.test/facade.jpg' });
-    expect(screen.queryByTestId('pastille-garde', { includeHiddenElements: true })).toBeNull();
-    expect(StyleSheet.flatten(screen.getByText('Cocody · ouverte jusqu’à 23:00').props.style).color).toBe(jetonsJour.ocreTexte);
+    expect(style('a').borderTopLeftRadius).toBe(rayons.surface);
+    expect(style('a').borderBottomLeftRadius).toBeUndefined();
+    expect(style('b').borderBottomLeftRadius).toBe(rayons.surface);
+    expect(style('b').borderTopLeftRadius).toBeUndefined();
+  });
+
+  it('dense : nom, distance, état et quartier ; ni vignette ni flèche', async () => {
+    await rendre(<LignePharmacie {...base} statut="ouverte" commune="Cocody Danga" />);
+    expect(screen.getByText('Pharmacie Gazelle')).toBeTruthy();
+    expect(screen.getByText('0,9 km')).toBeTruthy();
+    expect(screen.getByText('Ouverte jusqu’à 23:00')).toBeTruthy();
+    expect(screen.getByText('· Cocody Danga')).toBeTruthy();
+    expect(screen.queryByTestId('l-photo')).toBeNull();
+    expect(screen.queryByTestId('pastille-ouverte', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('garde : distance, marche et quartier, puis le numéro ; seule la restriction est en ocre', async () => {
+    await rendre(
+      <LignePharmacie {...base} variante="garde" commune="Cocody" numero="27 22 44 51 20" restriction="jusqu’à 04:00" marcheJusquA={2000} />,
+    );
+    expect(screen.getByText('0,9 km')).toBeTruthy();
+    expect(screen.getByText(/11 min · Cocody/)).toBeTruthy();
+    expect(screen.getByTestId('l-numero')).toHaveTextContent('27 22 44 51 20 · jusqu’à 04:00');
+    expect(StyleSheet.flatten(screen.getByText('jusqu’à 04:00').props.style).color).toBe(jetonsJour.ocreTexte);
+  });
+
+  it('marche masquée au-delà de 2 km ; badge assurance et libellé complet pour le lecteur d’écran', async () => {
+    await rendre(<LignePharmacie {...base} variante="garde" assurance marcheJusquA={2000} distanceM={4200} marcheMin={52} onPress={jest.fn()} />);
+    expect(screen.queryByText(/52 min/)).toBeNull();
     expect(screen.getByTestId('l-assurance')).toBeTruthy();
-    expect(screen.queryByText('52 min')).toBeNull();
-    // Le statut complet et l'assurance restent lus par le lecteur d'écran.
     expect(screen.getByRole('button', { name: /Ouverte jusqu’à 23:00, Votre assurance, 4,2 km/ })).toBeTruthy();
   });
 
-  it('marche affichée en deçà de 2 km', async () => {
-    await rendre(<LignePharmacie {...base} marcheJusquA={2000} />);
-    expect(screen.getByText('11 min')).toBeTruthy();
-  });
-});
-
-describe('Bloc « La plus proche »', () => {
-  const bloc = { titre: 'La plus proche de garde', nom: 'Pharmacie Alpha', statut: 'garde' as const, libelleStatut: 'Ouverte toute la nuit', distanceM: 4700, marcheMin: 59, testID: 'b' };
-
-  it('avec photo : bandeau photo et étiquette « La plus proche », badge assurance', async () => {
-    await rendre(<BlocPlusProche {...bloc} garde photoUrl="https://exemple.test/a.jpg" etiquettePhoto="La plus proche" detail="Koumassi" assurance />);
-    expect(screen.getByTestId('b-photo')).toBeTruthy();
-    expect(screen.getByText('La plus proche')).toBeTruthy();
-    expect(screen.queryByText('La plus proche de garde')).toBeNull();
-    expect(screen.getByText('Koumassi')).toBeTruthy();
-    expect(screen.getByTestId('b-assurance')).toBeTruthy();
-    expect(StyleSheet.flatten(screen.getByTestId('b').props.style).borderRadius).toBe(rayons.grandeCarte);
-  });
-
-  it('photo pas encore validée (null) : bandeau avec la devanture dessinée et l’étiquette', async () => {
-    await rendre(<BlocPlusProche {...bloc} garde photoUrl={null} etiquettePhoto="La plus proche" />);
-    expect(screen.getByTestId('b-facade')).toBeTruthy();
-    expect(screen.queryByTestId('b-photo')).toBeNull();
-    expect(screen.getByText('La plus proche')).toBeTruthy();
-    expect(screen.queryByTestId('badge-24', { includeHiddenElements: true })).toBeNull();
-  });
-
-  it('sans photo : titre et pastille rouge « 24 » comme avant', async () => {
-    await rendre(<BlocPlusProche {...bloc} garde />);
-    expect(screen.queryByTestId('b-photo')).toBeNull();
-    expect(screen.getByText('La plus proche de garde')).toBeTruthy();
-    expect(screen.getByTestId('badge-24', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.queryByTestId('b-assurance')).toBeNull();
-  });
-});
-
-describe('Indices d’action (29 oct.)', () => {
-  it('la carte se teinte de vert pâle sous le doigt', async () => {
+  it('la ligne se teinte de vert pâle sous le doigt', async () => {
     await rendre(<LignePharmacie {...base} onPress={jest.fn()} />);
     const zone = screen.getByRole('button', { name: /Pharmacie Gazelle/ });
     await fireEvent(zone, 'pressIn');
-    expect(StyleSheet.flatten(screen.getByTestId('l').props.style).backgroundColor).toBe(jetonsJour.carteAppuyee);
+    expect(style('l').backgroundColor).toBe(jetonsJour.carteAppuyee);
     await fireEvent(zone, 'pressOut');
-    expect(StyleSheet.flatten(screen.getByTestId('l').props.style).backgroundColor).toBe(jetonsJour.carte);
+    expect(style('l').backgroundColor).toBe(jetonsJour.carte);
   });
 
-  it('« Voir la fiche » sur le bloc qui s’ouvre, absent sans action', async () => {
-    const bloc = { titre: 'La plus proche de garde', nom: 'Pharmacie Alpha', statut: 'garde' as const, libelleStatut: 'Ouverte toute la nuit', distanceM: 4700, marcheMin: 59, testID: 'b' };
-    await rendre(<BlocPlusProche {...bloc} onPress={jest.fn()} />);
-    expect(screen.getByText('Voir la fiche')).toBeTruthy();
-    await rendre(<BlocPlusProche {...bloc} />);
-    expect(screen.queryByText('Voir la fiche')).toBeNull();
+  it('bouton Appeler : rôle, libellé, zone tactile de 48 dp', async () => {
+    const appeler = jest.fn();
+    await rendre(<LignePharmacie {...base} onAppeler={appeler} />);
+    const bouton = screen.getByRole('button', { name: 'Appeler Pharmacie Gazelle' });
+    const aplati = StyleSheet.flatten(typeof bouton.props.style === 'function' ? bouton.props.style({ pressed: false }) : bouton.props.style);
+    expect(aplati.width + 2 * (bouton.props.hitSlop ?? 0)).toBeGreaterThanOrEqual(48);
+    await fireEvent.press(bouton);
+    expect(appeler).toHaveBeenCalledTimes(1);
   });
-});
 
-describe('Position à confirmer (31 oct.)', () => {
-  it('badge sur la ligne, à la place de la distance pour le lecteur d’écran', async () => {
+  it('position à confirmer : badge à la place de la distance', async () => {
     await rendre(<LignePharmacie {...base} distanceM={null} marcheMin={null} positionAConfirmer onPress={jest.fn()} />);
     expect(screen.getByTestId('l-position')).toBeTruthy();
     expect(screen.getByRole('button', { name: /Position à confirmer/ })).toBeTruthy();
   });
+});
 
-  it('bloc « La plus proche » : badge et pas de bouton Itinéraire', async () => {
-    const bloc = { titre: 'La plus proche de garde', nom: 'Pharmacie Alpha', statut: 'garde' as const, libelleStatut: 'Ouverte toute la nuit', distanceM: null, marcheMin: null, testID: 'b' };
-    await rendre(<BlocPlusProche {...bloc} positionAConfirmer onAppeler={jest.fn()} onItineraire={jest.fn()} />);
+describe('Carte « la plus proche » (une seule, partout)', () => {
+  const carte = {
+    id: 'ph_1',
+    nom: 'Pharmacie de la Paix',
+    statut: 'garde' as const,
+    libelleStatut: 'De garde, ouverte toute la nuit',
+    distanceM: 700,
+    marcheMin: 9,
+    repere: 'Rue des Jardins · Cocody',
+    testID: 'b',
+  };
+
+  it('état, nom, distance, repère, puis Appeler et Y aller ; ombre le jour, rien la nuit', async () => {
+    await rendre(<CartePlusProche {...carte} onAppeler={jest.fn()} onYAller={jest.fn()} />);
+    expect(screen.getByText('La plus proche')).toBeTruthy();
+    expect(screen.getByText('De garde, ouverte toute la nuit')).toBeTruthy();
+    expect(screen.getByTestId('b-statut-24', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('b-details')).toHaveTextContent('0,7 km · 9 min à pied');
+    expect(screen.getByTestId('b-repere')).toHaveTextContent('Rue des Jardins · Cocody');
+    expect(screen.getByText('Appeler')).toBeTruthy();
+    expect(screen.getByText('Y aller')).toBeTruthy();
+    expect(screen.queryByText('Voir la fiche')).toBeNull();
+    expect(style('b').borderRadius).toBe(rayons.surface);
+    expect(style('b').elevation).toBe(ombres.carte.elevation);
+    await rendre(<CartePlusProche {...carte} onAppeler={jest.fn()} onYAller={jest.fn()} />, { theme: 'nuit' });
+    expect(style('b').elevation ?? 0).toBe(0);
+    expect(style('b').backgroundColor).toBe(jetonsNuit.blocProche);
+  });
+
+  it('Appeler et Y aller : 56 dp, libellés de 19 px gras', async () => {
+    const appeler = jest.fn();
+    const yAller = jest.fn();
+    await rendre(<CartePlusProche {...carte} onAppeler={appeler} onYAller={yAller} />);
+    expect(style('b-appeler').minHeight).toBe(56);
+    expect(style('b-y-aller').minHeight).toBe(56);
+    expect(StyleSheet.flatten(screen.getByText('Appeler').props.style).fontSize).toBe(19);
+    await fireEvent.press(screen.getByRole('button', { name: 'Appeler Pharmacie de la Paix' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Aller jusqu’à Pharmacie de la Paix' }));
+    expect(appeler).toHaveBeenCalledTimes(1);
+    expect(yAller).toHaveBeenCalledTimes(1);
+  });
+
+  it('conseil d’appeler en texte simple, juste au-dessus d’Appeler', async () => {
+    await rendre(<CartePlusProche {...carte} conseil onAppeler={jest.fn()} />);
+    expect(screen.getByText('La nuit, appelez avant de vous déplacer.')).toBeTruthy();
+    expect(style('conseil-garde').backgroundColor).toBeUndefined();
+  });
+
+  it('variante compacte (Carte) : sans repère, la commune après la distance', async () => {
+    await rendre(<CartePlusProche {...carte} compacte commune="Cocody" plusProche={false} onAppeler={jest.fn()} />);
+    expect(screen.queryByTestId('b-repere')).toBeNull();
+    expect(screen.getByTestId('b-details')).toHaveTextContent('0,7 km · 9 min à pied · Cocody');
+    expect(screen.queryByText('La plus proche')).toBeNull();
+  });
+
+  it('position à confirmer : badge et pas de « Y aller »', async () => {
+    await rendre(<CartePlusProche {...carte} distanceM={null} marcheMin={null} positionAConfirmer onAppeler={jest.fn()} onYAller={jest.fn()} />);
     expect(screen.getByTestId('b-position')).toBeTruthy();
-    expect(screen.queryByText('Itinéraire')).toBeNull();
+    expect(screen.queryByText('Y aller')).toBeNull();
     expect(screen.getByTestId('b-appeler')).toBeTruthy();
+  });
+
+  it('toute la partie haute ouvre la fiche', async () => {
+    const ouvrir = jest.fn();
+    await rendre(<CartePlusProche {...carte} onPress={ouvrir} />);
+    await fireEvent.press(screen.getByRole('button', { name: /La plus proche : Pharmacie de la Paix/ }));
+    expect(ouvrir).toHaveBeenCalledTimes(1);
   });
 });

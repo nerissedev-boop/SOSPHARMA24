@@ -42,7 +42,7 @@ export function BoutonIcone({
         {
           width: cote,
           height: cote,
-          borderRadius: rond ? cote / 2 : rayons.moyen,
+          borderRadius: rond ? cote / 2 : rayons.touche,
           backgroundColor: fond,
           alignItems: 'center',
           justifyContent: 'center',

@@ -4,101 +4,63 @@ import Animated from 'react-native-reanimated';
 
 import type { StatutPharmacie } from '../api/schema';
 import type { TonStatut } from '../regles/libelles';
-import { estInactive } from '../regles/statut';
 import { distanceKm } from '../lib/format';
 import { t } from '../lib/i18n';
 import { CIBLE_TACTILE } from '../theme/espacements';
-import { ombres } from '../theme/ombres';
 import { rayons } from '../theme/rayons';
-import type { Jetons } from '../theme/jetons';
 import { useTheme } from '../theme/Theme';
-import { apparitionLigne, transitionListe, useAppui } from './animations';
+import { transitionListe } from './animations';
 import { BadgeAssurance } from './BadgeAssurance';
 import { BadgePosition } from './BadgePosition';
-import { DistanceMarche } from './DistanceMarche';
-import { FacadeIllustree } from './FacadeIllustree';
 import { HiPhone } from './icones/healthicons';
-import { IconeChevronDroite } from './icones/trait';
-import { PastilleStatut } from './PastilleStatut';
-import { PhotoFondu } from './PhotoFondu';
+import { RepereStatut } from './RepereStatut';
 import { Texte } from './Texte';
 
-/**
- * Statut en un coup d'œil : couleur du point, couleur et libellé court du texte, libellé lu.
- * vert = ouverte, rouge = de garde, ocre = ferme bientôt (moins de 30 min), gris = fermée ou à confirmer.
- */
-export function infosStatut(statut: StatutPharmacie, ton: TonStatut | undefined, c: Jetons) {
-  if (ton === 'ocre' && !estInactive(statut)) {
-    return { point: c.ocrePoint, texte: c.ocreTexte, court: t('statut.courtBientot'), lu: t('statut.pastilleBientot') };
-  }
-  if (statut === 'garde') return { point: c.rouge, texte: c.rougeTexteFort, court: t('statut.courtGarde'), lu: t('statut.pastilleGarde') };
-  if (statut === 'ouverte') return { point: c.vert, texte: c.vertTexte, court: t('statut.ouverte'), lu: t('statut.pastilleOuverte') };
-  if (statut === 'inconnue') {
-    return { point: c.texteTertiaire, texte: c.texteSecondaire, court: t('statut.courtInconnue'), lu: t('statut.pastilleInconnue') };
-  }
-  return { point: c.texteTertiaire, texte: c.texteSecondaire, court: t('statut.fermee'), lu: t('statut.pastilleFermee') };
-}
-
-/**
- * Petit point coloré suivi d'un libellé court (« Ouverte », « De garde », « Ferme bientôt », « Fermée ») :
- * le texte porte l'information, la couleur ne fait que la doubler.
- */
-export function PointStatut({ statut, ton, testID }: { statut: StatutPharmacie; ton?: TonStatut; testID?: string }) {
-  const { couleurs: c } = useTheme();
-  const infos = infosStatut(statut, ton, c);
-  return (
-    <View style={styles.pointStatut} accessible accessibilityLabel={infos.lu} testID={testID}>
-      <View style={[styles.point, { backgroundColor: infos.point }]} testID={testID ? `${testID}-point` : undefined} />
-      <Texte variante="libelleFort" couleur={infos.texte} numberOfLines={1} style={styles.textePoint}>
-        {infos.court}
-      </Texte>
-    </View>
-  );
-}
+/** Bouton d'appel des lignes denses : 40 de diamètre, zone tactile portée à 48. */
+const APPEL_DENSE = 40;
 
 export type PropsLignePharmacie = {
   nom: string;
   statut: StatutPharmacie;
-  /** Libellé du statut : 2e ligne visible (sauf si `detail` est donné) et toujours lu par le lecteur d'écran. */
+  /** Libellé du statut : 2e ligne de la variante dense, et toujours lu par le lecteur d'écran. */
   libelleStatut: string;
   distanceM: number | null;
   marcheMin: number | null;
-  onPress?: () => void;
-  /** Bouton rond « Appeler » à droite (listes) ; absent dans les favoris. */
-  onAppeler?: () => void;
+  /** Quartier ou commune, écrit sur chaque ligne. */
+  commune?: string | null;
+  /**
+   * dense (Accueil, recherche) : nom et distance, puis l'état et le quartier ;
+   * garde (listes de garde) : nom, puis distance et quartier, puis le numéro, comme la liste de l'Ordre.
+   */
+  variante?: 'dense' | 'garde';
+  /** Numéro déjà mis en forme (variante garde). */
+  numero?: string | null;
+  /** Garde qui s'arrête avant le matin (« jusqu'à 04:00 ») : seule mention en ocre de la ligne. */
+  restriction?: string | null;
   /** Ton calculé (tonAffiche) : « ocre » quand la pharmacie ferme dans moins de 30 min. */
   ton?: TonStatut;
-  /** Variante « favori » du profil : pastille 38 (vignette 48), distance seule. */
-  variante?: 'liste' | 'favori';
-  iconeMarche?: boolean;
-  /** Position dans la liste : la ligne apparaît en cascade (fondu et glissement). Absent : pas d'animation. */
-  rang?: number;
-  /**
-   * Photo de façade : vignette 56 × 56 à la place de la pastille de statut. `null` (pas encore
-   * de photo validée) : devanture dessinée. Absent : pastille de statut.
-   */
-  photoUrl?: string | null;
-  /**
-   * 2e ligne visible à la place du statut (écran Garde : « Cocody », ou « Cocody · ouverte jusqu'à 02:00 »).
-   * Le statut complet reste dans le libellé d'accessibilité.
-   */
-  detail?: string;
-  /** 2e ligne en ocre (garde qui s'arrête avant le matin). */
-  detailOcre?: boolean;
-  /** Badge « Votre assurance » sous la 2e ligne. */
+  onPress?: () => void;
+  /** Bouton rond « Appeler » à droite ; absent sans numéro. */
+  onAppeler?: () => void;
+  /** Badge « Votre assurance ». */
   assurance?: boolean;
   /** Badge « Position à confirmer » : pas de position GPS, donc ni distance ni itinéraire. */
   positionAConfirmer?: boolean;
   /** Temps de marche affiché seulement en deçà de cette distance (mètres) ; absent : toujours. */
   marcheJusquA?: number;
-  /** Halo pulsé autour des pastilles de garde (par défaut dans les listes). */
-  pulsation?: boolean;
+  /** Première ligne de la surface : coins hauts arrondis, pas de filet au-dessus. */
+  premiere?: boolean;
+  /** Dernière ligne de la surface : coins bas arrondis. */
+  derniere?: boolean;
+  /** Dans une liste qui se réorganise (filtre changé) : la ligne glisse vers sa place, s'efface en sortant. */
+  animee?: boolean;
   testID?: string;
 };
 
 /**
- * Ligne de liste des maquettes Accueil, Garde et Profil : carte blanche arrondie (16) posée sur
- * le fond clair, sans bordure ni séparateur ; l'écran espace les cartes de 8.
+ * Ligne d'une liste imprimée (refonte v2) : une seule surface blanche par liste, un filet entre deux
+ * lignes, ni carte ni ombre par ligne, ni vignette ni flèche. Le nom prend toute la largeur.
+ * Pas d'entrée en cascade : une liste qui vient du cache s'affiche telle quelle.
  */
 export function LignePharmacie({
   nom,
@@ -106,107 +68,125 @@ export function LignePharmacie({
   libelleStatut,
   distanceM,
   marcheMin,
+  commune,
+  variante = 'dense',
+  numero,
+  restriction,
+  ton,
   onPress,
   onAppeler,
-  variante = 'liste',
-  iconeMarche = true,
-  ton,
-  rang,
-  photoUrl,
-  detail,
-  detailOcre = false,
   assurance = false,
   positionAConfirmer = false,
   marcheJusquA,
-  pulsation,
+  premiere = true,
+  derniere = true,
+  animee = false,
   testID,
 }: PropsLignePharmacie) {
-  const { couleurs: c, estNuit } = useTheme();
-  const couleurStatut = ton === 'ocre' ? c.ocreTexte : statut === 'garde' ? c.rougeTexteFort : statut === 'ouverte' ? c.vertTexte : statut === 'inconnue' ? c.texteSecondaire : c.texteTertiaire;
-  const couleurDetail = detailOcre ? c.ocreTexte : detail !== undefined ? c.texteSecondaire : couleurStatut;
-  const favori = variante === 'favori';
-  // Libellé court en tête (listes) ; la 2e ligne ne le répète pas s'il dit déjà tout (« Ouverte »).
-  const court = favori ? null : infosStatut(statut, ton, c).court;
-  const secondeLigne = detail ?? (libelleStatut === court ? null : libelleStatut);
-  const description = [nom, libelleStatut, assurance ? t('commun.votreAssurance') : null, positionAConfirmer ? t('commun.positionAConfirmer') : distanceKm(distanceM)].filter(Boolean).join(', ');
-  // La carte entière se comprime sous le doigt (retour tactile façon cartes).
-  const appui = useAppui(0.98);
-  // Sous le doigt, la carte se teinte de vert pâle : l'appui est confirmé même sur un téléphone lent.
+  const { couleurs: c } = useTheme();
+  // Sous le doigt, la ligne se teinte de vert pâle : l'appui est confirmé même sur un téléphone lent.
   const [appuyee, setAppuyee] = useState(false);
-  const marcheVisible = marcheJusquA === undefined || (distanceM !== null && distanceM < marcheJusquA) ? marcheMin : null;
+  const distance = positionAConfirmer ? '' : distanceKm(distanceM);
+  const marche = distance && marcheMin !== null && (marcheJusquA === undefined || (distanceM ?? Infinity) < marcheJusquA) ? t('commun.min', { valeur: marcheMin }) : null;
+  const description = [nom, libelleStatut, restriction, assurance ? t('commun.votreAssurance') : null, positionAConfirmer ? t('commun.positionAConfirmer') : distance, commune]
+    .filter(Boolean)
+    .join(', ');
+  const garde = variante === 'garde';
+  const suite = [marche, commune].filter(Boolean).join(' · ');
+
+  const badges =
+    assurance || positionAConfirmer ? (
+      <View style={styles.badges}>
+        {assurance ? <BadgeAssurance petit testID={testID ? `${testID}-assurance` : undefined} /> : null}
+        {positionAConfirmer ? <BadgePosition petit testID={testID ? `${testID}-position` : undefined} /> : null}
+      </View>
+    ) : null;
+
   return (
     <Animated.View
-      entering={apparitionLigne(rang)}
-      // Dans une liste animée, les cartes glissent vers leur place quand le filtre change.
-      layout={rang === undefined ? undefined : transitionListe.layout}
-      exiting={rang === undefined ? undefined : transitionListe.exiting}
-      style={[styles.ligne, favori && styles.ligneFavori, { backgroundColor: appuyee ? c.carteAppuyee : c.carte }, !estNuit && ombres.carte, appui.style]}
+      layout={animee ? transitionListe.layout : undefined}
+      exiting={animee ? transitionListe.exiting : undefined}
+      style={[
+        styles.ligne,
+        { backgroundColor: appuyee ? c.carteAppuyee : c.carte },
+        premiere && styles.haut,
+        derniere && styles.bas,
+      ]}
       testID={testID}
     >
+      {premiere ? null : <View style={[styles.filet, { backgroundColor: c.separateur }]} />}
       <Pressable
         onPress={onPress}
-        onPressIn={() => {
-          setAppuyee(true);
-          appui.onPressIn();
-        }}
-        onPressOut={() => {
-          setAppuyee(false);
-          appui.onPressOut();
-        }}
+        onPressIn={() => setAppuyee(true)}
+        onPressOut={() => setAppuyee(false)}
         accessibilityRole="button"
         accessibilityLabel={description}
-        style={styles.zone}
+        style={[styles.zone, garde ? styles.zoneGarde : styles.zoneDense]}
       >
-        {photoUrl ? (
-          <PhotoFondu
-            uri={photoUrl}
-            style={[styles.vignette, favori && styles.vignetteFavori, { backgroundColor: c.surface }]}
-            repli={<FacadeIllustree taille="vignette" style={[styles.vignette, favori && styles.vignetteFavori]} testID={testID ? `${testID}-facade` : undefined} />}
-            testID={testID ? `${testID}-photo` : undefined}
-          />
-        ) : photoUrl === null ? (
-          <FacadeIllustree taille="vignette" style={[styles.vignette, favori && styles.vignetteFavori]} testID={testID ? `${testID}-facade` : undefined} />
+        {garde ? (
+          <>
+            <Texte variante="nom">{nom}</Texte>
+            {distance || suite ? (
+              <Texte variante="petit" couleur={c.texteSecondaire}>
+                {distance ? (
+                  <Texte variante="petitFort" couleur={c.texte} style={styles.chiffres}>
+                    {distance}
+                  </Texte>
+                ) : null}
+                {distance && suite ? ' · ' : null}
+                {suite}
+              </Texte>
+            ) : null}
+            {numero || restriction ? (
+              <Texte variante="petitFort" style={styles.chiffres} testID={testID ? `${testID}-numero` : undefined}>
+                {numero}
+                {numero && restriction ? ' · ' : null}
+                {restriction ? (
+                  <Texte variante="petitFort" couleur={c.ocreTexte}>
+                    {restriction}
+                  </Texte>
+                ) : null}
+              </Texte>
+            ) : null}
+          </>
         ) : (
-          <PastilleStatut
-            statut={statut}
-            pulsation={pulsation ?? !favori}
-            ton={ton === 'ocre' ? 'ocre' : undefined}
-            taille={favori ? 38 : 40}
-            tailleIcone={favori ? (estInactive(statut) ? 22 : 24) : estInactive(statut) ? 24 : 26}
-          />
+          <>
+            <View style={styles.premiereLigne}>
+              <Texte variante="nomPetit" style={styles.flexible}>
+                {nom}
+              </Texte>
+              {distance ? (
+                <Texte variante="petitFort" couleur={c.texte} style={styles.chiffres}>
+                  {distance}
+                </Texte>
+              ) : null}
+            </View>
+            <View style={styles.secondeLigne}>
+              <RepereStatut statut={statut} ton={ton} libelle={libelleStatut} variante="petit" numberOfLines={1} testID={testID ? `${testID}-statut` : undefined} />
+              {commune ? (
+                <Texte variante="petit" couleur={c.texteSecondaire} numberOfLines={1} style={styles.commune}>
+                  {`· ${commune}`}
+                </Texte>
+              ) : null}
+            </View>
+          </>
         )}
-        <View style={styles.textes}>
-          {favori ? null : <PointStatut statut={statut} ton={ton} testID={testID ? `${testID}-statut` : undefined} />}
-          <Texte variante={favori ? 'nom' : 'nomPetit'} numberOfLines={favori ? 1 : 2}>
-            {nom}
-          </Texte>
-          {secondeLigne ? (
-            <Texte variante={detail !== undefined ? 'petit' : 'libelleMoyen'} couleur={couleurDetail} numberOfLines={2}>
-              {secondeLigne}
-            </Texte>
-          ) : null}
-          {assurance ? <BadgeAssurance petit testID={testID ? `${testID}-assurance` : undefined} /> : null}
-          {positionAConfirmer ? <BadgePosition petit testID={testID ? `${testID}-position` : undefined} /> : null}
-        </View>
-        {favori ? (
-          <Texte variante="boutonPetit" style={styles.distanceFavori}>
-            {distanceKm(distanceM)}
-          </Texte>
-        ) : (
-          <DistanceMarche distanceM={distanceM} marcheMin={marcheVisible} icone={iconeMarche} />
-        )}
-        {/* Flèche : la carte s'ouvre (le rond vert, lui, appelle tout de suite). */}
-        {onPress ? <IconeChevronDroite size={16} color={c.texteTertiaire} strokeWidth={2.4} /> : null}
+        {badges}
       </Pressable>
       {onAppeler ? (
         <Pressable
           onPress={onAppeler}
           accessibilityRole="button"
           accessibilityLabel={`${t('commun.appeler')} ${nom}`}
+          hitSlop={garde ? undefined : (CIBLE_TACTILE - APPEL_DENSE) / 2}
           testID={testID ? `${testID}-appeler` : undefined}
-          style={({ pressed }) => [styles.appel, { backgroundColor: c.pastilleAction, opacity: pressed ? 0.8 : 1 }]}
+          style={({ pressed }) => [
+            styles.appel,
+            garde ? styles.appelGarde : styles.appelDense,
+            { backgroundColor: c.boutonBlocSecondaire, opacity: pressed ? 0.8 : 1 },
+          ]}
         >
-          <HiPhone size={20} color={c.pastilleActionIcone} />
+          <HiPhone size={garde ? 22 : 20} color={c.pastilleActionIcone} />
         </Pressable>
       ) : null}
     </Animated.View>
@@ -214,30 +194,21 @@ export function LignePharmacie({
 }
 
 const styles = StyleSheet.create({
-  ligne: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 8,
-    paddingLeft: 8,
-    paddingRight: 10,
-    borderRadius: rayons.carte,
-  },
-  ligneFavori: { minHeight: 58, paddingLeft: 10, paddingRight: 14 },
-  zone: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0, minHeight: CIBLE_TACTILE },
-  vignette: { width: 56, height: 56, borderRadius: rayons.vignette, flexShrink: 0 },
-  vignetteFavori: { width: 48, height: 48 },
-  textes: { flex: 1, flexShrink: 1, gap: 3, minWidth: 0 },
-  pointStatut: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', maxWidth: '100%' },
-  point: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  textePoint: { flexShrink: 1 },
-  distanceFavori: { fontSize: 13 },
-  appel: {
-    width: CIBLE_TACTILE,
-    height: CIBLE_TACTILE,
-    borderRadius: CIBLE_TACTILE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
+  ligne: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14 },
+  haut: { borderTopLeftRadius: rayons.surface, borderTopRightRadius: rayons.surface },
+  bas: { borderBottomLeftRadius: rayons.surface, borderBottomRightRadius: rayons.surface },
+  /** Filet d'1 px dans la largeur du texte : un aplat, pas une bordure (charte). */
+  filet: { position: 'absolute', top: 0, left: 14, right: 14, height: 1 },
+  zone: { flex: 1, minWidth: 0, minHeight: CIBLE_TACTILE, justifyContent: 'center' },
+  zoneDense: { paddingVertical: 10, gap: 2 },
+  zoneGarde: { paddingVertical: 12, gap: 2 },
+  premiereLigne: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
+  secondeLigne: { flexDirection: 'row', alignItems: 'center', gap: 4, minWidth: 0 },
+  commune: { flexShrink: 1 },
+  flexible: { flex: 1 },
+  chiffres: { fontVariant: ['tabular-nums'] },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  appel: { alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  appelDense: { width: APPEL_DENSE, height: APPEL_DENSE, borderRadius: APPEL_DENSE / 2 },
+  appelGarde: { width: CIBLE_TACTILE, height: CIBLE_TACTILE, borderRadius: CIBLE_TACTILE / 2 },
 });

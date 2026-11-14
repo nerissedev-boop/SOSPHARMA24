@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     top: -7,
     right: -9,
     paddingHorizontal: 4,
-    borderRadius: rayons.pilule,
+    borderRadius: rayons.repere,
     shadowColor: '#000',
     shadowOpacity: 0.25,
     shadowRadius: 2,

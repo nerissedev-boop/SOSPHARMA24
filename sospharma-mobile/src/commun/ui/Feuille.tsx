@@ -138,8 +138,8 @@ export function Feuille({
 
 const styles = StyleSheet.create({
   bas: { flex: 1, justifyContent: 'flex-end' },
-  feuille: { maxHeight: '90%', paddingTop: 10, borderTopLeftRadius: rayons.feuille, borderTopRightRadius: rayons.feuille },
-  poignee: { alignSelf: 'center', width: 40, height: 4, marginBottom: 14, borderRadius: rayons.pilule },
+  feuille: { maxHeight: '90%', paddingTop: 10, borderTopLeftRadius: rayons.surface, borderTopRightRadius: rayons.surface },
+  poignee: { alignSelf: 'center', width: 40, height: 4, marginBottom: 14, borderRadius: rayons.rond },
   defilement: { flexGrow: 0 },
   contenu: { paddingHorizontal: 20, gap: 14 },
   entete: { flexDirection: 'row', alignItems: 'center', gap: 12 },

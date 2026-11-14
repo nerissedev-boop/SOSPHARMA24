@@ -117,7 +117,7 @@ function Signaler() {
 const styles = StyleSheet.create({
   flex: { flex: 1, gap: 2 },
   contenu: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 24, gap: 16 },
-  pharmacie: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: rayons.moyen },
+  pharmacie: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: rayons.touche },
   titre: { marginBottom: 4 },
   motif: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, marginHorizontal: -12 },
   texteMotif: { flex: 1 },

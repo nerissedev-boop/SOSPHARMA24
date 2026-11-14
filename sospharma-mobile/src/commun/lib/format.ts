@@ -2,7 +2,7 @@
  * Formats d'affichage via Intl (langue de l'interface, fuseau du pays).
  * Règle de rédaction : pas de séparateur « · » dans les méta.
  */
-import { localeActive } from './i18n';
+import { localeActive, t } from './i18n';
 
 const unDecimale = () => new Intl.NumberFormat(localeActive(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const entier = () => new Intl.NumberFormat(localeActive(), { maximumFractionDigits: 0 });
@@ -102,4 +102,18 @@ export function initiales(prenom: string, nom: string): string {
 /** Première lettre en minuscule (« De garde cette nuit » -> « de garde cette nuit »). */
 export function minusculeInitiale(texte: string): string {
   return texte.length ? texte[0]!.toLocaleLowerCase(localeActive()) + texte.slice(1) : texte;
+}
+
+/** Heure d'une mise à jour passée : « à 23:40 », « hier à 23:40 », « le 12 nov. à 23:40 ». */
+export function momentPasse(instant: Date, fuseau: string, maintenant: Date = new Date()): string {
+  const jour = (d: Date) => partie(d, fuseau, { year: 'numeric', month: 'numeric', day: 'numeric' });
+  const h = heure(instant, fuseau);
+  if (jour(instant) === jour(maintenant)) return t('temps.aujourdhui', { heure: h });
+  if (jour(instant) === jour(new Date(maintenant.getTime() - 24 * 3600 * 1000))) return t('temps.hier', { heure: h });
+  return t('temps.le', { date: jourMois(instant.toISOString(), fuseau), heure: h });
+}
+
+/** Adresse écrite comme un repère, suivie de la commune : « Face à la mairie · Cocody ». */
+export function repereEtCommune(p: { adresse?: string | null; commune?: string | null }): string {
+  return [p.adresse, p.commune].filter(Boolean).join(' · ');
 }

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
 import { usePreferences, useSession } from '@/commun/lib';
@@ -13,34 +13,58 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
 }));
 
-describe('Écran Urgence', () => {
+describe('Écran Urgence (refonte v2 : trois appels, un appui chacun)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useSession.setState({ position: { latitude: 5.36, longitude: -3.98 } });
     usePreferences.setState({ zone: null });
   });
 
-  it('affiche les numéros d\'urgence venant de la configuration pays (pas en dur)', async () => {
+  it('affiche les numéros d\'urgence venant de la configuration pays (pas en dur), en un seul bloc', async () => {
     await rendre(<Urgence />);
     expect(await screen.findByText('185')).toBeTruthy();
     expect(screen.getByText('SAMU')).toBeTruthy();
-    // Bouton compact : nom court affiché, nom complet lu par le lecteur d'écran.
+    // Nom court affiché, nom complet lu par le lecteur d'écran.
     expect(screen.getByText('Pompiers')).toBeTruthy();
     expect(screen.getByText('180')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Appeler Sapeurs-pompiers, 180' })).toBeTruthy();
+    expect(screen.getByTestId('numeros-urgence')).toHaveStyle({ backgroundColor: jetonsJour.rougeClair });
   });
 
-  it('numéros en gros boutons blancs posés sur le fond rouge (jetons jour et nuit)', async () => {
-    const { unmount } = await rendre(<Urgence />);
-    expect(await screen.findByTestId('urgence-samu')).toHaveStyle({ backgroundColor: jetonsJour.sosNumero, minHeight: 64 });
-    await unmount();
-    await rendre(<Urgence />, { theme: 'nuit' });
-    expect(await screen.findByTestId('urgence-samu')).toHaveStyle({ backgroundColor: jetonsNuit.sosNumero });
+  it('appelle le SAMU avec un lien tel:', async () => {
+    const ouvrir = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    await rendre(<Urgence />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Appeler SAMU, 185' }));
+    expect(ouvrir).toHaveBeenCalledWith('tel:185');
+  });
+
+  it('la garde la plus proche dans la même carte que l’Accueil : Appeler et Y aller, sans détour', async () => {
+    await rendre(<Urgence />);
+    const carte = within(await screen.findByTestId('urgence-plus-proche'));
+    expect(carte.getByText('Pharmacie de la Paix')).toBeTruthy();
+    expect(carte.getByText('La plus proche')).toBeTruthy();
+    expect(carte.getByText('Appeler')).toBeTruthy();
+    await fireEvent.press(carte.getByText('Y aller'));
+    expect(mockRouteur.push).toHaveBeenCalledWith(expect.objectContaining({ pathname: '/pharmacie/[id]/itineraire' }));
+  });
+
+  it('ni disque SOS, ni halo, ni feuille : rien ne bouge à l’écran', async () => {
+    await rendre(<Urgence />);
+    await screen.findByTestId('urgence-plus-proche');
+    expect(screen.queryByTestId('bouton-sos')).toBeNull();
+    expect(screen.queryByTestId('halo-sos')).toBeNull();
+    expect(screen.queryByTestId('feuille-sos')).toBeNull();
+  });
+
+  it('« Toutes les pharmacies de garde » mène à la liste', async () => {
+    await rendre(<Urgence />);
+    await fireEvent.press(await screen.findByTestId('urgence-autres-gardes'));
+    expect(mockRouteur.navigate).toHaveBeenCalledWith('/garde');
   });
 
   it('affiche la zone sous le titre, et rien quand aucune zone n’est choisie', async () => {
     const { unmount } = await rendre(<Urgence />);
-    await screen.findByTestId('bouton-sos');
+    await screen.findByTestId('bandeau-urgence');
     expect(screen.queryByTestId('urgence-zone')).toBeNull();
     await unmount();
     usePreferences.setState({
@@ -51,64 +75,13 @@ describe('Écran Urgence', () => {
     expect(screen.getByText('Urgence')).toBeTruthy();
   });
 
-  it('appelle le SAMU avec un lien tel:', async () => {
-    const ouvrir = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
-    await rendre(<Urgence />);
-    await fireEvent.press(await screen.findByRole('button', { name: 'Appeler SAMU, 185' }));
-    expect(ouvrir).toHaveBeenCalledWith('tel:185');
-  });
-
-  it('SOS : propose d’appeler la garde la plus proche ou d’y aller', async () => {
-    await rendre(<Urgence />);
-    expect(await screen.findByText('Pharmacie de la Paix')).toBeTruthy();
-    expect(screen.getByText('9 min à pied')).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('bouton-sos'));
-    expect(screen.getByTestId('sos-appeler')).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('sos-itineraire'));
-    expect(mockRouteur.push).toHaveBeenCalledWith(expect.objectContaining({ pathname: '/pharmacie/[id]/itineraire' }));
-  });
-
-  it('SOS : « Voir toutes les pharmacies de garde » mène à la liste', async () => {
-    await rendre(<Urgence />);
-    await screen.findByText('Pharmacie de la Paix');
-    await fireEvent.press(screen.getByTestId('bouton-sos'));
-    await fireEvent.press(screen.getByTestId('sos-autres'));
-    expect(mockRouteur.navigate).toHaveBeenCalledWith('/garde');
-  });
-
-  it('prend ses couleurs dans les jetons du thème (fond plus sombre la nuit)', async () => {
+  it('la nuit, le rouge reste dans le bandeau : le reste de l’écran garde le fond sombre du thème', async () => {
     const { unmount } = await rendre(<Urgence />);
-    expect(await screen.findByTestId('ecran-urgence')).toHaveStyle({ backgroundColor: jetonsJour.sosFond });
+    expect(await screen.findByTestId('bandeau-urgence')).toHaveStyle({ backgroundColor: jetonsJour.sosFond });
     await unmount();
     await rendre(<Urgence />, { theme: 'nuit' });
-    expect(await screen.findByTestId('ecran-urgence')).toHaveStyle({ backgroundColor: jetonsNuit.sosFond });
-    expect(jetonsNuit.sosFond).not.toBe(jetonsJour.sosFond);
-  });
-
-  it('garde la ligne « plus proche » lisible en grandes polices (nom sur deux lignes au plus)', async () => {
-    await rendre(<Urgence />);
-    const nom = await screen.findByText('Pharmacie de la Paix');
-    expect(nom.props.numberOfLines).toBe(2);
-    expect(nom.props.maxFontSizeMultiplier).toBe(1.6);
-    expect(screen.getByText('9 min à pied').props.numberOfLines).toBe(2);
-  });
-
-  it('pulse un halo autour du bouton SOS', async () => {
-    await rendre(<Urgence />);
-    expect(await screen.findByTestId('halo-sos')).toBeTruthy();
-  });
-
-  // En dernier : modifie le simulacre de Reanimated (restauré ensuite).
-  it('pas de halo si le téléphone demande de supprimer les animations', async () => {
-    const reanimated = jest.requireMock('react-native-reanimated') as { useReducedMotion: () => boolean };
-    const reduitAvant = reanimated.useReducedMotion;
-    reanimated.useReducedMotion = () => true;
-    try {
-      await rendre(<Urgence />);
-      expect(await screen.findByTestId('bouton-sos')).toBeTruthy();
-      expect(screen.queryByTestId('halo-sos')).toBeNull();
-    } finally {
-      reanimated.useReducedMotion = reduitAvant;
-    }
+    expect(await screen.findByTestId('bandeau-urgence')).toHaveStyle({ backgroundColor: jetonsNuit.sosFond });
+    expect(screen.getByTestId('numeros-urgence')).toHaveStyle({ backgroundColor: jetonsNuit.rougeClair });
+    expect(await screen.findByTestId('conseil-garde')).toBeTruthy();
   });
 });

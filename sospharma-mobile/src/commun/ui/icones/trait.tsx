@@ -405,3 +405,19 @@ export function IconeSansReseau({ color = '#9A5B00', strokeWidth = 2, ...p }: Pr
     </Base>
   );
 }
+
+/**
+ * Croix de l'officine, repère d'état (refonte v2) : pleine quand la pharmacie est ouverte, en contour
+ * quand elle est fermée. La forme seule se lit en niveaux de gris ; le texte l'accompagne toujours.
+ */
+export function IconeCroix({ color, plein = true, ...p }: PropsIconeTrait & { color: string; plein?: boolean }) {
+  return (
+    <Base {...p}>
+      {plein ? (
+        <Path d="M8.6 1h6.8v7.6h7.6v6.8h-7.6v7.6H8.6v-7.6H1V8.6h7.6z" fill={color} />
+      ) : (
+        <Path d="M8.8 2h6.4v6.8H22v6.4h-6.8V22H8.8v-6.8H2V8.8h6.8z" fill="none" stroke={color} strokeWidth={2.4} strokeLinejoin="round" />
+      )}
+    </Base>
+  );
+}

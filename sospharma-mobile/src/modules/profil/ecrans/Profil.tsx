@@ -1,59 +1,42 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
-import { alerte, appliquerLangue, estModeDemo, initiales, t, usePreferences, type ModeNuit, type PreferenceLangue } from '@/commun/lib';
-import { CIBLE_TACTILE, rayons, useTheme } from '@/commun/theme';
-import {
-  avecErrorBoundary,
-  CaseACocher,
-  Ecran,
-  HiUiUserProfile,
-  IconeChevronDroite,
-  LigneMenu,
-  PressableAnime,
-  revenirAuLogo,
-  Texte,
-} from '@/commun/ui';
+import { alerte, appliquerLangue, estModeDemo, t, usePreferences, type ModeNuit, type PreferenceLangue } from '@/commun/lib';
+import { CIBLE_TACTILE, espacements, rayons, useTheme } from '@/commun/theme';
+import { avecErrorBoundary, Ecran, Filtre, IconeChevronDroite, LigneMenu, revenirAuLogo, Texte } from '@/commun/ui';
 import { useNotificationGarde } from '@/modules/notifications';
 import { usePaysCourant, useZoneCourante } from '@/modules/territoire';
 
 import { CarteFavoris } from '../composants/CarteFavoris';
-import { EditionProfil } from '../composants/EditionProfil';
 import { GroupeReglages } from '../composants/GroupeReglages';
 
-const CYCLE_MODE: Record<ModeNuit, ModeNuit> = { auto: 'nuit', nuit: 'jour', jour: 'auto' };
+const MODES: ModeNuit[] = ['auto', 'jour', 'nuit'];
 /** Chaque langue s'écrit dans sa propre langue (« English » même en français). */
 const NOM_LANGUE: Record<PreferenceLangue, () => string> = {
   auto: () => t('profil.langueAuto'),
   fr: () => t('profil.francais'),
   en: () => t('profil.anglais'),
 };
-/** Bas du bandeau recouvert par la carte des favoris (piste A). */
-const CHEVAUCHEMENT = 40;
 
 /**
- * 14 Profil et favoris (piste A, 11 nov.) : bandeau vert profond (avatar, nom, « Modifier »),
- * carte des favoris qui chevauche son bas, puis les groupes « Préférences » et « Aide ».
+ * 14 Profil (refonte v2, 14 nov.) : ni bandeau ni avatar, il n'y a pas de compte. L'ordre suit
+ * l'usage : mes pharmacies, mes assurances, préférences, aide. Le mode nuit montre ses trois choix
+ * (Auto, Jour, Nuit), les mêmes filtres que partout.
  */
 function Profil() {
   const router = useRouter();
   const { couleurs: c } = useTheme();
-  const [edition, setEdition] = useState(false);
-  const profil = usePreferences((e) => e.profil);
-  const definirProfil = usePreferences((e) => e.definirProfil);
   const modeNuit = usePreferences((e) => e.modeNuit);
   const definirModeNuit = usePreferences((e) => e.definirModeNuit);
   const { zone } = useZoneCourante();
   const { pays } = usePaysCourant();
   const notification = useNotificationGarde();
   const mesAssurances = usePreferences((e) => e.mesAssurances);
-  const nomComplet = `${profil.prenom} ${profil.nom}`.trim();
-  const lettres = initiales(profil.prenom, profil.nom);
   const langue = usePreferences((e) => e.langue);
   const definirLangue = usePreferences((e) => e.definirLangue);
   const clientRequetes = useQueryClient();
+  const modifierAssurances = () => router.push({ pathname: '/assurances', params: { contexte: 'profil' } });
 
   // Les écrans lisent leurs textes à l'affichage : on repasse par le logo pour tout reconstruire,
   // et on recharge les données dont l'API fournit des textes (résumés, messages).
@@ -75,75 +58,83 @@ function Profil() {
     ]);
 
   return (
-    // Fond vert profond : la zone de la barre d'état prolonge le bandeau ; la liste garde le fond sable.
-    <Ecran testID="ecran-profil" fond={c.vertProfond} barreClaire>
-      <ScrollView style={{ backgroundColor: c.fond }} contentContainerStyle={styles.contenu} testID="defilement-profil">
-        <View style={[styles.bandeau, { backgroundColor: c.vertProfond }]} testID="bandeau-profil">
-          {/* Liste tirée vers le bas (rebond iOS) : le vert continue au-dessus du bandeau. */}
-          <View pointerEvents="none" style={[styles.prolongement, { backgroundColor: c.vertProfond }]} />
-          {/* Avatar décoratif : le nom, juste à côté, est lu par le lecteur d'écran. */}
-          <View
-            style={[styles.avatar, { backgroundColor: c.vert }]}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            testID="avatar-profil"
-          >
-            {lettres ? (
-              <Texte variante="titre" couleur={c.blanc} maxFontSizeMultiplier={1.2}>
-                {lettres}
-              </Texte>
-            ) : (
-              <HiUiUserProfile size={30} color={c.blanc} />
-            )}
-          </View>
-          <View style={styles.identite}>
-            <Texte variante="titre" titre couleur={c.blanc} numberOfLines={2}>
-              {nomComplet || t('profil.ajouterNom')}
-            </Texte>
-            <Texte variante="petit" couleur={c.vertTendre} numberOfLines={2}>
-              {profil.telephone || t('profil.localSeulement')}
-            </Texte>
-          </View>
-          <PressableAnime
-            onPress={() => setEdition(true)}
-            accessibilityRole="button"
-            style={[styles.modifier, { backgroundColor: c.profilBandeauBouton }]}
-            testID="bouton-modifier-profil"
-          >
-            <Texte variante="boutonPetit" couleur={c.blanc} numberOfLines={1}>
-              {t('profil.modifier')}
-            </Texte>
-          </PressableAnime>
-        </View>
+    <Ecran testID="ecran-profil">
+      <ScrollView contentContainerStyle={styles.contenu} testID="defilement-profil">
+        <Texte variante="titreEcran" titre style={styles.titre}>
+          {t('profil.titre')}
+        </Texte>
 
-        <CarteFavoris style={styles.chevauchement} />
+        <Texte variante="section" titre style={styles.etiquette}>
+          {t('profil.mesPharmacies')}
+        </Texte>
+        <CarteFavoris />
+
+        <Texte variante="section" titre style={styles.etiquette}>
+          {t('profil.mesAssurances')}
+        </Texte>
+        <View style={[styles.assurances, { backgroundColor: c.carte }]} testID="groupe-assurances">
+          <View style={styles.rangeeAssurances}>
+            <View style={styles.puces}>
+              {mesAssurances.length > 0 ? (
+                mesAssurances.map((a) => (
+                  <View key={a.slug} style={[styles.puce, { backgroundColor: c.puceForteFond }]}>
+                    <Texte variante="libelleFort" couleur={c.puceForteTexte}>
+                      {a.nom}
+                    </Texte>
+                  </View>
+                ))
+              ) : (
+                <Texte variante="corps" couleur={c.texteSecondaire}>
+                  {t('profil.aucune')}
+                </Texte>
+              )}
+            </View>
+            <Pressable onPress={modifierAssurances} accessibilityRole="button" accessibilityLabel={t('profil.modifierAssurances')} style={styles.lien} testID="ligne-mes-assurances">
+              <Texte variante="boutonPetit" couleur={c.vertTexte}>
+                {t('profil.modifier')}
+              </Texte>
+            </Pressable>
+          </View>
+          <Texte variante="petit" couleur={c.texteSecondaire}>
+            {t('profil.assurancesTexte')}
+          </Texte>
+        </View>
 
         <GroupeReglages titre={t('profil.preferences')} style={styles.groupe} testID="groupe-preferences">
           <LigneMenu libelle={t('profil.communeDefaut')} valeur={zone?.nom ?? t('profil.aucune')} onPress={() => router.push('/zone')} />
           <LigneMenu libelle={t('profil.pays')} valeur={pays?.nom ?? ''} onPress={() => router.push('/zone/pays')} />
-          <LigneMenu
-            libelle={t('profil.mesAssurances')}
-            valeur={resumeAssurances(mesAssurances.map((a) => a.nom))}
-            onPress={() => router.push({ pathname: '/assurances', params: { contexte: 'profil' } })}
-            testID="ligne-mes-assurances"
-          />
+          <View style={styles.modeNuit} testID="ligne-mode-nuit">
+            <View style={styles.textesMode}>
+              <Texte variante="corps">{t('profil.modeNuit')}</Texte>
+              <Texte variante="libelle" couleur={c.texteSecondaire}>
+                {t('profil.modeNuitAuto')}
+              </Texte>
+            </View>
+            <View style={styles.modes} accessibilityRole="radiogroup" accessibilityLabel={t('profil.modeNuit')}>
+              {MODES.map((mode) => (
+                <Filtre
+                  key={mode}
+                  libelle={t(`profil.modes.${mode}`)}
+                  selectionne={modeNuit === mode}
+                  onPress={() => definirModeNuit(mode)}
+                  paddingHorizontal={12}
+                  testID={`mode-${mode}`}
+                />
+              ))}
+            </View>
+          </View>
           <LigneMenu libelle={t('profil.langue')} valeur={NOM_LANGUE[langue]()} onPress={choisirLangue} testID="ligne-langue" />
-          <LigneMenu
-            libelle={t('profil.modeNuit')}
-            sousTitre={modeNuit === 'auto' ? t('profil.modeNuitAuto') : undefined}
-            valeur={t(`profil.modes.${modeNuit}`)}
-            onPress={() => definirModeNuit(CYCLE_MODE[modeNuit])}
-            testID="ligne-mode-nuit"
-          />
           {/* Refus de l'autorisation : le message est donné par useNotificationGarde (réglages du téléphone). */}
           <LigneMenu
             libelle={t('profil.notifTitre')}
             sousTitre={t('profil.notifTexte')}
             droite={
-              <CaseACocher
-                coche={notification.actif}
-                onChange={notification.basculer}
-                libelle={t('profil.notifTitre')}
+              <Switch
+                value={notification.actif}
+                onValueChange={notification.basculer}
+                trackColor={{ false: c.etapeInactive, true: c.vert }}
+                thumbColor={c.blanc}
+                accessibilityLabel={t('profil.notifTitre')}
                 testID="case-notification-garde"
               />
             }
@@ -175,52 +166,24 @@ function Profil() {
           ) : null}
         </View>
       </ScrollView>
-      <EditionProfil
-        visible={edition}
-        profil={profil}
-        onFermer={() => setEdition(false)}
-        onEnregistrer={(p) => {
-          definirProfil(p);
-          setEdition(false);
-        }}
-      />
     </Ecran>
   );
 }
 
-/** « MUGEF-CI, CMU + 2 » : deux noms au plus, puis le nombre des autres. */
-function resumeAssurances(noms: string[]): string {
-  if (noms.length === 0) return t('profil.aucune');
-  const debut = noms.slice(0, 2).join(', ');
-  return noms.length > 2 ? `${debut} + ${noms.length - 2}` : debut;
-}
-
 const styles = StyleSheet.create({
-  contenu: { paddingBottom: 24 },
-  bandeau: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingTop: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 20 + CHEVAUCHEMENT,
-    borderBottomLeftRadius: rayons.feuille,
-    borderBottomRightRadius: rayons.feuille,
-  },
-  prolongement: { position: 'absolute', left: 0, right: 0, bottom: '100%', height: 600 },
-  avatar: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  identite: { flex: 1, minWidth: 0, gap: 2 },
-  modifier: {
-    minHeight: CIBLE_TACTILE,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    borderRadius: rayons.pilule,
-  },
-  chevauchement: { marginTop: -CHEVAUCHEMENT, marginHorizontal: 16 },
-  groupe: { marginTop: 20, marginHorizontal: 16 },
-  pied: { marginTop: 12, marginHorizontal: 20, gap: 4 },
+  contenu: { paddingHorizontal: espacements.gouttiere, paddingBottom: 24 },
+  titre: { paddingTop: 24, paddingHorizontal: 4 },
+  etiquette: { marginTop: 20, marginBottom: 8, paddingHorizontal: 4 },
+  assurances: { paddingHorizontal: 16, paddingVertical: 12, gap: 6, borderRadius: rayons.surface },
+  rangeeAssurances: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  puces: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
+  puce: { minHeight: 28, paddingHorizontal: 10, justifyContent: 'center', borderRadius: rayons.repere },
+  lien: { minHeight: CIBLE_TACTILE, justifyContent: 'center' },
+  groupe: { marginTop: 20 },
+  modeNuit: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, minHeight: 60, paddingVertical: 8 },
+  textesMode: { flexGrow: 1, flexShrink: 1, gap: 2 },
+  modes: { flexDirection: 'row', gap: 6 },
+  pied: { marginTop: 12, marginHorizontal: 4, gap: 4 },
   lienAgent: { minHeight: CIBLE_TACTILE, flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' },
 });
 

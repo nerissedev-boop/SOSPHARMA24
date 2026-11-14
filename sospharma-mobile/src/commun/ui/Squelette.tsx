@@ -3,6 +3,8 @@ import { StyleSheet, View, type DimensionValue, type StyleProp, type ViewStyle }
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 
 import { t } from '../lib/i18n';
+import { hauteurs } from '../theme/espacements';
+import { ombres } from '../theme/ombres';
 import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { DUREES, usePulsation } from './animations';
@@ -62,36 +64,31 @@ export function Squelette({ largeur = '100%', hauteur = 14, rayon = 6, anime = t
 
 type PropsForme = { style?: StyleProp<ViewStyle>; testID?: string };
 
-/** Forme d'une carte de liste (vignette 56, nom, statut, distance) pendant le chargement. */
+/** Forme d'une ligne de liste à plat (nom, état, bouton d'appel) pendant le chargement. */
 export function SqueletteCartePharmacie({ style, testID = 'squelette-carte' }: PropsForme) {
-  const { couleurs: c } = useTheme();
   return (
-    <ZoneSquelette testID={testID} style={[styles.carte, { backgroundColor: c.surface2 }, style]}>
-      <Squelette anime={false} largeur={56} hauteur={56} rayon={12} />
+    <View testID={testID} style={[styles.carte, style]}>
       <View style={styles.textes}>
-        <Squelette anime={false} largeur="72%" hauteur={14} />
+        <Squelette anime={false} largeur="68%" hauteur={15} />
         <Squelette anime={false} largeur="46%" hauteur={12} />
       </View>
-      <Squelette anime={false} largeur={44} hauteur={12} />
-    </ZoneSquelette>
+      <Squelette anime={false} largeur={40} hauteur={40} rayon={20} />
+    </View>
   );
 }
 
-/** Forme du bloc « la plus proche » (pastille, deux lignes, deux boutons). */
+/** Forme de la carte « la plus proche » : état, nom, distance, repère, puis les deux boutons de 56. */
 export function SqueletteBlocProche({ style, testID = 'squelette-bloc-proche' }: PropsForme) {
-  const { couleurs: c } = useTheme();
+  const { couleurs: c, estNuit } = useTheme();
   return (
-    <ZoneSquelette testID={testID} style={[styles.bloc, { backgroundColor: c.surface2 }, style]}>
-      <View style={styles.ligne}>
-        <Squelette anime={false} largeur={46} hauteur={46} rayon={23} />
-        <View style={styles.textes}>
-          <Squelette anime={false} largeur="64%" hauteur={16} />
-          <Squelette anime={false} largeur="40%" hauteur={12} />
-        </View>
-      </View>
-      <View style={styles.ligne}>
-        <Squelette anime={false} hauteur={44} rayon={12} style={styles.bouton} />
-        <Squelette anime={false} hauteur={44} rayon={12} style={styles.bouton} />
+    <ZoneSquelette testID={testID} style={[styles.bloc, { backgroundColor: c.blocProche }, estNuit ? null : ombres.carte, style]}>
+      <Squelette anime={false} largeur={132} hauteur={16} />
+      <Squelette anime={false} largeur="72%" hauteur={26} style={styles.nomBloc} />
+      <Squelette anime={false} largeur="44%" hauteur={18} />
+      <Squelette anime={false} largeur="80%" hauteur={14} />
+      <View style={styles.actionsBloc}>
+        <Squelette anime={false} hauteur={hauteurs.boutonAction} rayon={rayons.touche} style={styles.appeler} />
+        <Squelette anime={false} hauteur={hauteurs.boutonAction} rayon={rayons.touche} style={styles.yAller} />
       </View>
     </ZoneSquelette>
   );
@@ -137,25 +134,34 @@ export function SqueletteFiche({ style, testID = 'squelette-fiche', hauteurPhoto
 /** Largeurs des lignes d'horaires du squelette de fiche (irrégulières, comme du vrai texte). */
 const LIGNES_HORAIRES: DimensionValue[] = ['70%', '62%', '70%', '55%', '66%'];
 
-/** Plusieurs cartes squelettes à la suite (premier chargement d'une liste). */
-export function SqueletteListe({ nombre = 4, ecart = 10 }: { nombre?: number; ecart?: number }) {
+/** Lignes grises dans une seule surface (premier chargement d'une liste) : une respiration pour toutes. */
+export function SqueletteListe({ nombre = 4 }: { nombre?: number }) {
+  const { couleurs: c } = useTheme();
   return (
-    <View style={{ gap: ecart }} testID="squelette-liste">
+    <ZoneSquelette testID="squelette-liste" style={[styles.liste, { backgroundColor: c.carte }]}>
       {Array.from({ length: nombre }, (_, i) => (
-        <SqueletteCartePharmacie key={i} testID={`squelette-carte-${i}`} />
+        <View key={i}>
+          {i > 0 ? <View style={[styles.filet, { backgroundColor: c.separateur }]} /> : null}
+          <SqueletteCartePharmacie testID={`squelette-carte-${i}`} />
+        </View>
       ))}
-    </View>
+    </ZoneSquelette>
   );
 }
 
 const styles = StyleSheet.create({
-  carte: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16 },
-  bloc: { padding: 14, gap: 14, borderRadius: 16 },
+  carte: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  liste: { paddingHorizontal: 14, borderRadius: rayons.surface },
+  filet: { height: 1 },
+  bloc: { paddingTop: 14, paddingHorizontal: 16, paddingBottom: 8, gap: 8, borderRadius: rayons.surface },
+  nomBloc: { marginTop: 4 },
+  actionsBloc: { flexDirection: 'row', gap: 8, marginTop: 6, marginHorizontal: -8 },
+  appeler: { flex: 1.25, width: undefined },
+  yAller: { flex: 1, width: undefined },
   ligne: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   textes: { flex: 1, gap: 8, minWidth: 0 },
-  bouton: { flex: 1, width: undefined },
   fiche: { flexGrow: 1 },
-  feuilleFiche: { flexGrow: 1, marginTop: -24, padding: 20, gap: 20, borderTopLeftRadius: rayons.feuille, borderTopRightRadius: rayons.feuille },
+  feuilleFiche: { flexGrow: 1, marginTop: -24, padding: 20, gap: 20, borderTopLeftRadius: rayons.surface, borderTopRightRadius: rayons.surface },
   titreFiche: { alignItems: 'flex-start' },
   pastilleFiche: { marginTop: -34 },
   actionsFiche: { flexDirection: 'row', gap: 8 },

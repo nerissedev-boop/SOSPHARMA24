@@ -5,7 +5,7 @@ import { CIBLE_TACTILE } from '../theme/espacements';
 import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { HiGeoLocation } from './icones/healthicons';
-import { IconeChevronBas, IconeRepere } from './icones/trait';
+import { IconeChevronBas } from './icones/trait';
 import { Texte } from './Texte';
 
 type Props = {
@@ -15,9 +15,9 @@ type Props = {
   /**
    * entete : accueil (« Position détectée » au-dessus) ;
    * compacte : en-tête de la carte ;
-   * bandeau : aplat gris arrondi de 44 px (carte dézoomée, zone non couverte) ;
-   * pastille : pilule touchable (repère, libellé, chevron) dans l'en-tête de l'écran Garde ;
-   *   translucide sur l'en-tête rouge (`surFonce`), aplat de surface sur le fond de nuit.
+   * bandeau : aplat gris arrondi de 48 dp (carte dézoomée, zone non couverte) ;
+   * pastille : zone touchable (repère, libellé, chevron) en tête des écrans Accueil et Garde ;
+   *   translucide sur un bandeau foncé (`surFonce`), aplat de surface ailleurs.
    */
   variante?: 'entete' | 'compacte' | 'bandeau' | 'pastille';
   /** Petit libellé au-dessus (variante entete). */
@@ -26,7 +26,7 @@ type Props = {
   iconeNeutre?: boolean;
   /**
    * Posée sur un aplat de couleur : variante entete sur le bandeau vert profond de l'accueil
-   * (texte blanc, accents vert tendre) ; variante pastille sur l'en-tête rouge de l'écran Garde.
+   * (texte blanc, accents vert tendre) ; variante pastille sur les bandeaux de l'Accueil et de la Garde.
    */
   surFonce?: boolean;
   testID?: string;
@@ -50,10 +50,10 @@ export function BarreZone({ libelle, onChanger, variante = 'entete', surtitre, i
         hitSlop={{ top: 4, bottom: 4 }}
         style={({ pressed }) => [
           styles.pastille,
-          { backgroundColor: surFonce ? 'rgba(255,255,255,0.18)' : c.surface, opacity: pressed ? 0.8 : 1 },
+          { backgroundColor: surFonce ? c.boutonSurFonce : c.surface, opacity: pressed ? 0.8 : 1 },
         ]}
       >
-        <IconeRepere size={16} color={surFonce ? c.blanc : c.rougeTexte} />
+        <HiGeoLocation size={18} color={surFonce ? c.blanc : c.rougeTexte} />
         <Texte variante="petitFort" couleur={texte} style={styles.textePastille} numberOfLines={1}>
           {libelle}
         </Texte>
@@ -134,15 +134,15 @@ const styles = StyleSheet.create({
   surtitre: { fontFamily: 'PlusJakartaSans_400Regular' },
   compacte: { flexDirection: 'row', alignItems: 'center', gap: 6, height: CIBLE_TACTILE, maxWidth: 120, flexShrink: 1 },
   nomCompact: { flexShrink: 1 },
-  bandeau: { height: CIBLE_TACTILE, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, borderRadius: rayons.moyen },
+  bandeau: { height: CIBLE_TACTILE, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, borderRadius: rayons.touche },
   pastille: {
-    height: 36,
+    height: 40,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingLeft: 10,
     paddingRight: 12,
-    borderRadius: rayons.pilule,
+    borderRadius: rayons.touche,
     flexShrink: 1,
   },
   textePastille: { fontSize: 14, flexShrink: 1 },

@@ -5,7 +5,6 @@
     "retour": "Retour",
     "fermer": "Fermer",
     "appeler": "Appeler",
-    "itineraire": "Itinéraire",
     "whatsapp": "WhatsApp",
     "annuler": "Annuler",
     "voirDetails": "Voir les détails",
@@ -18,9 +17,11 @@
     "ok": "OK",
     "aucuneZone": "Choisir une zone",
     "votreAssurance": "Votre assurance",
-    "voirFiche": "Voir la fiche",
     "positionAConfirmer": "Position à confirmer",
-    "positionAConfirmerTexte": "Position pas encore relevée : appelez la pharmacie pour connaître le chemin."
+    "positionAConfirmerTexte": "Position pas encore relevée : appelez la pharmacie pour connaître le chemin.",
+    "yAller": "Y aller",
+    "yAllerA11y": "Aller jusqu’à {{nom}}",
+    "laPlusProche": "La plus proche"
   },
   "statut": {
     "garde": "De garde cette nuit",
@@ -34,7 +35,6 @@
     "fermeeOuvre": "Fermée, ouvre à {{heure}}",
     "fermeeOuvreJour": "Fermée, ouvre {{jour}} à {{heure}}",
     "fermee": "Fermée",
-    "confirmeeLe": "Confirmée le {{date}}",
     "pastilleOuverte": "Pharmacie ouverte",
     "pastilleGarde": "Pharmacie de garde",
     "pastilleFermee": "Pharmacie fermée",
@@ -59,9 +59,10 @@
   },
   "demarrage": {
     "logo": "Logo SOS Pharma 24",
-    "slogan": "Votre santé, notre priorité",
-    "disponibilite": "24h/24 · 7j/7",
-    "miseAJour": "Mise à jour du tour de garde de la semaine"
+    "miseAJour": "Mise à jour du tour de garde de la semaine",
+    "role": "Pharmacies ouvertes et de garde",
+    "tourEnregistre": "Tour de garde du {{debut}} au {{fin}} enregistré.",
+    "arrierePlan": "La mise à jour se fait en arrière-plan."
   },
   "localisation": {
     "titre": "Nous avons besoin de votre localisation",
@@ -74,25 +75,15 @@
     "permissionTexte": "Pour vous montrer les pharmacies les plus proches et les pharmacies de garde autour de vous."
   },
   "accueil": {
-    "bonjour": "Bonjour {{prenom}}",
-    "bonjourSeul": "Bonjour",
-    "bonsoir": "Bonsoir {{prenom}}",
-    "bonsoirSeul": "Bonsoir",
     "aide": "Comment pouvons-nous vous aider aujourd’hui ?",
     "proches": "Pharmacies proches",
     "trouvees_one": "{{count}} trouvée",
     "trouvees_other": "{{count}} trouvées",
-    "garde": "Pharmacies de garde",
-    "gardeOuvertes_one": "{{count}} ouverte maintenant",
-    "gardeOuvertes_other": "{{count}} ouvertes maintenant",
-    "periodeGarde": "Garde du {{debut}} au {{fin}}",
     "autour": "Autour de vous",
     "voirCarte": "Voir sur la carte",
     "toutes": "Toutes",
     "ouvertes": "Ouvertes",
     "deGarde": "De garde",
-    "plusProcheOuverte": "La plus proche ouverte",
-    "plusProcheGarde": "La plus proche de garde",
     "notifications": "Notifications",
     "notificationsNouvelles": "Notifications, nouveau tour de garde",
     "heureNuit": "Il est {{heure}}. Les pharmacies de garde passent en premier.",
@@ -102,11 +93,12 @@
     "fermeesNuit_other": "{{count}} pharmacies proches sont fermées cette nuit.",
     "modeJour": "Passer en mode jour",
     "modeNuit": "Passer en mode nuit",
-    "resume_one": "{{heure}} · {{count}} pharmacie ouverte autour de vous",
-    "resume_other": "{{heure}} · {{count}} pharmacies ouvertes autour de vous"
+    "titreJour_zero": "Aucune pharmacie ouverte autour de vous",
+    "titreJour_one": "{{count}} pharmacie ouverte autour de vous",
+    "titreJour_other": "{{count}} pharmacies ouvertes autour de vous",
+    "tourGarde": "Tour de garde du {{debut}} au {{fin}}"
   },
   "carte": {
-    "titre": "Autour de vous",
     "recherche": "Rechercher une pharmacie…",
     "rechercheA11y": "Rechercher une pharmacie",
     "filtres": "Filtres",
@@ -120,16 +112,13 @@
     "voirGardes": "Voir les pharmacies de garde",
     "legendePharmacies": "Pharmacies",
     "legendeGarde": "Dont de garde",
-    "avis": "({{count}} avis)",
     "marqueur": "{{nom}}, {{statut}}, {{distance}}",
     "selectionnee": "{{libelle}}, sélectionnée",
     "commune_one": "{{nom}}, {{count}} pharmacie dont {{gardes}} de garde",
     "commune_other": "{{nom}}, {{count}} pharmacies dont {{gardes}} de garde",
     "horsLigne": "Sans réseau, la carte est remplacée par la liste.",
-    "nonDisponible": "La carte demande un development build (MapLibre). Voici la liste.",
-    "ouvrirFicheIndice": "Ouvre la fiche de la pharmacie",
-    "appelerNom": "Appeler {{nom}}",
-    "itineraireNom": "Itinéraire vers {{nom}}"
+    "nonDisponible": "La carte n’est pas disponible ici. Voici la liste des pharmacies.",
+    "ouvrirFicheIndice": "Ouvre la fiche de la pharmacie"
   },
   "garde": {
     "titre": "Pharmacies de garde",
@@ -157,13 +146,17 @@
     "groupeDetail_one": "{{count}} de garde, à {{distance}}",
     "groupeDetail_other": "{{count}} de garde, la plus proche à {{distance}}",
     "sansCommune": "Commune non précisée",
-    "plusProcheTitre": "La plus proche de garde",
     "aPied": "{{minutes}} min à pied",
-    "itineraireA11y": "Itinéraire vers {{nom}}",
     "erreurTitre": "Liste de garde indisponible",
     "erreurTexte": "La liste n’a pas pu être chargée. Vérifiez votre connexion, puis réessayez.",
-    "aucunTour": "Aucune liste de garde n’est encore publiée pour cette ville.",
-    "horsConnexionTexte": "Pas de connexion internet. La liste s’affichera dès le retour du réseau."
+    "horsConnexionTexte": "La liste s’affichera dès le retour du réseau. Les appels, eux, passent sans internet.",
+    "tourCourt": "Tour du {{debut}} au {{fin}}",
+    "confirmeeBandeau": "liste confirmée le {{date}}",
+    "horsConnexionTitre": "Pas de réseau, et aucune liste sur ce téléphone",
+    "pasDeListeTitre": "Pas encore de liste de garde pour cette semaine",
+    "pasDeListeTexte": "Le nouveau tour est publié le samedi matin. Les pharmacies ouvertes 24h/24 restent ouvertes.",
+    "voir24h": "Voir les pharmacies 24h/24",
+    "enCasDUrgence": "En cas d’urgence"
   },
   "fiche": {
     "photo": "Photo de la façade",
@@ -172,7 +165,6 @@
     "partager": "Partager",
     "favori": "Favori",
     "informations": "Informations",
-    "adresse": "Adresse",
     "telephone": "Téléphone",
     "horaires": "Horaires",
     "h24": "Ouvert 24h/24, 7j/7",
@@ -194,11 +186,12 @@
     "servicesListe": "Services : {{services}}.",
     "mettreAJour": "Mettre à jour cette fiche (agent)",
     "ferme": "Fermée",
-    "yAllerCourt": "Y aller",
     "whatsapp": "Écrire sur WhatsApp",
     "aPied": "{{minutes}} min à pied",
     "voirSemaine": "Affiche les horaires de toute la semaine",
-    "masquerSemaine": "Masque les horaires de la semaine"
+    "masquerSemaine": "Masque les horaires de la semaine",
+    "repere": "Repère",
+    "envoyerChauffeur": "Envoyer au chauffeur"
   },
   "services": {
     "ordonnances": "Ordonnances",
@@ -352,8 +345,6 @@
   "profil": {
     "titre": "Profil",
     "modifier": "Modifier",
-    "ajouterNom": "Ajouter votre nom",
-    "localSeulement": "Reste sur votre téléphone",
     "favoris": "Pharmacies favorites",
     "aucunFavori": "Ajoutez une pharmacie à vos favoris depuis sa fiche.",
     "favorisErreur": "Vos favoris n’ont pas pu être chargés. Vérifiez votre connexion.",
@@ -370,35 +361,30 @@
     "langueAuto": "Langue du téléphone",
     "langueTexte": "L’application revient à l’accueil dans la langue choisie.",
     "modeNuit": "Mode nuit",
-    "modeNuitAuto": "Le soir, de 19 h à 6 h",
+    "modeNuitAuto": "Auto : de 19 h à 6 h",
     "modes": {
-      "auto": "Automatique",
-      "jour": "Désactivé",
-      "nuit": "Activé"
+      "auto": "Auto",
+      "jour": "Jour",
+      "nuit": "Nuit"
     },
     "aide": "Aide",
     "contact": "Nous contacter",
     "signaler": "Signaler une erreur sur une pharmacie",
     "signalerChoisir": "Ouvrez la fiche de la pharmacie concernée, puis touchez « Signaler une erreur ».",
     "demo": "Mode démonstration : pharmacies et numéros fictifs.",
-    "editerTitre": "Votre profil",
-    "prenom": "Prénom",
-    "nom": "Nom",
-    "telephone": "Téléphone",
-    "enregistrer": "Enregistrer",
     "mesAssurances": "Mes assurances",
     "espaceAgent": "Espace agent et pharmacien",
-    "proposer": "Proposer une pharmacie manquante"
+    "proposer": "Proposer une pharmacie manquante",
+    "mesPharmacies": "Mes pharmacies",
+    "modifierAssurances": "Modifier mes assurances",
+    "assurancesTexte": "Les pharmacies qui les acceptent portent « Votre assurance »."
   },
   "urgence": {
     "titre": "Urgence",
-    "sos": "SOS",
-    "sosTexte": "Trouver une pharmacie de garde maintenant",
-    "plusProche": "La plus proche de garde",
-    "aPied": "{{minutes}} min à pied",
-    "besoin": "Besoin d’aide immédiate ?",
     "appeler": "Appeler {{nom}}, {{numero}}",
-    "autresGardes": "Voir toutes les pharmacies de garde"
+    "autresGardes": "Toutes les pharmacies de garde",
+    "unAppui": "Un appui compose le numéro.",
+    "secours": "Secours"
   },
   "vide": {
     "titre": "Aucune pharmacie trouvée",
@@ -410,8 +396,9 @@
     "proposer": "Une pharmacie manque ? Proposez-la"
   },
   "horsConnexion": {
-    "bandeau": "Hors connexion, liste de garde du {{date}} enregistrée",
-    "bandeauSansDate": "Hors connexion, données enregistrées affichées"
+    "titre": "Hors connexion",
+    "miseAJour": "Hors connexion · mise à jour {{quand}}",
+    "appels": "Les appels passent sans internet."
   },
   "notifications": {
     "canal": "Tour de garde"
@@ -693,5 +680,10 @@
     "precisions": "Signalé depuis l’app : trouvée fermée après un appel ou un trajet.",
     "merciTitre": "Merci",
     "merciTexte": "Votre signalement a été envoyé. Nous vérifions cette pharmacie."
+  },
+  "temps": {
+    "aujourdhui": "à {{heure}}",
+    "hier": "hier à {{heure}}",
+    "le": "le {{date}} à {{heure}}"
   }
 }

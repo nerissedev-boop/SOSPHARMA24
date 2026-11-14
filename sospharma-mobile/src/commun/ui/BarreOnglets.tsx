@@ -3,7 +3,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { t } from '../lib/i18n';
 import { useSessionAgent } from '../lib/sessionAgent';
-import { ombres } from '../theme/ombres';
 import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { HiGeoLocation, HiHome, HiUiUserProfile, HiUiUserProfileOutline } from './icones/healthicons';
@@ -22,11 +21,11 @@ type Props = {
 
 /**
  * Barre d'onglets personnalisée (5 onglets) : Urgence = cercle rouge avec +,
- * Garde actif en rouge, sinon actif vert. Fond blanc, haut arrondi de 20, ombre douce, sans bordure.
+ * Garde actif en rouge, sinon actif vert. Fond blanc, haut arrondi de 20, à plat (refonte v2), sans bordure.
  * Utilisable par le navigateur d'onglets ou seule (écrans hors onglets des maquettes).
  */
 export function BarreOnglets({ actif, onSelection }: Props) {
-  const { couleurs: c, estNuit } = useTheme();
+  const { couleurs: c } = useTheme();
   const insets = useSafeAreaInsets();
   const agentConnecte = useSessionAgent((e) => e.agent !== null);
 
@@ -84,7 +83,6 @@ export function BarreOnglets({ actif, onSelection }: Props) {
       style={[
         styles.barre,
         { backgroundColor: c.navigation, paddingBottom: Math.max(insets.bottom, 12), minHeight: 66 + Math.max(insets.bottom, 12) },
-        !estNuit && ombres.barre,
       ]}
     >
       {(agentConnecte ? ORDRE_ONGLETS_AGENT : ORDRE_ONGLETS).map(rendu)}
@@ -99,8 +97,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingTop: 8,
     paddingHorizontal: 4,
-    borderTopLeftRadius: rayons.grandeCarte,
-    borderTopRightRadius: rayons.grandeCarte,
+    borderTopLeftRadius: rayons.surface,
+    borderTopRightRadius: rayons.surface,
   },
   onglet: { minWidth: 60, minHeight: 50, alignItems: 'center' },
   urgence: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },

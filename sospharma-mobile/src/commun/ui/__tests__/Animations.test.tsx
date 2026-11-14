@@ -86,7 +86,7 @@ describe('Squelette', () => {
     expect(screen.getByLabelText('Chargement')).toBeTruthy();
   });
 
-  it('carte et bloc « la plus proche » : arrondis 16, vignette 56 arrondie 12', async () => {
+  it('bloc « la plus proche » et liste : surfaces arrondies à 20, lignes dans une seule surface', async () => {
     await rendre(
       <>
         <SqueletteCartePharmacie />
@@ -94,8 +94,8 @@ describe('Squelette', () => {
         <SqueletteListe nombre={3} />
       </>,
     );
-    expect(StyleSheet.flatten(screen.getByTestId('squelette-carte').props.style).borderRadius).toBe(16);
-    expect(StyleSheet.flatten(screen.getByTestId('squelette-bloc-proche').props.style).borderRadius).toBe(16);
+    expect(StyleSheet.flatten(screen.getByTestId('squelette-bloc-proche').props.style).borderRadius).toBe(20);
+    expect(StyleSheet.flatten(screen.getByTestId('squelette-liste').props.style).borderRadius).toBe(20);
     expect(screen.getAllByTestId(/^squelette-carte-\d$/)).toHaveLength(3);
   });
 });

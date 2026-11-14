@@ -4,30 +4,41 @@ import { useCallback, useMemo, useState } from 'react';
 import { BackHandler, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { PharmacieResume } from '@/commun/api';
-import { bornesCourtes, comparerDistance, heure, marquerSortieVolontaire, t, useEnLigne, usePreferences } from '@/commun/lib';
-import { rayons, useMaintenant, useTheme } from '@/commun/theme';
+import {
+  bornesCourtes,
+  comparerDistance,
+  heure,
+  marquerSortieVolontaire,
+  repereEtCommune,
+  t,
+  telephoneAffiche,
+  useEnLigne,
+  usePreferences,
+} from '@/commun/lib';
+import { CIBLE_TACTILE, espacements, rayons, useMaintenant, useTheme } from '@/commun/theme';
 import { estInactive } from '@/commun/regles';
 import {
   avecErrorBoundary,
   BandeauHorsConnexion,
   BarreZone,
-  BlocPlusProche,
   BoutonIcone,
+  CartePlusProche,
+  ChampRecherche,
+  ChargementCroix,
   Ecran,
   EtatVide,
   Filtre,
-  ChampRecherche,
-  IconeChevronDroite,
   HiMedicalSearchOutline,
   IconeLune,
   LignePharmacie,
-  ChargementCroix,
+  Squelette,
   SqueletteBlocProche,
   SqueletteListe,
   Texte,
   useChargementVisible,
+  ZoneSquelette,
 } from '@/commun/ui';
-import { useTourEnCours } from '@/modules/gardes';
+import { detailGarde, useTourEnCours } from '@/modules/gardes';
 import { usePaysCourant, useZoneCourante } from '@/modules/territoire';
 
 import { clesPharmacies } from '../api';
@@ -36,11 +47,15 @@ import { useActionsPharmacie } from '../hooks/useActions';
 import { useLibelleStatut, usePharmaciesProches, useTonStatut } from '../hooks/usePharmacies';
 
 /** Hauteur dont la grande carte « La plus proche » remonte sur le bandeau. */
-const CHEVAUCHEMENT = 44;
-/** Bouton rond posé sur le bandeau foncé (même voile que la barre de zone `surFonce`). */
-const FOND_TRANSLUCIDE = 'rgba(255,255,255,0.18)';
+const CHEVAUCHEMENT = 52;
+/** L'Accueil sert à trouver vite : quelques lignes, la suite est sur la carte ou dans l'onglet Garde. */
+const LIGNES_ACCUEIL = 5;
 
-/** 03 Accueil (jour) et 19 Accueil nuit : la nuit, les pharmacies de garde passent en premier. */
+/**
+ * 03 Accueil (jour) et 19 Accueil nuit, refonte v2 : le bandeau donne l'état du moment (pas de
+ * salutation), la plus proche le chevauche, puis la recherche (le jour) et une liste imprimée.
+ * La nuit, les pharmacies de garde passent en premier, avec leur numéro.
+ */
 function Accueil() {
   // Touche retour sur l'accueil : l'usager quitte l'app ; au prochain appui sur l'icône,
   // l'écran du logo repasse (commun/lib/premierPlan.ts). false : Android garde son comportement.
@@ -57,20 +72,19 @@ function Accueil() {
   const { couleurs: c, estNuit } = useTheme();
   const maintenant = useMaintenant();
   const { libelle } = useZoneCourante();
-  const { fuseau } = usePaysCourant();
-  const profil = usePreferences((e) => e.profil);
+  const { pays, fuseau } = usePaysCourant();
   const filtreRapide = usePreferences((e) => e.filtreRapide);
   const definirFiltreRapide = usePreferences((e) => e.definirFiltreRapide);
   const definirModeNuit = usePreferences((e) => e.definirModeNuit);
   const proches = usePharmaciesProches();
   const toutes = usePharmaciesProches({ rapide: 'toutes', actif: true });
-  const { tour, dateEnregistree } = useTourEnCours();
+  const { tour, dataUpdatedAt: tourMisAJourLe } = useTourEnCours();
   const client = useQueryClient();
   const enLigne = useEnLigne();
   const [actualisation, setActualisation] = useState(false);
   // Glisser pour actualiser : pharmacies proches (liste et compteur) et tour de garde. Hors connexion,
   // rien n'est relancé (la requête attendrait le réseau et la roue tournerait sans fin) : le cache reste
-  // affiché et le bandeau hors connexion dit de quand il date.
+  // affiché et le bandeau dit de quand il date.
   const actualiser = async () => {
     if (!enLigne) return;
     setActualisation(true);
@@ -96,55 +110,77 @@ function Accueil() {
     () => [...(tour?.pharmacies ?? [])].filter((p) => p.statut === 'garde').sort(comparerDistance),
     [tour],
   );
-  const prenom = profil.prenom.trim();
   const [saisie, setSaisie] = useState('');
 
-  const ligne = (p: PharmacieResume, contexte: 'liste' | 'garde' = 'liste', rang?: number) => (
-    <LignePharmacie
-      key={p.id}
-      rang={rang}
-      testID={`ligne-${p.id}`}
+  const carte = (p: PharmacieResume, libelleEtat: string) => (
+    <CartePlusProche
+      id={p.id}
+      testID="bloc-plus-proche"
       nom={p.nom}
       statut={p.statut}
-      libelleStatut={libelleStatut(p, contexte)}
       ton={tonStatut(p)}
-      // Photo de façade validée, sinon devanture dessinée (null).
-      photoUrl={p.photo_url ?? null}
-      positionAConfirmer={p.latitude === null}
+      libelleStatut={libelleEtat}
       distanceM={p.distance_m}
       marcheMin={p.marche_min}
-      iconeMarche={!estNuit}
+      repere={repereEtCommune(p)}
+      assurance={p.accepte_mes_assurances === true}
+      positionAConfirmer={p.latitude === null}
+      conseil={estNuit}
       onPress={() => actions.ouvrir(p)}
       onAppeler={p.telephone ? () => actions.appeler(p) : undefined}
+      onYAller={() => actions.itineraire(p)}
+      style={styles.chevauchement}
     />
   );
 
   /**
-   * Piste A (maquette validée le 2026-11-11) : bandeau foncé aux coins bas arrondis (zone, mode,
-   * salutation, résumé en une phrase), puis la plus proche en grande carte qui chevauche le bandeau.
+   * Bandeau foncé aux coins bas arrondis : zone et mode nuit, l'état du moment en titre, puis la
+   * plus proche en grande carte qui le chevauche. Hors connexion, l'heure de la dernière mise à jour.
    */
-  const bandeau = (titre: string, resume: string | null, chevauche: boolean) => (
+  const bandeau = (titre: string | null, surtitre: string | null, misAJourLe: number, chevauche: boolean) => (
     <View style={[styles.bandeau, chevauche && styles.bandeauChevauche, { backgroundColor: c.vertProfond }]} testID="bandeau-accueil">
       <View style={styles.entete}>
-        <BarreZone libelle={libelle} onChanger={() => router.push('/zone')} surFonce testID="barre-zone" />
+        <BarreZone variante="pastille" libelle={libelle} onChanger={() => router.push('/zone')} surFonce testID="barre-zone" />
         <BoutonIcone
           accessibilityLabel={estNuit ? t('accueil.modeJour') : t('accueil.modeNuit')}
           rond
-          fond={FOND_TRANSLUCIDE}
+          fond={c.boutonSurFonce}
           onPress={() => definirModeNuit(estNuit ? 'jour' : 'nuit')}
           testID="bouton-mode"
         >
           <IconeLune size={20} color={c.blanc} plein={estNuit} />
         </BoutonIcone>
       </View>
-      <Texte variante="titreEcran" titre couleur={c.blanc} style={styles.salutation}>
-        {titre}
-      </Texte>
-      {resume ? (
-        <Texte variante="petit" couleur={c.vertTendre} testID="resume-accueil">
-          {resume}
+      {surtitre ? (
+        <Texte variante="petitFort" couleur={c.vertTendre} testID="surtitre-accueil">
+          {surtitre}
         </Texte>
       ) : null}
+      <BandeauHorsConnexion misAJourLe={misAJourLe} fuseau={fuseau} couleurTexte={c.vertTendre} />
+      {titre ? (
+        <Texte variante="titreEcran" titre couleur={c.blanc} testID="titre-accueil">
+          {titre}
+        </Texte>
+      ) : (
+        // Premier chargement : la place du titre est gardée, la carte ne saute pas à son arrivée.
+        <ZoneSquelette style={styles.titreAttente} testID="titre-accueil-attente">
+          <Squelette anime={false} largeur="88%" hauteur={24} style={{ backgroundColor: c.boutonSurFonce }} />
+          <Squelette anime={false} largeur="52%" hauteur={24} style={{ backgroundColor: c.boutonSurFonce }} />
+        </ZoneSquelette>
+      )}
+    </View>
+  );
+
+  const titreSection = (titre: string, lien: string, aller: () => void) => (
+    <View style={styles.titreSection}>
+      <Texte variante="section" titre style={styles.flexible}>
+        {titre}
+      </Texte>
+      <Pressable onPress={aller} accessibilityRole="link" style={styles.lien}>
+        <Texte variante="boutonPetit" couleur={c.vertTexte}>
+          {lien}
+        </Texte>
+      </Pressable>
     </View>
   );
 
@@ -152,64 +188,63 @@ function Accueil() {
   if (estNuit) {
     const [premiere, ...autres] = gardes;
     const fermees = (toutes.liste ?? []).filter((p) => p.statut === 'fermee').length;
-    const chevauche = premiere !== undefined || !tour;
+    const bornes = tour ? bornesCourtes(tour.debut, tour.fin, fuseau) : null;
+    const lignes = autres.slice(0, LIGNES_ACCUEIL);
     return (
       <Ecran testID="ecran-accueil" fond={c.vertProfond} barreClaire>
-        <BandeauHorsConnexion dateGarde={dateEnregistree} />
         <ScrollView
-          contentContainerStyle={[styles.contenu, styles.contenuBandeau]}
+          contentContainerStyle={styles.contenu}
           style={{ backgroundColor: c.fond }}
           refreshControl={controleActualiser}
           testID="defilement-accueil"
         >
           {bandeau(
-            prenom ? t('accueil.bonsoir', { prenom }) : t('accueil.bonsoirSeul'),
             t('accueil.heureNuit', { heure: heure(maintenant, fuseau) }),
-            chevauche,
+            bornes ? t('accueil.tourGarde', bornes) : null,
+            tourMisAJourLe,
+            premiere !== undefined || !tour,
           )}
           {premiere ? (
-            <View style={styles.chevauchement}>
-              <BlocPlusProche
-                testID="bloc-plus-proche"
-                garde
-                titre={t('accueil.plusProcheGarde')}
-                photoUrl={premiere.photo_url ?? null}
-                positionAConfirmer={premiere.latitude === null}
-                nom={premiere.nom}
-                statut={premiere.statut}
-                ton={tonStatut(premiere)}
-                libelleStatut={libelleStatut(premiere, 'garde')}
-                distanceM={premiere.distance_m}
-                marcheMin={premiere.marche_min}
-                onPress={() => actions.ouvrir(premiere)}
-                onAppeler={() => actions.appeler(premiere)}
-                onItineraire={() => actions.itineraire(premiere)}
-              />
-            </View>
+            carte(premiere, libelleStatut(premiere, 'carte'))
           ) : tour ? (
             // Tour chargé mais aucune garde : dessin plutôt qu'un squelette qui attendrait sans fin.
             <EtatVide titre={t('garde.aucuneTitre')} dessin="gardeVide" testID="accueil-aucune-garde" />
           ) : (
             <SqueletteBlocProche style={styles.chevauchement} />
           )}
-          <View style={styles.titreSection}>
-            <Texte variante="section" titre>
-              {t('accueil.autresGarde')}
+          {lignes.length > 0 ? (
+            <>
+              {titreSection(t('accueil.autresGarde'), t('accueil.toutVoir'), () => router.navigate('/garde'))}
+              <View>
+                {lignes.map((p, i) => (
+                  <LignePharmacie
+                    key={p.id}
+                    testID={`ligne-${p.id}`}
+                    variante="garde"
+                    premiere={i === 0}
+                    derniere={i === lignes.length - 1}
+                    nom={p.nom}
+                    statut={p.statut}
+                    libelleStatut={libelleStatut(p, 'garde')}
+                    ton={tonStatut(p)}
+                    commune={p.commune}
+                    numero={p.telephone ? telephoneAffiche(p.telephone, pays?.indicatif) : null}
+                    restriction={detailGarde(p, fuseau).restriction}
+                    positionAConfirmer={p.latitude === null}
+                    distanceM={p.distance_m}
+                    marcheMin={p.marche_min}
+                    onPress={() => actions.ouvrir(p)}
+                    onAppeler={p.telephone ? () => actions.appeler(p) : undefined}
+                  />
+                ))}
+              </View>
+            </>
+          ) : null}
+          {fermees > 0 ? (
+            <Texte variante="libelle" couleur={c.texteSecondaire} style={styles.fermees}>
+              {t('accueil.fermeesNuit', { count: fermees })}
             </Texte>
-            <Pressable onPress={() => router.navigate('/garde')} accessibilityRole="link" hitSlop={10} style={styles.lien}>
-              <Texte variante="boutonPetit" couleur={c.vertTexte} style={styles.texte13}>
-                {t('accueil.toutVoir')}
-              </Texte>
-            </Pressable>
-          </View>
-          <View style={styles.liste}>
-            {autres.slice(0, 5).map((p, i) => ligne(p, 'garde', i))}
-            {fermees > 0 ? (
-              <Texte variante="libelle" couleur={c.texteSecondaire} style={styles.fermees}>
-                {t('accueil.fermeesNuit', { count: fermees })}
-              </Texte>
-            ) : null}
-          </View>
+          ) : null}
         </ScrollView>
       </Ecran>
     );
@@ -219,105 +254,44 @@ function Accueil() {
   const liste = filtreEnCours ? [] : (proches.liste ?? []);
   // La plus proche ouverte ou de garde : ni fermée, ni « horaires à confirmer ».
   const premiere = liste.find((p) => !estInactive(p.statut));
-  // L'Accueil sert à trouver vite : 5 lignes, la suite est sur la carte (« Voir la carte »).
-  const reste = liste.filter((p) => p.id !== premiere?.id).slice(0, 5);
-  const bornes = tour ? bornesCourtes(tour.debut, tour.fin, fuseau) : null;
+  const reste = liste.filter((p) => p.id !== premiere?.id).slice(0, LIGNES_ACCUEIL);
   const premierChargement = proches.isPending && !proches.liste;
-  const chevauche = premiere !== undefined || premierChargement;
   const ouvertes = (toutes.liste ?? []).filter((p) => p.statut === 'ouverte' || p.statut === 'garde').length;
 
   return (
     <Ecran testID="ecran-accueil" fond={c.vertProfond} barreClaire>
-      <BandeauHorsConnexion dateGarde={dateEnregistree} />
       <ScrollView
-        contentContainerStyle={[styles.contenu, styles.contenuBandeau]}
+        contentContainerStyle={styles.contenu}
         style={{ backgroundColor: c.fond }}
         refreshControl={controleActualiser}
+        keyboardShouldPersistTaps="handled"
         testID="defilement-accueil"
       >
-        {bandeau(
-          prenom ? t('accueil.bonjour', { prenom }) : t('accueil.bonjourSeul'),
-          toutes.liste ? t('accueil.resume', { heure: heure(maintenant, fuseau), count: ouvertes }) : null,
-          chevauche,
-        )}
+        {bandeau(toutes.liste ? t('accueil.titreJour', { count: ouvertes }) : null, null, proches.dataUpdatedAt, premiere !== undefined || premierChargement)}
 
         {/* La plus proche chevauche le bandeau : visible et joignable sans faire défiler. */}
-        {premiere ? (
-          <View style={styles.chevauchement}>
-            <BlocPlusProche
-              testID="bloc-plus-proche"
-              garde={premiere.statut === 'garde'}
-              titre={premiere.statut === 'garde' ? t('accueil.plusProcheGarde') : t('accueil.plusProcheOuverte')}
-              photoUrl={premiere.photo_url ?? null}
-              positionAConfirmer={premiere.latitude === null}
-              nom={premiere.nom}
-              statut={premiere.statut}
-              ton={tonStatut(premiere)}
-              libelleStatut={libelleStatut(premiere)}
-              distanceM={premiere.distance_m}
-              marcheMin={premiere.marche_min}
-              onPress={() => actions.ouvrir(premiere)}
-              onAppeler={() => actions.appeler(premiere)}
-              onItineraire={() => actions.itineraire(premiere)}
-            />
-          </View>
-        ) : premierChargement ? (
-          <SqueletteBlocProche style={styles.chevauchement} />
-        ) : null}
+        {premiere ? carte(premiere, libelleStatut(premiere)) : premierChargement ? <SqueletteBlocProche style={styles.chevauchement} /> : null}
 
-        {/* Recherche par nom : les résultats s'ouvrent sur la carte. */}
-        <ChampRecherche
-          libelle={t('carte.rechercheA11y')}
-          placeholder={t('carte.recherche')}
-          value={saisie}
-          onChangeText={setSaisie}
-          returnKeyType="search"
-          onSubmitEditing={() => {
-            const q = saisie.trim();
-            if (!q) return;
-            setSaisie('');
-            router.navigate({ pathname: '/carte', params: { q, n: String(Date.now()) } });
-          }}
-          rendreIcone={(couleur) => <HiMedicalSearchOutline size={22} color={couleur} />}
-          testID="champ-recherche-accueil"
-        />
-
-        {/* Tour de garde en une ligne : l'accès à l'écran Garde reste à un appui depuis l'accueil. */}
-        <Pressable
-          testID="carte-gardes"
-          onPress={() => router.navigate('/garde')}
-          accessibilityRole="button"
-          accessibilityLabel={[t('accueil.garde'), t('accueil.gardeOuvertes', { count: gardes.length }), bornes ? t('accueil.periodeGarde', bornes) : null]
-            .filter(Boolean)
-            .join(', ')}
-          style={({ pressed }) => [styles.lienGarde, { backgroundColor: c.rougeClair, opacity: pressed ? 0.85 : 1 }]}
-        >
-          <View style={[styles.rond, { backgroundColor: c.rouge }]}>
-            <IconeLune size={18} color={c.blanc} plein />
-          </View>
-          <View style={styles.textesGarde}>
-            <Texte variante="petitFort" couleur={c.rougeTexteFort} numberOfLines={2}>
-              {t('accueil.garde')} · {t('accueil.gardeOuvertes', { count: gardes.length })}
-            </Texte>
-            {bornes ? (
-              <Texte variante="libelle" couleur={c.rougeTexteFort} numberOfLines={2}>
-                {t('accueil.periodeGarde', bornes)}
-              </Texte>
-            ) : null}
-          </View>
-          <IconeChevronDroite size={16} color={c.rougeTexteFort} strokeWidth={2.6} />
-        </Pressable>
-
-        <View style={styles.titreSection}>
-          <Texte variante="section" titre>
-            {t('accueil.autour')}
-          </Texte>
-          <Pressable onPress={() => router.navigate('/carte')} accessibilityRole="link" hitSlop={10} style={styles.lien}>
-            <Texte variante="petitFort" couleur={c.vertTexte}>
-              {t('accueil.voirCarte')}
-            </Texte>
-          </Pressable>
+        {/* Recherche par nom, juste sous la grande carte : les résultats s'ouvrent sur la carte. */}
+        <View style={styles.recherche}>
+          <ChampRecherche
+            libelle={t('carte.rechercheA11y')}
+            placeholder={t('carte.recherche')}
+            value={saisie}
+            onChangeText={setSaisie}
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              const q = saisie.trim();
+              if (!q) return;
+              setSaisie('');
+              router.navigate({ pathname: '/carte', params: { q, n: String(Date.now()) } });
+            }}
+            rendreIcone={(couleur) => <HiMedicalSearchOutline size={22} color={couleur} />}
+            testID="champ-recherche-accueil"
+          />
         </View>
+
+        {titreSection(t('accueil.autour'), t('accueil.voirCarte'), () => router.navigate('/carte'))}
 
         <View style={styles.filtres}>
           <Filtre libelle={t('accueil.toutes')} selectionne={filtreRapide === 'toutes'} onPress={() => definirFiltreRapide('toutes')} />
@@ -333,51 +307,67 @@ function Accueil() {
           />
         </View>
 
-        {filtreEnCours ? (
-          // Après un appui sur un filtre : la croix de la marque bat le temps que la liste arrive.
-          <ChargementCroix style={styles.chargementFiltre} testID="chargement-filtre" />
-        ) : premierChargement ? (
-          // Lignes grises qui respirent pendant le premier chargement (la grande carte a la sienne en haut).
-          <View style={styles.chargement} testID="chargement-proches">
-            <SqueletteListe nombre={4} ecart={8} />
-          </View>
-        ) : null}
-        <View style={styles.liste}>{reste.map((p, i) => ligne(p, 'liste', i))}</View>
-        {proches.isSuccess && !filtreEnCours && liste.length === 0 ? <AucunResultat onActualiser={() => void proches.refetch()} /> : null}
+        <View style={styles.liste}>
+          {filtreEnCours ? (
+            // Après un appui sur un filtre : la croix de la marque bat le temps que la liste arrive.
+            <ChargementCroix style={styles.chargementFiltre} testID="chargement-filtre" />
+          ) : premierChargement ? (
+            // Lignes grises qui respirent pendant le premier chargement (la grande carte a la sienne en haut).
+            <View testID="chargement-proches">
+              <SqueletteListe nombre={4} />
+            </View>
+          ) : null}
+          {reste.map((p, i) => (
+            <LignePharmacie
+              key={p.id}
+              testID={`ligne-${p.id}`}
+              animee
+              premiere={i === 0}
+              derniere={i === reste.length - 1}
+              nom={p.nom}
+              statut={p.statut}
+              libelleStatut={libelleStatut(p)}
+              ton={tonStatut(p)}
+              commune={p.commune}
+              assurance={p.accepte_mes_assurances === true}
+              positionAConfirmer={p.latitude === null}
+              distanceM={p.distance_m}
+              marcheMin={p.marche_min}
+              onPress={() => actions.ouvrir(p)}
+              onAppeler={p.telephone ? () => actions.appeler(p) : undefined}
+            />
+          ))}
+          {proches.isSuccess && !filtreEnCours && liste.length === 0 ? <AucunResultat onActualiser={() => void proches.refetch()} /> : null}
+        </View>
       </ScrollView>
     </Ecran>
   );
 }
 
 const styles = StyleSheet.create({
-  contenu: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 24, gap: 16 },
-  contenuBandeau: { paddingTop: 0 },
+  contenu: { paddingHorizontal: espacements.gouttiere, paddingBottom: 24 },
   bandeau: {
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 22,
+    marginHorizontal: -espacements.gouttiere,
+    paddingHorizontal: espacements.gouttiere,
+    paddingTop: 12,
+    paddingBottom: 20,
     gap: 6,
-    borderBottomLeftRadius: rayons.feuille,
-    borderBottomRightRadius: rayons.feuille,
+    borderBottomLeftRadius: rayons.surface,
+    borderBottomRightRadius: rayons.surface,
   },
-  // Place laissée sous le résumé pour la grande carte qui chevauche le bandeau.
-  bandeauChevauche: { paddingBottom: 22 + CHEVAUCHEMENT },
-  salutation: { marginTop: 10 },
-  // Le gap de 16 du contenu s'ajoute : on remonte d'autant pour poser la carte sur le bandeau.
-  chevauchement: { marginTop: -(CHEVAUCHEMENT + 16) },
-  entete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  lienGarde: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 10, paddingHorizontal: 12, borderRadius: rayons.carte },
-  rond: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  textesGarde: { flex: 1, gap: 2, minWidth: 0 },
-  titreSection: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 8, marginTop: 4, marginBottom: -4 },
-  lien: { minHeight: 44, justifyContent: 'center' },
-  texte13: { fontSize: 13 },
-  filtres: { flexDirection: 'row', gap: 8, marginBottom: -4 },
-  chargement: { marginTop: 4, gap: 12 },
+  // Place laissée sous le titre pour la grande carte qui chevauche le bandeau.
+  bandeauChevauche: { paddingBottom: 20 + CHEVAUCHEMENT },
+  chevauchement: { marginTop: -CHEVAUCHEMENT },
+  entete: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4 },
+  titreAttente: { gap: 6, paddingTop: 3 },
+  recherche: { marginTop: 16 },
+  titreSection: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: CIBLE_TACTILE, marginTop: 8 },
+  flexible: { flex: 1 },
+  lien: { minHeight: CIBLE_TACTILE, justifyContent: 'center' },
+  filtres: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  liste: { marginTop: 12 },
   chargementFiltre: { height: 220 },
-  liste: { gap: 8 },
-  fermees: { marginTop: 8 },
+  fermees: { marginTop: 12, paddingHorizontal: 4 },
 });
 
 export default avecErrorBoundary(Accueil, 'Accueil');

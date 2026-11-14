@@ -46,6 +46,8 @@ jest.mock('react-native-reanimated', () => {
     FadeIn: constructeur(),
     FadeOut: constructeur(),
     LinearTransition: constructeur(),
+    // Saute l'entrée des enfants au premier rendu : sous Jest, rien n'est animé de toute façon.
+    LayoutAnimationConfig: ({ children }: { children: unknown }) => children,
   };
 });
 

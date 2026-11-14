@@ -1,23 +1,15 @@
 /**
- * Rayons d'arrondi de la charte « cartes » (28 oct. 2026, maquette façon Yango) :
- * cartes blanches arrondies sur fond clair, toujours sans bordure.
- * Les éléments réellement ronds (pastilles, boutons ronds) gardent un rayon de moitié de leur côté.
+ * Trois rayons et le rond (refonte v2, 14 nov.), chacun avec un rôle ; toujours sans bordure.
+ * Dans la carte « la plus proche », les boutons sont posés à 8 du bord : 12 + 8 = 20, leurs coins
+ * suivent ceux de la carte.
  */
 export const rayons = {
-  /** Petits badges posés sur un élément (« 24 », case à cocher). */
-  mini: 6,
-  /** Segments, puces internes, étiquettes rectangulaires. */
-  petit: 10,
-  /** Vignette photo des lignes de pharmacie (56 × 56). */
-  vignette: 12,
-  /** Boutons, champs, bandeaux d'information, photo de la carte « La plus proche ». */
-  moyen: 14,
-  /** Cartes des listes (lignes de pharmacie, sections de la fiche). */
-  carte: 16,
-  /** Grandes cartes (« La plus proche »), barre d'onglets (haut). */
-  grandeCarte: 20,
-  /** Haut des feuilles et des dialogues, bas des en-têtes colorés. */
-  feuille: 24,
-  /** Filtres, badges et pastilles en forme de pilule. */
-  pilule: 999,
+  /** Repères : « 24 », assurances, « Hors connexion », étiquettes du plan. */
+  repere: 6,
+  /** Ce qu'on touche : boutons, champs, filtres, zone. */
+  touche: 12,
+  /** Surfaces : carte la plus proche, bas des bandeaux, listes, carte d'infos, feuilles, barre d'onglets. */
+  surface: 20,
+  /** Les vrais ronds seulement : boutons d'appel, boutons du haut, marqueurs, interrupteur. */
+  rond: 999,
 } as const;

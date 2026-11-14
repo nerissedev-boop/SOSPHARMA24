@@ -12,6 +12,8 @@ const pharmacie = {
   id: 'ph_1',
   nom: 'Pharmacie Gazelle',
   statut: 'garde',
+  commune: 'Cocody',
+  adresse: 'Rue des Jardins',
   distance_m: 900,
   marche_min: 11,
   telephone: '+2250700000000',
@@ -24,45 +26,47 @@ const pharmacie = {
 function rendreFeuille(p: PharmacieResume | null, surcharges: Partial<Parameters<typeof FeuillePharmacieCarte>[0]> = {}) {
   const props = {
     pharmacie: p,
-    libelleStatut: () => 'De garde',
+    plusProche: true,
+    libelleStatut: () => 'De garde, ouverte toute la nuit',
+    tonStatut: () => 'rouge' as const,
     onOuvrir: jest.fn(),
     onAppeler: jest.fn(),
-    onItineraire: jest.fn(),
+    onYAller: jest.fn(),
     onFermer: jest.fn(),
     ...surcharges,
   };
   return { props, rendu: rendre(<FeuillePharmacieCarte {...props} />) };
 }
 
-describe('Aperçu pharmacie sur la carte', () => {
+describe('Aperçu posé sur la carte : la carte « la plus proche », variante compacte', () => {
   it('fermé : rien n’est affiché', async () => {
     await rendreFeuille(null).rendu;
     expect(screen.queryByTestId('apercu-carte')).toBeNull();
   });
 
-  it('sans photo : devanture dessinée, nom, statut et distance', async () => {
+  it('état, nom, distance et commune, sans repère ni photo', async () => {
     await rendreFeuille(pharmacie).rendu;
-    expect(screen.getByTestId('apercu-carte-facade')).toBeTruthy();
-    expect(screen.queryByTestId('apercu-carte-photo')).toBeNull();
+    expect(screen.getByText('La plus proche')).toBeTruthy();
     expect(screen.getByText('Pharmacie Gazelle')).toBeTruthy();
-    expect(screen.getByText('De garde')).toBeTruthy();
-    expect(screen.getByText('0,9 km')).toBeTruthy();
+    expect(screen.getByText('De garde, ouverte toute la nuit')).toBeTruthy();
+    expect(screen.getByTestId('apercu-carte-details')).toHaveTextContent('0,9 km · 11 min à pied · Cocody');
+    expect(screen.queryByTestId('apercu-carte-repere')).toBeNull();
+    expect(screen.queryByTestId('apercu-carte-photo')).toBeNull();
   });
 
-  it('avec photo : la photo de façade remplace le dessin', async () => {
-    await rendreFeuille({ ...pharmacie, photo_url: 'https://exemple.test/facade.jpg' }).rendu;
-    expect(screen.getByTestId('apercu-carte-photo', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.queryByTestId('apercu-carte-facade')).toBeNull();
+  it('une autre pharmacie touchée sur le plan : pas d’étiquette « La plus proche »', async () => {
+    await rendreFeuille(pharmacie, { plusProche: false }).rendu;
+    expect(screen.queryByText('La plus proche')).toBeNull();
   });
 
-  it('Appeler, Itinéraire et appui sur l’aperçu (fiche), avec libellés d’accessibilité', async () => {
+  it('Appeler, Y aller et appui sur la carte (fiche), avec libellés d’accessibilité', async () => {
     const { props, rendu } = rendreFeuille(pharmacie);
     await rendu;
     await fireEvent.press(screen.getByLabelText('Appeler Pharmacie Gazelle'));
     expect(props.onAppeler).toHaveBeenCalledWith(pharmacie);
-    await fireEvent.press(screen.getByLabelText('Itinéraire vers Pharmacie Gazelle'));
-    expect(props.onItineraire).toHaveBeenCalledWith(pharmacie);
-    await fireEvent.press(screen.getByTestId('apercu-carte-ouvrir'));
+    await fireEvent.press(screen.getByLabelText('Aller jusqu’à Pharmacie Gazelle'));
+    expect(props.onYAller).toHaveBeenCalledWith(pharmacie);
+    await fireEvent.press(screen.getByRole('button', { name: /La plus proche : Pharmacie Gazelle/ }));
     expect(props.onOuvrir).toHaveBeenCalledWith(pharmacie);
   });
 

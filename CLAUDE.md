@@ -46,8 +46,8 @@ Monorepo GitHub `nerissedev-boop/SOSPHARMA24`, branche `main`. Chaque sous-proje
   - Les images de stock (pharmacienne souriante, 3D, blobs) : une vraie façade validée, sinon la devanture dessinée.
   - Le mouvement qui décore : compteur qui part de 0, cascade sur une liste déjà en cache, parallaxe, Lottie, deux boucles visibles en même temps.
   - Tout ce qui retarde quelqu'un en urgence : attente imposée au démarrage, carrousel de bienvenue, compte obligatoire, demande de note, carte plein écran par défaut, roue qui tourne hors connexion.
-  - Une couleur hors de son sens : du rouge ailleurs que pour la garde, le « 24 » et l'urgence (exception : le texte d'erreur sous un champ), de l'ocre décoratif, un gris froid de Tailwind parmi les neutres sable.
-  - Une même action en deux couleurs : « Appeler » vert plein et « Itinéraire » blanc à icône verte sur tous les écrans ; la garde se reconnaît à l'étiquette, à la pastille et au « 24 » (tranché le 12 nov. 2026).
+  - Une couleur hors de son sens : du rouge ailleurs que pour la garde, le « 24 » et l'urgence (exception : le texte d'erreur sous un champ), de l'ocre décoratif, un gris froid de Tailwind parmi les neutres argentés.
+  - Une même action en deux couleurs : « Appeler » vert plein et « Y aller » pâle à icône verte (libellés en 19 px gras) sur tous les écrans ; la garde se reconnaît à l'étiquette, à la pastille et au « 24 » (tranché le 12 nov. 2026).
   - Une nuit qui éblouit : en mode nuit, aucun aplat blanc ou sable plein écran, splash compris.
 - **Voix des textes** :
   - Vouvoiement. Français standard avec les mots d'ici, sans nouchi ni familiarité. Une idée par phrase, une quinzaine de mots au plus. Un verbe sur chaque bouton (« Appeler », « Y aller », « Envoyer le signalement »).
@@ -67,7 +67,7 @@ Monorepo GitHub `nerissedev-boop/SOSPHARMA24`, branche `main`. Chaque sous-proje
   - **Vert** `#1B8A3E` = la pharmacie et les actions.
   - **Rouge** `#D32F2F` (bandeau Garde `#9E1F1F`) = la garde, le « 24 » et l'urgence.
   - **Ocre** = états intermédiaires seulement (« ferme dans 20 min », « en vérification », « à envoyer »).
-  - Neutres chauds : fond sable `#FBF8F3`, cartes blanches, texte `#1C1F1A`.
+  - Neutres argentés (thème jour ; la nuit ne change pas) : fond `#F3F5F3`, surfaces (champs, filtres, puces, boutons secondaires) `#E8EBE8`, `surface2` `#EDF0ED`, filets `#DFE3DF`, texte secondaire `#565D58`, tertiaire `#5F6661`, cartes blanches, texte `#1C1F1A`. Le canal vert un ou deux points au-dessus des autres, rien de commun avec les gris bleutés de Tailwind.
 - Typographie : titres **Vonca** (licence client, fichiers à récupérer dans les dossiers du site ; repli **Urbanist** en attendant), texte **Plus Jakarta Sans** (`sospharma-mobile/src/commun/theme/typographie.ts`). Back-office : police système.
 - Thèmes : clair et sombre dans l'app, **mêmes clés de jetons** ; jamais de couleur en dur. Back-office : clair seulement.
 - Animations : `sospharma-mobile/src/commun/ui/animations.ts` (`DUREES` : 90 à 300 ms), sur le fil UI, coupées par « Supprimer les animations » / `ReduceMotion.System`.
@@ -80,7 +80,6 @@ Monorepo GitHub `nerissedev-boop/SOSPHARMA24`, branche `main`. Chaque sous-proje
 - **CI** : `sospharma-api/.github/workflows/tests.yml` est dans un sous-dossier, GitHub ne l'exécute pas (laissé tel quel pour l'instant).
 
 ## ⚠️ Pièges
-- **Pas encore dans Git** (au 13 nov. 2026) : `sospharma-admin/`, les `CLAUDE.md` et `.claude/`. Une perte du disque les efface. À commiter dès que possible.
 - **Tests API qui vident la base** : avec une config en cache, les tests visent MySQL au lieu de SQLite en mémoire (arrivé le 31 oct. 2026). Garde-fou dans `tests/TestCase.php` ; toujours `php artisan optimize:clear` avant.
 - **`D:\sp` n'est pas un dépôt Git** : copie de `sospharma-mobile` pour compiler Android sous la limite de chemins Windows. Recopier `src/` et `app/` avant chaque build ; ne jamais y laisser de modification non reportée.
 - **Mode démo de l'app** (`EXPO_PUBLIC_API_MOCK=1`, par défaut) : pharmacies **fictives**.

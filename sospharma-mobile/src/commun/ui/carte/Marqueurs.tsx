@@ -56,7 +56,7 @@ export function MarqueurCommune({ nombre, gardes }: { nombre: number; gardes: nu
       style={[
         styles.commune,
         ombres.marqueur,
-        { width: taille + 16, height: taille + 16, borderRadius: (taille + 16) / 2, backgroundColor: 'rgba(27,138,62,0.18)' },
+        { width: taille + 16, height: taille + 16, borderRadius: (taille + 16) / 2, backgroundColor: c.carteHaloCommune },
       ]}
     >
       <View style={{ width: taille, height: taille, borderRadius: taille / 2, backgroundColor: c.vert, alignItems: 'center', justifyContent: 'center' }}>
@@ -97,7 +97,7 @@ export function PointPosition({ taille = 26 }: { taille?: number }) {
 
 const styles = StyleSheet.create({
   marqueur: { flexDirection: 'row', alignItems: 'center' },
-  etiquette: { paddingLeft: 9, paddingRight: 7, paddingVertical: 2, borderRadius: rayons.pilule, zIndex: -1 },
+  etiquette: { paddingLeft: 9, paddingRight: 7, paddingVertical: 2, borderRadius: rayons.repere, zIndex: -1 },
   etiquetteSelection: { paddingLeft: 12, paddingRight: 9, paddingVertical: 4 },
   texteSelection: { fontFamily: 'PlusJakartaSans_800ExtraBold' },
   commune: { alignItems: 'center', justifyContent: 'center' },
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     minWidth: 22,
     height: 22,
-    borderRadius: rayons.pilule,
+    borderRadius: rayons.rond,
     paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',

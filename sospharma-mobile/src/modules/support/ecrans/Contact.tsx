@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   whatsapp: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14 },
   rond: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   deux: { flexDirection: 'row', gap: 8 },
-  canal: { flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, borderRadius: rayons.moyen },
+  canal: { flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, borderRadius: rayons.touche },
   formulaire: { gap: 10 },
   sujets: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   sujet: { width: '48.5%', minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },

@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   textes: { flex: 1, gap: 1, minWidth: 0 },
   quitter: { height: 44, justifyContent: 'center' },
   gras: { fontFamily: 'PlusJakartaSans_700Bold' },
-  bandeau: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: rayons.moyen },
+  bandeau: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: rayons.touche },
   compteurs: { flexDirection: 'row', gap: 8 },
   compteur: { flex: 1, padding: 12, gap: 2 },
   nombre: { fontSize: 22, lineHeight: 28 },

@@ -2,10 +2,10 @@ import { StyleSheet, View } from 'react-native';
 
 import { t } from '@/commun/lib';
 import { CIBLE_TACTILE, espacements, rayons, useTheme } from '@/commun/theme';
-import { BarreZone, IconePartage, NombreAnime, PressableAnime, Texte } from '@/commun/ui';
+import { BandeauHorsConnexion, BarreZone, IconePartage, NombreAnime, PressableAnime, Texte } from '@/commun/ui';
 
-/** La carte « La plus proche de garde » remonte de 48 sur le bas du bandeau (maquette, piste A). */
-export const CHEVAUCHEMENT = 48;
+/** La carte « La plus proche » remonte de 52 sur le bas du bandeau (refonte v2). */
+export const CHEVAUCHEMENT = 52;
 
 type Props = {
   libelleZone: string;
@@ -16,6 +16,13 @@ type Props = {
   /** Nombre de pharmacies de garde du tour ; null tant que le tour n'est pas là. */
   nombre: number | null;
   bornes: { debut: string; fin: string } | null;
+  /** « 6 nov. » : date de confirmation de la liste par l'Ordre, à côté de la période du tour. */
+  confirmeeLe: string | null;
+  /** Hors connexion : heure de la dernière mise à jour du tour (`dataUpdatedAt`). */
+  misAJourLe: number;
+  /** Sans aucune liste enregistrée, l'état « hors connexion » de la liste le dit déjà. */
+  masquerHorsConnexion: boolean;
+  fuseau: string;
   /** Premier chargement : la place du résumé est gardée, la carte ne saute pas à l'arrivée du tour. */
   reserverResume: boolean;
   /** Une carte chevauche le bas du bandeau : on lui laisse la place. */
@@ -23,17 +30,30 @@ type Props = {
 };
 
 /**
- * Bandeau de l'écran Garde (piste A) : rouge foncé d'un bord à l'autre, coins bas arrondis, dans
- * le défilement. Zone en pilule et Partager en haut, puis le titre et le résumé du tour (nombre
- * de gardes, période).
+ * Bandeau de l'écran Garde : rouge foncé d'un bord à l'autre, coins bas arrondis, dans le
+ * défilement. Zone et Partager en haut, puis le titre, le nombre de gardes et, comme sur la liste
+ * de l'Ordre, la période du tour et la date de confirmation, en tête plutôt qu'en pied de liste.
  */
-export function BandeauGarde({ libelleZone, onChangerZone, onPartager, partageActif, nombre, bornes, reserverResume, chevauche }: Props) {
+export function BandeauGarde({
+  libelleZone,
+  onChangerZone,
+  onPartager,
+  partageActif,
+  nombre,
+  bornes,
+  confirmeeLe,
+  misAJourLe,
+  masquerHorsConnexion,
+  fuseau,
+  reserverResume,
+  chevauche,
+}: Props) {
   const { couleurs: c } = useTheme();
+  const periode = [bornes ? t('garde.tourCourt', bornes) : null, confirmeeLe ? t('garde.confirmeeBandeau', { date: confirmeeLe }) : null]
+    .filter(Boolean)
+    .join(' · ');
   return (
-    <View
-      testID="bandeau-garde"
-      style={[styles.bandeau, { backgroundColor: c.bandeauGarde, paddingBottom: chevauche ? CHEVAUCHEMENT + 18 : 24 }]}
-    >
+    <View testID="bandeau-garde" style={[styles.bandeau, { backgroundColor: c.bandeauGarde, paddingBottom: chevauche ? CHEVAUCHEMENT + 20 : 24 }]}>
       <View style={styles.rangee}>
         <BarreZone variante="pastille" surFonce libelle={libelleZone} onChanger={onChangerZone} testID="pastille-zone-garde" />
         <PressableAnime
@@ -43,20 +63,21 @@ export function BandeauGarde({ libelleZone, onChangerZone, onPartager, partageAc
           accessibilityRole="button"
           accessibilityLabel={t('garde.partagerA11y')}
           accessibilityState={{ disabled: !partageActif }}
-          style={[styles.partager, { backgroundColor: c.bandeauGardeBouton }, !partageActif && styles.inactif]}
+          style={[styles.partager, { backgroundColor: c.boutonSurFonce }, !partageActif && styles.inactif]}
         >
           <IconePartage size={20} color={c.texteSurCouleur} strokeWidth={2.2} />
         </PressableAnime>
       </View>
-      <Texte variante="titreEcran" titre couleur={c.texteSurCouleur} style={styles.titre}>
+      <BandeauHorsConnexion misAJourLe={misAJourLe} fuseau={fuseau} couleurTexte={c.rougeTendre} visible={masquerHorsConnexion ? false : undefined} />
+      <Texte variante="titreEcran" titre couleur={c.texteSurCouleur}>
         {t('garde.titre')}
       </Texte>
       {nombre !== null ? (
         <View style={styles.resume}>
           <NombreAnime variante="corpsFort" couleur={c.texteSurCouleur} valeur={nombre} rendu={(n) => t('garde.ouvertesNuit', { count: n })} />
-          {bornes ? (
-            <Texte variante="petit" couleur={c.rougeTendre}>
-              {t('garde.tour', bornes)}
+          {periode ? (
+            <Texte variante="petit" couleur={c.rougeTendre} testID="garde-periode">
+              {periode}
             </Texte>
           ) : null}
         </View>
@@ -75,10 +96,11 @@ const styles = StyleSheet.create({
   bandeau: {
     paddingHorizontal: espacements.gouttiere,
     paddingTop: 12,
-    borderBottomLeftRadius: rayons.feuille,
-    borderBottomRightRadius: rayons.feuille,
+    gap: 6,
+    borderBottomLeftRadius: rayons.surface,
+    borderBottomRightRadius: rayons.surface,
   },
-  rangee: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  rangee: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 4 },
   partager: {
     width: CIBLE_TACTILE,
     height: CIBLE_TACTILE,
@@ -88,6 +110,5 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   inactif: { opacity: 0.5 },
-  titre: { marginTop: 14 },
-  resume: { marginTop: 4, gap: 2 },
+  resume: { gap: 2 },
 });

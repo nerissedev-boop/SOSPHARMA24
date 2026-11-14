@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     minHeight: 32,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: rayons.petit,
+    borderRadius: rayons.repere,
   },
   appuye: { opacity: 0.7 },
   /** « + N autres » est une action : texte vert, en gras. */

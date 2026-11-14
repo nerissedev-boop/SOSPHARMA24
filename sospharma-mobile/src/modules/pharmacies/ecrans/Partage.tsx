@@ -107,7 +107,7 @@ function Partage() {
 
 const styles = StyleSheet.create({
   plein: { flex: 1 },
-  message: { padding: 14, gap: 6, borderRadius: rayons.moyen },
+  message: { padding: 14, gap: 6, borderRadius: rayons.touche },
   texteMessage: { lineHeight: 22 },
   options: { flexDirection: 'row', gap: 8 },
   option: { flex: 1, alignItems: 'center', gap: 8 },

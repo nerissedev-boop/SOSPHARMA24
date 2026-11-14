@@ -3,7 +3,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { distanceKm, t } from '@/commun/lib';
-import { CIBLE_TACTILE, useTheme } from '@/commun/theme';
+import { useTheme } from '@/commun/theme';
 import { DUREES, IconeChevronBas, Texte } from '@/commun/ui';
 
 import type { GroupeCommune } from '../regroupement';
@@ -11,8 +11,9 @@ import type { GroupeCommune } from '../regroupement';
 type Props = { groupe: GroupeCommune; ouvert: boolean; onPress: () => void };
 
 /**
- * Titre de commune en petites capitales grises (piste A), touchable pour déplier ou replier
- * ses pharmacies : « YOPOUGON · 4 DE GARDE », la distance de la plus proche, puis le chevron.
+ * Titre de commune écrit comme dans la liste de l'Ordre (refonte v2) : la commune en gras et en casse
+ * normale, puis « · 4 de garde », la distance de la plus proche et le chevron. Il se touche pour
+ * déplier ou replier ses pharmacies.
  * Le lecteur d'écran entend la phrase complète et l'état déplié.
  *
  * Mouvement : le chevron pivote d'un demi-tour (220 ms, départ vif, arrivée douce, fil UI) ;
@@ -40,11 +41,14 @@ export function EnTeteGroupe({ groupe, ouvert, onPress }: Props) {
       accessibilityLabel={`${nom}, ${detail}`}
       style={({ pressed }) => [styles.groupe, { opacity: pressed ? 0.6 : 1 }]}
     >
-      <Texte variante="libelleFort" couleur={c.texteSecondaire} style={styles.titre}>
-        {`${nom} · ${nombre}`}
+      <Texte variante="petit" couleur={c.texteSecondaire} style={styles.titre}>
+        <Texte variante="sectionMoyenne" titre>
+          {nom}
+        </Texte>
+        {` · ${nombre}`}
       </Texte>
       {groupe.plusProcheM !== null ? (
-        <Texte variante="petitFort" couleur={c.texteSecondaire}>
+        <Texte variante="petitFort" style={styles.chiffres}>
           {distanceKm(groupe.plusProcheM)}
         </Texte>
       ) : null}
@@ -56,6 +60,7 @@ export function EnTeteGroupe({ groupe, ouvert, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  groupe: { minHeight: CIBLE_TACTILE, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 },
-  titre: { flex: 1, textTransform: 'uppercase', letterSpacing: 0.6 },
+  groupe: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 },
+  titre: { flex: 1 },
+  chiffres: { fontVariant: ['tabular-nums'] },
 });

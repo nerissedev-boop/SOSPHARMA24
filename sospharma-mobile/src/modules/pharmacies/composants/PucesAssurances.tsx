@@ -64,7 +64,7 @@ export function PucesAssurances({ puces, onRetirer, action, hauteur = 38 }: Prop
 
 const styles = StyleSheet.create({
   puces: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  puce: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, minHeight: 36, borderRadius: rayons.pilule },
+  puce: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, minHeight: 36, borderRadius: rayons.touche },
   puceRetirable: { paddingLeft: 12, paddingRight: 10, gap: 8, minHeight: 44 },
   action: { gap: 6, minHeight: 44 },
   gras: { fontFamily: 'PlusJakartaSans_700Bold' },

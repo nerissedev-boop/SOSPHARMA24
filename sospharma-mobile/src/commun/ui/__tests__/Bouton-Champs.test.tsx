@@ -14,14 +14,14 @@ function styleAplati(element: { props: { style?: unknown } }) {
 }
 
 describe('Bouton avec icône', () => {
-  it('affiche l’icône nommée à gauche du libellé, écart 10 px, arrondi de 14, sans bordure', async () => {
+  it('affiche l’icône nommée à gauche du libellé, écart 10 px, arrondi de 12, sans bordure', async () => {
     await rendre(<Bouton libelle="Envoyer le signalement" icone="envoyer" testID="b" />);
     const bouton = screen.getByTestId('b');
     expect(screen.getByTestId('icone-envoyer')).toBeTruthy();
     const style = styleAplati(bouton);
     expect(style.gap).toBe(10);
-    expect(style.borderRadius).toBe(rayons.moyen);
-    expect(rayons.moyen).toBe(14);
+    expect(style.borderRadius).toBe(rayons.touche);
+    expect(rayons.touche).toBe(12);
     expect(style.borderWidth ?? 0).toBe(0);
     // L'icône précède le libellé.
     expect(JSON.stringify(screen.toJSON())).toMatch(/icone-envoyer[\s\S]*Envoyer le signalement/);
@@ -74,12 +74,12 @@ describe('Champ de saisie', () => {
     expect(screen.getByRole('button', { name: 'Masquer le mot de passe' })).toBeTruthy();
   });
 
-  it('libellé visible et lu, arrondi de 14, sans bordure', async () => {
+  it('libellé visible et lu, arrondi de 12, sans bordure', async () => {
     await rendre(<ChampSaisie libelle="Téléphone" icone="telephone" testID="t" />);
     // Libellé affiché, masqué aux lecteurs d'écran (déjà annoncé par le champ lui-même).
     expect(screen.getByText('Téléphone', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByLabelText('Téléphone')).toBeTruthy();
     expect(styleAplati(screen.getByTestId('t-fond')).borderWidth ?? 0).toBe(0);
-    expect(styleAplati(screen.getByTestId('t-fond')).borderRadius).toBe(rayons.moyen);
+    expect(styleAplati(screen.getByTestId('t-fond')).borderRadius).toBe(rayons.touche);
   });
 });

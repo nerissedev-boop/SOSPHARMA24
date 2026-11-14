@@ -5,7 +5,6 @@
     "retour": "Back",
     "fermer": "Close",
     "appeler": "Call",
-    "itineraire": "Directions",
     "whatsapp": "WhatsApp",
     "annuler": "Cancel",
     "voirDetails": "See details",
@@ -18,9 +17,11 @@
     "ok": "OK",
     "aucuneZone": "Choose an area",
     "votreAssurance": "Your insurance",
-    "voirFiche": "View details",
     "positionAConfirmer": "Location to be confirmed",
-    "positionAConfirmerTexte": "Location not checked yet: call the pharmacy to ask for directions."
+    "positionAConfirmerTexte": "Location not checked yet: call the pharmacy to ask for directions.",
+    "yAller": "Go there",
+    "yAllerA11y": "Go to {{nom}}",
+    "laPlusProche": "Nearest"
   },
   "statut": {
     "garde": "On duty tonight",
@@ -34,7 +35,6 @@
     "fermeeOuvre": "Closed, opens at {{heure}}",
     "fermeeOuvreJour": "Closed, opens {{jour}} at {{heure}}",
     "fermee": "Closed",
-    "confirmeeLe": "Confirmed on {{date}}",
     "pastilleOuverte": "Open pharmacy",
     "pastilleGarde": "On-duty pharmacy",
     "pastilleFermee": "Closed pharmacy",
@@ -59,9 +59,10 @@
   },
   "demarrage": {
     "logo": "SOS Pharma 24 logo",
-    "slogan": "Your health, our priority",
-    "disponibilite": "24/7",
-    "miseAJour": "Updating this week's on-duty rota"
+    "miseAJour": "Updating this week's on-duty rota",
+    "role": "Open and on-duty pharmacies",
+    "tourEnregistre": "On-duty rota from {{debut}} to {{fin}} saved.",
+    "arrierePlan": "The update runs in the background."
   },
   "localisation": {
     "titre": "We need your location",
@@ -74,25 +75,15 @@
     "permissionTexte": "To show you the nearest pharmacies and the on-duty pharmacies around you."
   },
   "accueil": {
-    "bonjour": "Hello {{prenom}}",
-    "bonjourSeul": "Hello",
-    "bonsoir": "Good evening {{prenom}}",
-    "bonsoirSeul": "Good evening",
     "aide": "How can we help you today?",
     "proches": "Nearby pharmacies",
     "trouvees_one": "{{count}} found",
     "trouvees_other": "{{count}} found",
-    "garde": "On-duty pharmacies",
-    "gardeOuvertes_one": "{{count}} open now",
-    "gardeOuvertes_other": "{{count}} open now",
-    "periodeGarde": "On duty from {{debut}} to {{fin}}",
     "autour": "Around you",
     "voirCarte": "See on the map",
     "toutes": "All",
     "ouvertes": "Open",
     "deGarde": "On duty",
-    "plusProcheOuverte": "Nearest open",
-    "plusProcheGarde": "Nearest on duty",
     "notifications": "Notifications",
     "notificationsNouvelles": "Notifications, new on-duty rota",
     "heureNuit": "It is {{heure}}. On-duty pharmacies are shown first.",
@@ -102,11 +93,12 @@
     "fermeesNuit_other": "{{count}} nearby pharmacies are closed tonight.",
     "modeJour": "Switch to day mode",
     "modeNuit": "Switch to night mode",
-    "resume_one": "{{heure}} · {{count}} pharmacy open near you",
-    "resume_other": "{{heure}} · {{count}} pharmacies open near you"
+    "titreJour_zero": "No pharmacy open near you",
+    "titreJour_one": "{{count}} pharmacy open near you",
+    "titreJour_other": "{{count}} pharmacies open near you",
+    "tourGarde": "On-duty rota from {{debut}} to {{fin}}"
   },
   "carte": {
-    "titre": "Around you",
     "recherche": "Search for a pharmacy...",
     "rechercheA11y": "Search for a pharmacy",
     "filtres": "Filters",
@@ -120,16 +112,13 @@
     "voirGardes": "See on-duty pharmacies",
     "legendePharmacies": "Pharmacies",
     "legendeGarde": "Of which on duty",
-    "avis": "({{count}} reviews)",
     "marqueur": "{{nom}}, {{statut}}, {{distance}}",
     "selectionnee": "{{libelle}}, selected",
     "commune_one": "{{nom}}, {{count}} pharmacy including {{gardes}} on duty",
     "commune_other": "{{nom}}, {{count}} pharmacies including {{gardes}} on duty",
     "horsLigne": "Without a network, the map is replaced by the list.",
-    "nonDisponible": "The map requires a development build (MapLibre). Here is the list.",
-    "ouvrirFicheIndice": "Opens the pharmacy details",
-    "appelerNom": "Call {{nom}}",
-    "itineraireNom": "Directions to {{nom}}"
+    "nonDisponible": "The map isn’t available here. Here is the list of pharmacies.",
+    "ouvrirFicheIndice": "Opens the pharmacy details"
   },
   "garde": {
     "titre": "On-duty pharmacies",
@@ -157,13 +146,17 @@
     "groupeDetail_one": "{{count}} on duty, {{distance}} away",
     "groupeDetail_other": "{{count}} on duty, nearest {{distance}} away",
     "sansCommune": "Area not specified",
-    "plusProcheTitre": "Nearest on duty",
     "aPied": "{{minutes}} min on foot",
-    "itineraireA11y": "Directions to {{nom}}",
     "erreurTitre": "On-duty list unavailable",
     "erreurTexte": "The list could not be loaded. Check your connection, then try again.",
-    "aucunTour": "No on-duty list has been published for this city yet.",
-    "horsConnexionTexte": "No internet connection. The list will appear as soon as you are back online."
+    "horsConnexionTexte": "The list will appear as soon as the network is back. Calls still work without internet.",
+    "tourCourt": "Rota from {{debut}} to {{fin}}",
+    "confirmeeBandeau": "list confirmed on {{date}}",
+    "horsConnexionTitre": "No network, and no list on this phone",
+    "pasDeListeTitre": "No on-duty list for this week yet",
+    "pasDeListeTexte": "The new rota is published on Saturday morning. 24/7 pharmacies stay open.",
+    "voir24h": "See 24/7 pharmacies",
+    "enCasDUrgence": "In an emergency"
   },
   "fiche": {
     "photo": "Storefront photo",
@@ -172,7 +165,6 @@
     "partager": "Share",
     "favori": "Favourite",
     "informations": "Information",
-    "adresse": "Address",
     "telephone": "Phone",
     "horaires": "Opening hours",
     "h24": "Open 24 hours, 7 days a week",
@@ -194,11 +186,12 @@
     "servicesListe": "Services: {{services}}.",
     "mettreAJour": "Update this listing (agent)",
     "ferme": "Closed",
-    "yAllerCourt": "Go there",
     "whatsapp": "Message on WhatsApp",
     "aPied": "{{minutes}} min on foot",
     "voirSemaine": "Shows the opening hours for the whole week",
-    "masquerSemaine": "Hides the week's opening hours"
+    "masquerSemaine": "Hides the week's opening hours",
+    "repere": "Landmark",
+    "envoyerChauffeur": "Send to driver"
   },
   "services": {
     "ordonnances": "Prescriptions",
@@ -352,8 +345,6 @@
   "profil": {
     "titre": "Profile",
     "modifier": "Edit",
-    "ajouterNom": "Add your name",
-    "localSeulement": "Stays on your phone",
     "favoris": "Favourite pharmacies",
     "aucunFavori": "Add a pharmacy to your favourites from its page.",
     "favorisErreur": "Your favourites could not be loaded. Check your connection.",
@@ -370,35 +361,30 @@
     "langueAuto": "Phone language",
     "langueTexte": "The app will return to the home screen in the chosen language.",
     "modeNuit": "Night mode",
-    "modeNuitAuto": "In the evening, from 7 pm to 6 am",
+    "modeNuitAuto": "Auto: from 7 pm to 6 am",
     "modes": {
-      "auto": "Automatic",
-      "jour": "Off",
-      "nuit": "On"
+      "auto": "Auto",
+      "jour": "Day",
+      "nuit": "Night"
     },
     "aide": "Help",
     "contact": "Contact us",
     "signaler": "Report an error about a pharmacy",
     "signalerChoisir": "Open the page of the pharmacy concerned, then tap “Report an error”.",
     "demo": "Demo mode: fictitious pharmacies and numbers.",
-    "editerTitre": "Your profile",
-    "prenom": "First name",
-    "nom": "Last name",
-    "telephone": "Phone",
-    "enregistrer": "Save",
     "mesAssurances": "My insurances",
     "espaceAgent": "Agent and pharmacist area",
-    "proposer": "Suggest a missing pharmacy"
+    "proposer": "Suggest a missing pharmacy",
+    "mesPharmacies": "My pharmacies",
+    "modifierAssurances": "Edit my insurance",
+    "assurancesTexte": "Pharmacies that accept them show “Your insurance”."
   },
   "urgence": {
     "titre": "Emergency",
-    "sos": "SOS",
-    "sosTexte": "Find an on-duty pharmacy now",
-    "plusProche": "Nearest on duty",
-    "aPied": "{{minutes}} min on foot",
-    "besoin": "Need help right away?",
     "appeler": "Call {{nom}}, {{numero}}",
-    "autresGardes": "See all on-duty pharmacies"
+    "autresGardes": "All on-duty pharmacies",
+    "unAppui": "One tap dials the number.",
+    "secours": "Emergency services"
   },
   "vide": {
     "titre": "No pharmacy found",
@@ -410,8 +396,9 @@
     "proposer": "A pharmacy is missing? Suggest it"
   },
   "horsConnexion": {
-    "bandeau": "Offline, on-duty list from {{date}} saved",
-    "bandeauSansDate": "Offline, saved data shown"
+    "titre": "Offline",
+    "miseAJour": "Offline · updated {{quand}}",
+    "appels": "Calls work without internet."
   },
   "notifications": {
     "canal": "On-duty rota"
@@ -698,5 +685,10 @@
     "precisions": "Reported from the app: found closed after a call or a trip.",
     "merciTitre": "Thank you",
     "merciTexte": "Your report has been sent. We are checking this pharmacy."
+  },
+  "temps": {
+    "aujourdhui": "at {{heure}}",
+    "hier": "yesterday at {{heure}}",
+    "le": "on {{date}} at {{heure}}"
   }
 }

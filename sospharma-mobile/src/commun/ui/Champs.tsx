@@ -159,7 +159,7 @@ type PropsRecherche = Omit<TextInputProps, 'style'> & {
 };
 
 /** Champ de recherche : icône loupe à gauche ; gris vide, vert clair actif ou rempli. */
-export function ChampRecherche({ libelle, icone, rendreIcone, hauteur = 46, taillePolice = 14, value, onFocus, onBlur, ...props }: PropsRecherche) {
+export function ChampRecherche({ libelle, icone, rendreIcone, hauteur = CIBLE_TACTILE, taillePolice = 15, value, onFocus, onBlur, ...props }: PropsRecherche) {
   const { couleurs: c } = useTheme();
   const etat = useEtatChamp(value, { onFocus, onBlur });
   return (
@@ -282,18 +282,18 @@ export function Segments<T extends string>({
 
 const styles = StyleSheet.create({
   champConteneur: { gap: 6 },
-  champ: { flexDirection: 'row', alignItems: 'center', borderRadius: rayons.moyen },
+  champ: { flexDirection: 'row', alignItems: 'center', borderRadius: rayons.touche },
   oeil: { width: CIBLE_TACTILE, height: CIBLE_TACTILE, alignItems: 'center', justifyContent: 'center' },
-  recherche: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, borderRadius: rayons.moyen },
+  recherche: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, borderRadius: rayons.touche },
   // Pas de contour de focus du navigateur (version web) : l'état actif est rendu par le fond vert clair.
   saisie: { flex: 1, minWidth: 0, paddingVertical: 0, height: '100%', outlineWidth: 0 },
   zoneConteneur: { gap: 6 },
-  zone: { padding: 12, fontSize: 14, borderRadius: rayons.moyen },
-  case: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderRadius: rayons.mini },
+  zone: { padding: 12, fontSize: 14, borderRadius: rayons.touche },
+  case: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderRadius: rayons.repere },
   radio: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   radioPoint: { width: 8, height: 8, borderRadius: 4 },
-  segments: { flexDirection: 'row', padding: 4, gap: 4, borderRadius: rayons.moyen },
-  segment: { flex: 1, height: 38, alignItems: 'center', justifyContent: 'center', minHeight: 38, borderRadius: rayons.petit },
+  segments: { flexDirection: 'row', padding: 4, gap: 4, borderRadius: rayons.touche },
+  segment: { flex: 1, height: 38, alignItems: 'center', justifyContent: 'center', minHeight: 38, borderRadius: rayons.repere },
 });
 
 export const HAUTEUR_CIBLE = CIBLE_TACTILE;

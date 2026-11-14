@@ -1,7 +1,7 @@
 import { Children, Fragment, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { ombres, rayons, useTheme } from '@/commun/theme';
+import { rayons, useTheme } from '@/commun/theme';
 import { Texte } from '@/commun/ui';
 
 type Props = {
@@ -13,18 +13,18 @@ type Props = {
 };
 
 /**
- * Groupe de réglages du Profil (piste A, 11 nov.) : titre en petites capitales grises, puis les
- * lignes dans une carte blanche arrondie. Les filets sont des aplats de 1 px (pas de bordure).
+ * Groupe de réglages du Profil (refonte v2) : titre en casse normale, puis les lignes dans une
+ * surface blanche à plat. Les filets sont des aplats de 1 px (pas de bordure).
  */
 export function GroupeReglages({ titre, children, style, testID }: Props) {
-  const { couleurs: c, estNuit } = useTheme();
+  const { couleurs: c } = useTheme();
   const lignes = Children.toArray(children);
   return (
     <View style={[styles.groupe, style]} testID={testID}>
-      <Texte variante="petitFort" titre couleur={c.texteSecondaire} style={styles.titre}>
+      <Texte variante="section" titre style={styles.titre}>
         {titre}
       </Texte>
-      <View style={[styles.carte, { backgroundColor: c.carte }, !estNuit && ombres.carte]}>
+      <View style={[styles.carte, { backgroundColor: c.carte }]}>
         {lignes.map((ligne, rang) => (
           <Fragment key={rang}>
             {rang > 0 ? <View style={[styles.filet, { backgroundColor: c.separateur }]} /> : null}
@@ -38,8 +38,8 @@ export function GroupeReglages({ titre, children, style, testID }: Props) {
 
 const styles = StyleSheet.create({
   groupe: { gap: 8 },
-  // Le titre s'aligne à 20 du bord (gouttière de l'app) ; la carte, elle, s'élargit à 16.
-  titre: { paddingHorizontal: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  carte: { paddingHorizontal: 16, borderRadius: rayons.grandeCarte },
+  // Le titre s'aligne sur le texte des lignes (16 + 4) ; la surface, elle, s'élargit à 16.
+  titre: { paddingHorizontal: 4 },
+  carte: { paddingHorizontal: 16, borderRadius: rayons.surface },
   filet: { height: 1 },
 });

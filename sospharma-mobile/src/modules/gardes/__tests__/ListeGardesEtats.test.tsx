@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { fireEvent, screen, within } from '@testing-library/react-native';
 
 import type { ApiResult, PharmacieResume, TourGarde } from '@/commun/api';
-import { useSession } from '@/commun/lib';
+import { usePreferences, useSession } from '@/commun/lib';
 import { rendre } from '@/commun/lib/tests/rendu';
 
 import ListeGardes from '../ecrans/ListeGardes';
@@ -46,27 +46,29 @@ describe('Écran Pharmacies de garde, états', () => {
   });
   afterEach(() => onlineManager.setOnline(true));
 
-  it('premier chargement : squelettes fidèles (carte et lignes), conseil en place, partage inactif', async () => {
+  it('premier chargement : squelettes fidèles (carte et lignes), partage inactif', async () => {
     mockLire.mockReturnValue(new Promise(() => undefined));
     await rendre(<ListeGardes />);
-    expect(screen.getByTestId('squelette-carte-garde')).toBeTruthy();
+    expect(screen.getByTestId('squelette-bloc-proche')).toBeTruthy();
     expect(screen.getByTestId('chargement-gardes')).toBeTruthy();
-    expect(screen.getByTestId('conseil-garde')).toBeTruthy();
     expect(screen.queryByText(/ouvertes? cette nuit/)).toBeNull();
     expect(screen.getByTestId('bouton-partager-gardes').props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
   });
 
-  it('aucune liste publiée pour la ville : message clair et « Réessayer »', async () => {
+  it('aucune liste publiée : quand elle arrive, les pharmacies 24h/24 et les secours', async () => {
     mockLire.mockResolvedValue(erreur('NOT_FOUND', 404));
+    usePreferences.setState({ filtres: { ...usePreferences.getState().filtres, h24: false } });
     await rendre(<ListeGardes />);
-    expect(await screen.findByText('Aucune liste de garde n’est encore publiée pour cette ville.')).toBeTruthy();
-    expect(screen.getByText('Liste de garde indisponible')).toBeTruthy();
-    // Sans liste, ni carte, ni conseil, ni filtres.
+    expect(await screen.findByText('Pas encore de liste de garde pour cette semaine')).toBeTruthy();
+    expect(screen.getByText('Le nouveau tour est publié le samedi matin. Les pharmacies ouvertes 24h/24 restent ouvertes.')).toBeTruthy();
+    // Sans liste, ni carte, ni conseil, ni filtres ; les numéros d'urgence restent à un appui.
     expect(screen.queryByTestId('bloc-garde-plus-proche')).toBeNull();
     expect(screen.queryByTestId('conseil-garde')).toBeNull();
     expect(screen.queryByTestId('filtre-garde-proches')).toBeNull();
-    await fireEvent.press(screen.getByTestId('garde-reessayer'));
-    expect(mockLire).toHaveBeenCalledTimes(2);
+    expect(await screen.findByTestId('garde-secours')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('garde-voir-24h'));
+    expect(usePreferences.getState().filtres.h24).toBe(true);
+    expect(mockRouteur.navigate).toHaveBeenCalledWith('/carte');
   });
 
   it('erreur du serveur : invitation à vérifier la connexion et à réessayer', async () => {
@@ -81,9 +83,12 @@ describe('Écran Pharmacies de garde, états', () => {
     mockLire.mockReturnValue(new Promise(() => undefined));
     await rendre(<ListeGardes />);
     expect(screen.getByTestId('garde-hors-connexion')).toBeTruthy();
-    expect(screen.getByText('Pas de connexion internet. La liste s’affichera dès le retour du réseau.')).toBeTruthy();
+    expect(screen.getByText('Pas de réseau, et aucune liste sur ce téléphone')).toBeTruthy();
+    expect(screen.getByText('La liste s’affichera dès le retour du réseau. Les appels, eux, passent sans internet.')).toBeTruthy();
+    expect(screen.getByTestId('garde-reessayer')).toBeTruthy();
     expect(screen.queryByTestId('bandeau-hors-connexion')).toBeNull();
-    expect(screen.queryByTestId('squelette-carte-garde')).toBeNull();
+    expect(screen.queryByTestId('squelette-bloc-proche')).toBeNull();
+    expect(screen.queryByTestId('illustration-garde-vide', { includeHiddenElements: true })).toBeNull();
   });
 
   it('aucune garde dans le tour : dessin de la devanture fermée, pas de carte', async () => {
@@ -97,7 +102,7 @@ describe('Écran Pharmacies de garde, états', () => {
     expect(screen.getByTestId('filtre-garde-proches')).toBeTruthy();
   });
 
-  it('plus proche sans numéro ni position : ni « Appeler » ni « Itinéraire », badge « Position à confirmer »', async () => {
+  it('plus proche sans numéro ni position : ni « Appeler » ni « Y aller », badge « Position à confirmer »', async () => {
     mockLire.mockImplementation(
       tourDemo((gardes) => gardes.map((p, i) => (i === 0 ? { ...p, telephone: null, latitude: null, longitude: null } : p))),
     );
@@ -105,7 +110,7 @@ describe('Écran Pharmacies de garde, états', () => {
     const carte = within(await screen.findByTestId('bloc-garde-plus-proche'));
     expect(carte.getByTestId('bloc-garde-plus-proche-position')).toBeTruthy();
     expect(carte.queryByTestId('bloc-garde-plus-proche-appeler')).toBeNull();
-    expect(carte.queryByTestId('bloc-garde-plus-proche-itineraire')).toBeNull();
+    expect(carte.queryByTestId('bloc-garde-plus-proche-y-aller')).toBeNull();
     expect(carte.queryByText(/ km/)).toBeNull();
   });
 });

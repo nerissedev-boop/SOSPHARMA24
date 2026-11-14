@@ -23,9 +23,10 @@ type Props = {
   illustration?: ReactNode;
   /**
    * Dessin prêt à l'emploi (ignoré si `illustration` est donnée) :
-   * « gardeVide » = devanture fermée sous la lune (aucune pharmacie de garde).
+   * « gardeVide » = devanture fermée sous la lune (aucune pharmacie de garde) ;
+   * « aucun » = pas de dessin (hors connexion : une phrase suffit, rien ne tourne).
    */
-  dessin?: 'gardeVide';
+  dessin?: 'gardeVide' | 'aucun';
   titreSuggestions?: string;
   suggestions?: Suggestion[];
   testID?: string;
@@ -36,7 +37,7 @@ export function EtatVide({ titre, texte, illustration, dessin, titreSuggestions,
   const { couleurs: c } = useTheme();
   return (
     <View style={styles.conteneur} testID={testID}>
-      {illustration ?? (dessin === 'gardeVide' ? <IllustrationGardeVide /> : null) ?? (
+      {dessin === 'aucun' ? null : illustration ?? (dessin === 'gardeVide' ? <IllustrationGardeVide /> : null) ?? (
         <View style={[styles.cercle, { backgroundColor: c.vertClair }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <HiMedicalSearchOutline size={80} color={c.vert} />
           <View style={[styles.mini, { backgroundColor: c.feuille }]}>
@@ -97,6 +98,6 @@ const styles = StyleSheet.create({
   texte: { maxWidth: 290, lineHeight: 21 },
   suggestions: { alignSelf: 'stretch', gap: 8, marginTop: 10 },
   titreSuggestions: { fontSize: 13 },
-  suggestion: { height: 52, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, borderRadius: rayons.moyen },
+  suggestion: { height: 52, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, borderRadius: rayons.touche },
   texteSuggestion: { fontSize: 14 },
 });

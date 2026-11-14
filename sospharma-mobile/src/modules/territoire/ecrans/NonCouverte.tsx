@@ -79,7 +79,7 @@ function NonCouverte() {
 const styles = StyleSheet.create({
   contenu: { flexGrow: 1, paddingTop: 16, paddingHorizontal: 20, paddingBottom: 26 },
   corps: { paddingTop: 40, paddingHorizontal: 4, gap: 14 },
-  illustration: { width: 88, height: 88, alignItems: 'center', justifyContent: 'center', borderRadius: rayons.feuille },
+  illustration: { width: 88, height: 88, alignItems: 'center', justifyContent: 'center', borderRadius: rayons.surface },
   horloge: { position: 'absolute', right: -12, bottom: -12, width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   titre: { marginTop: 14 },
   boutons: { gap: 10, marginTop: 8 },

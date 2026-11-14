@@ -245,13 +245,13 @@ const styles = StyleSheet.create({
   titre: { marginTop: 6 },
   deux: { flexDirection: 'row', gap: 8 },
   moitie: { flex: 1 },
-  horaires: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: rayons.moyen },
+  horaires: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: rayons.touche },
   textes: { flex: 1, gap: 2 },
   gras: { fontFamily: 'PlusJakartaSans_700Bold' },
   h24: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12 },
   assurances: { gap: 8 },
   titreAssurances: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  resume: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: rayons.moyen },
+  resume: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: rayons.touche },
   pied: { gap: 8 },
 });
 

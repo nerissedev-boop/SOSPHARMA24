@@ -114,9 +114,9 @@ const styles = StyleSheet.create({
   intro: { gap: 6, marginTop: 8 },
   interligne: { lineHeight: 21 },
   liste: { paddingTop: 4, gap: 10 },
-  carte: { padding: 14, gap: 12, borderRadius: rayons.carte },
+  carte: { padding: 14, gap: 12, borderRadius: rayons.surface },
   ligne: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  photo: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: rayons.vignette },
+  photo: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: rayons.touche },
   textes: { flex: 1, gap: 2, minWidth: 0 },
   distance: { fontFamily: 'PlusJakartaSans_800ExtraBold' },
 });

@@ -1,36 +1,26 @@
 import { screen } from '@testing-library/react-native';
-import { StyleSheet, Text } from 'react-native';
+import { Text } from 'react-native';
 
 import { rendre } from '../../lib/tests/rendu';
-import { jetonsJour } from '../../theme/jetons';
 import { EtatVide } from '../EtatVide';
-import { LignePharmacie } from '../LignePharmacie';
+import { RepereStatut } from '../RepereStatut';
 
-const base = { nom: 'Pharmacie Gazelle', distanceM: 900, marcheMin: 11, testID: 'l' };
-
-describe('Point de statut des lignes (vert, rouge, ocre, gris + libellé court)', () => {
+describe('Repère d’état : la croix de l’officine, le « 24 » pour la garde, toujours avec un texte', () => {
   it.each([
-    ['ouverte', undefined, 'Ouverte', 'Pharmacie ouverte', jetonsJour.vert],
-    ['garde', undefined, 'De garde', 'Pharmacie de garde', jetonsJour.rouge],
-    ['ouverte', 'ocre', 'Ferme bientôt', 'Pharmacie qui ferme bientôt', jetonsJour.ocrePoint],
-    ['fermee', undefined, 'Fermée', 'Pharmacie fermée', jetonsJour.texteTertiaire],
-  ] as const)('%s (%s) : « %s »', async (statut, ton, court, lu, couleur) => {
-    await rendre(<LignePharmacie {...base} statut={statut} ton={ton} libelleStatut="Libellé complet" />);
-    const point = screen.getByTestId('l-statut');
-    expect(point.props.accessibilityLabel).toBe(lu);
+    ['ouverte', undefined, 'Ouverte', 'Pharmacie ouverte', false],
+    ['garde', undefined, 'De garde', 'Pharmacie de garde', true],
+    ['ouverte', 'ocre', 'Ferme bientôt', 'Pharmacie qui ferme bientôt', false],
+    ['fermee', undefined, 'Fermée', 'Pharmacie fermée', false],
+  ] as const)('%s (%s) : « %s »', async (statut, ton, court, lu, badge24) => {
+    await rendre(<RepereStatut statut={statut} ton={ton} testID="r" />);
+    expect(screen.getByTestId('r').props.accessibilityLabel).toBe(lu);
     expect(screen.getByText(court)).toBeTruthy();
-    const pastille = screen.getByTestId('l-statut-point');
-    expect(StyleSheet.flatten(pastille.props.style).backgroundColor).toBe(couleur);
+    expect(Boolean(screen.queryByTestId('r-24', { includeHiddenElements: true }))).toBe(badge24);
   });
 
-  it('la 2e ligne ne répète pas un libellé identique au libellé court', async () => {
-    await rendre(<LignePharmacie {...base} statut="ouverte" libelleStatut="Ouverte" />);
-    expect(screen.getAllByText('Ouverte')).toHaveLength(1);
-  });
-
-  it('variante favori : pas de point de statut', async () => {
-    await rendre(<LignePharmacie {...base} statut="ouverte" libelleStatut="Ouverte" variante="favori" />);
-    expect(screen.queryByTestId('l-statut')).toBeNull();
+  it('un libellé complet est affiché et lu tel quel', async () => {
+    await rendre(<RepereStatut statut="ouverte" libelle="Ouverte jusqu’à 22:00" testID="r" />);
+    expect(screen.getByTestId('r').props.accessibilityLabel).toBe('Ouverte jusqu’à 22:00');
   });
 });
 
@@ -45,5 +35,11 @@ describe('État vide illustré', () => {
     await rendre(<EtatVide titre="Vide" dessin="gardeVide" illustration={<Text>perso</Text>} />);
     expect(screen.getByText('perso')).toBeTruthy();
     expect(screen.queryByTestId('illustration-garde-vide', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('« aucun » : pas de dessin, la phrase suffit (hors connexion)', async () => {
+    await rendre(<EtatVide titre="Pas de réseau" dessin="aucun" />);
+    expect(screen.queryByTestId('illustration-garde-vide', { includeHiddenElements: true })).toBeNull();
+    expect(screen.getByText('Pas de réseau')).toBeTruthy();
   });
 });

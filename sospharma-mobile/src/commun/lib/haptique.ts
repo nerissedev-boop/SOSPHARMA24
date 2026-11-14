@@ -24,7 +24,7 @@ export function vibrationLegere(): void {
   vibrer(() => Haptics.selectionAsync());
 }
 
-/** Action franche : Appeler, Itinéraire, Partager. */
+/** Action franche : Appeler, Y aller, Partager. */
 export function vibrationAction(): void {
   vibrer(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
 }

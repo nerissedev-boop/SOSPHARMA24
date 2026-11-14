@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -19,10 +19,12 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { reactionPour } from '@/commun/api';
 import {
+  commencerVisite,
   dateCourte,
   distanceKm,
   heureLocale,
-  localeActive,
+  marquerSortieVersAutreApp,
+  signalerErreur,
   t,
   telephoneAffiche,
   usePreferences,
@@ -32,6 +34,7 @@ import {
 } from '@/commun/lib';
 import { CIBLE_TACTILE, ombres, rayons, useTheme } from '@/commun/theme';
 import {
+  ActionsPharmacie,
   apparitionLigne,
   avecErrorBoundary,
   BadgePosition,
@@ -41,19 +44,18 @@ import {
   Ecran,
   EtatVide,
   FacadeIllustree,
-  HiPhone,
   IconeBulle,
   IconeCoche,
   IconeCoeur,
-  IconeEtoile,
   IconeHorloge,
   IconeLieu,
-  IconeNaviguer,
   IconePartage,
   IconeRetour,
   IconeTelephoneTrait,
+  IconeVoiture,
   PhotoFondu,
   PressableAnime,
+  RepereStatut,
   Texte,
   transitionListe,
   useMargeBas,
@@ -62,6 +64,7 @@ import {
 import { useFavori } from '@/modules/profil';
 import { usePaysCourant } from '@/modules/territoire';
 
+import { messageChauffeur } from '../chauffeur';
 import { AssurancesFiche } from '../composants/AssurancesFiche';
 import { HorairesFiche } from '../composants/HorairesFiche';
 import { SqueletteFichePharmacie } from '../composants/SqueletteFichePharmacie';
@@ -69,22 +72,19 @@ import { useActionsPharmacie } from '../hooks/useActions';
 import { accepteMesAssurances, useMesAssurances } from '../hooks/useAssurances';
 import { useLibelleStatut, usePharmacie, useTonStatut } from '../hooks/usePharmacies';
 
-/** Photo de façade en tête (maquette piste A). */
-const HAUTEUR_PHOTO = 250;
+/** Photo de façade en tête (refonte v2) ; sans photo, une bande plus basse avec la devanture dessinée. */
+const HAUTEUR_PHOTO = 224;
+const HAUTEUR_SANS_PHOTO = 144;
 /** La grande carte remonte sur le bas de la photo. */
-const CHEVAUCHEMENT = 36;
+const CHEVAUCHEMENT = 26;
 /** Boutons ronds du haut (retour, partager, favori), leur marge et leur écart. */
-const BOUTON_HAUT = 44;
+const BOUTON_HAUT = CIBLE_TACTILE;
 const MARGE_HAUT = 16;
 const ECART_HAUT = 8;
-/** Hauteur des boutons d'action ; WhatsApp est un carré de ce côté. */
-const HAUTEUR_ACTION = 52;
 /** Course du défilement sur laquelle la barre compacte apparaît (le fondu suit le doigt). */
 const COURSE_BARRE = 24;
 /** Dégradé sombre sous la barre d'état, sur une vraie photo seulement. */
 const HAUTEUR_VOILE = 120;
-/** À partir de ce facteur de taille de police, « Appeler » prend toute la largeur. */
-const POLICE_GRANDE = 1.3;
 /** Le cœur « bat » une fois quand la pharmacie entre dans les favoris. */
 const ECHELLE_COEUR = 1.25;
 const RESSORT_COEUR = { damping: 12, stiffness: 320, mass: 0.8 };
@@ -128,7 +128,7 @@ function LigneAvecFilet({ children }: { children: ReactNode }) {
  * « Supprimer les animations » : le cœur se remplit sans battre.
  */
 function BoutonFavori({ estFavori, onBasculer }: { estFavori: boolean; onBasculer: () => void }) {
-  const { couleurs: c } = useTheme();
+  const { couleurs: c, estNuit } = useTheme();
   const reduit = useReducedMotion();
   const echelle = useSharedValue(1);
   const styleCoeur = useAnimatedStyle(() => ({ transform: [{ scale: echelle.get() }] }));
@@ -146,8 +146,8 @@ function BoutonFavori({ estFavori, onBasculer }: { estFavori: boolean; onBascule
       accessibilityLabel={estFavori ? t('fiche.favoriRetirer') : t('fiche.favoriAjouter')}
       accessibilityState={{ selected: estFavori }}
       rond
-      fond={c.feuille}
-      style={ombres.boutonRond}
+      fond={estNuit ? c.boutonSecondaire : c.feuille}
+      style={estNuit ? null : ombres.boutonRond}
       onPress={basculer}
       testID="bouton-favori"
     >
@@ -158,17 +158,39 @@ function BoutonFavori({ estFavori, onBasculer }: { estFavori: boolean; onBascule
   );
 }
 
+type PropsActionLigne = { libelle: string; icone: ReactNode; onPress: () => void; accessibilityLabel?: string; testID?: string };
+
+/** Action posée dans une ligne d'infos (WhatsApp, Envoyer au chauffeur) : 40 de haut, 48 de zone tactile. */
+function ActionLigne({ libelle, icone, onPress, accessibilityLabel, testID }: PropsActionLigne) {
+  const { couleurs: c, estNuit } = useTheme();
+  return (
+    <PressableAnime
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? libelle}
+      hitSlop={{ top: 4, bottom: 4 }}
+      style={[styles.actionLigne, { backgroundColor: c.boutonBlocSecondaire }]}
+      testID={testID}
+    >
+      {icone}
+      <Texte variante="boutonPetit" couleur={estNuit ? c.texte : c.vertTexte} numberOfLines={1}>
+        {libelle}
+      </Texte>
+    </PressableAnime>
+  );
+}
+
 /**
- * 06 Détail pharmacie (piste A, 11 nov.) : photo de façade pleine largeur, grande carte qui la
- * chevauche (statut, nom, distance, Appeler / Y aller / WhatsApp), carte d'infos (horaires du
- * jour dépliables, adresse, téléphone, assurances), puis « Infos vérifiées » et « Signaler ».
+ * 06 Détail pharmacie (refonte v2, 14 nov.) : photo de façade de 224 (voilée la nuit), ou bande de
+ * 144 avec la devanture dessinée ; grande carte qui la chevauche (état, nom, distance, Appeler et
+ * Y aller), carte d'infos à plat (horaires dépliables, repère et « Envoyer au chauffeur », téléphone
+ * et WhatsApp, assurances), puis « Infos vérifiées » et « Signaler ».
  */
 function Fiche() {
   const margeBas = useMargeBas(24);
   const router = useRouter();
   const retour = useRetour();
   const insets = useSafeAreaInsets();
-  const { fontScale } = useWindowDimensions();
   const { couleurs: c, estNuit } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { fiche, error, isPending } = usePharmacie(id ?? '');
@@ -189,8 +211,10 @@ function Fiche() {
 
   // Barre compacte (nom de la pharmacie) : elle apparaît quand la grande carte arrive sous les
   // boutons ronds, pour que le contenu ne passe plus dessous ni sous la barre d'état.
+  const photoVisible = Boolean(fiche?.photo_url) && photoEnEchec !== fiche?.photo_url;
+  const hauteurHaut = photoVisible ? HAUTEUR_PHOTO : HAUTEUR_SANS_PHOTO;
   const hauteurBarre = insets.top + MARGE_HAUT + BOUTON_HAUT + 12;
-  const debutBarre = HAUTEUR_PHOTO - CHEVAUCHEMENT - hauteurBarre;
+  const debutBarre = hauteurHaut - CHEVAUCHEMENT - hauteurBarre;
   const defilement = useSharedValue(0);
   const [compact, setCompact] = useState(false);
   const onScroll = useAnimatedScrollHandler((e) => {
@@ -214,7 +238,14 @@ function Fiche() {
   }, [id, definirDerniereFiche]);
 
   const boutonRetour = (
-    <BoutonIcone accessibilityLabel={t('commun.retour')} rond fond={c.feuille} style={ombres.boutonRond} onPress={retour} testID="bouton-retour">
+    <BoutonIcone
+      accessibilityLabel={t('commun.retour')}
+      rond
+      fond={estNuit ? c.boutonSecondaire : c.feuille}
+      style={estNuit ? null : ombres.boutonRond}
+      onPress={retour}
+      testID="bouton-retour"
+    >
       <IconeRetour size={20} color={c.texte} />
     </BoutonIcone>
   );
@@ -223,7 +254,7 @@ function Fiche() {
     // Squelette fidèle à la fiche (photo, grande carte, infos) plutôt qu'une roue : la page « se dessine ».
     return (
       <Ecran hautSur={false} barreClaire={estNuit} testID="ecran-fiche">
-        <SqueletteFichePharmacie hauteurPhoto={HAUTEUR_PHOTO} chevauchement={CHEVAUCHEMENT} testID="fiche-chargement" />
+        <SqueletteFichePharmacie hauteurPhoto={HAUTEUR_SANS_PHOTO} chevauchement={CHEVAUCHEMENT} testID="fiche-chargement" />
         <View style={[styles.boutonsHaut, { top: insets.top + MARGE_HAUT }]} pointerEvents="box-none">
           {boutonRetour}
         </View>
@@ -247,25 +278,28 @@ function Fiche() {
     );
   }
 
-  // Statut en puce douce : vert (ouverte), rouge (garde), ocre (ferme bientôt), neutre (fermée, à confirmer).
-  const ocre = tonStatut(fiche) === 'ocre';
-  const fondStatut = ocre ? c.ocreClair : fiche.statut === 'garde' ? c.rougeClair : fiche.statut === 'ouverte' ? c.puceVerteFond : c.fermeFond;
-  const texteStatut = ocre ? c.ocreTexte : fiche.statut === 'garde' ? c.rougeTexteFort : fiche.statut === 'ouverte' ? c.vertTexte : c.texteSecondaire;
   const jour = heureLocale(new Date(), fuseau).jourSemaine;
   // Position à confirmer : ni distance ni « Y aller », un badge et un conseil d'appeler.
   const sansPosition = fiche.latitude === null || fiche.longitude === null;
   const accepte = accepteMesAssurances(fiche, miennes);
-  const photoVisible = Boolean(fiche.photo_url) && photoEnEchec !== fiche.photo_url;
-  const grandesPolices = fontScale >= POLICE_GRANDE;
   const numero = fiche.telephone ? telephoneAffiche(fiche.telephone, pays?.indicatif) : null;
-  const villePays = [fiche.ville, pays?.nom].filter(Boolean).join(', ');
-  const distance = fiche.distance_m !== null ? distanceKm(fiche.distance_m) : null;
+  const communeVille = [fiche.commune, fiche.ville].filter(Boolean).join(', ');
+  const distance = !sansPosition && fiche.distance_m !== null ? distanceKm(fiche.distance_m) : null;
   const marche = distance && fiche.marche_min !== null ? t('fiche.aPied', { minutes: fiche.marche_min }) : null;
-  const lieu = [distance, marche, fiche.commune].filter(Boolean).join(' · ');
-  const noteLue = fiche.note ? `${fiche.note.moyenne.toLocaleString(localeActive())} ${t('carte.avis', { count: fiche.note.nombre })}` : null;
-  const metaLue = [sansPosition ? t('commun.positionAConfirmer') : null, distance, marche, fiche.commune, noteLue].filter(Boolean).join(', ');
+  const suite = [marche, fiche.commune].filter(Boolean).join(' · ');
+  const metaLue = [sansPosition ? t('commun.positionAConfirmer') : null, distance, marche, fiche.commune].filter(Boolean).join(', ');
   const entree = (rang: number) => (squeletteVu ? apparitionLigne(rang) : undefined);
-  const facade = <FacadeIllustree taille="grande" largeur={260} style={[StyleSheet.absoluteFill, styles.facade]} testID="fiche-facade" />;
+  const facade = <FacadeIllustree taille="grande" largeur={104} style={[StyleSheet.absoluteFill, styles.facade]} testID="fiche-facade" />;
+  // Taxi ou proche qui conduit : l'adresse, la commune et le lien de position, par WhatsApp ou SMS (l'habitude Yango).
+  const envoyerAuChauffeur = async () => {
+    try {
+      commencerVisite({ id: fiche.id, nom: fiche.nom });
+      marquerSortieVersAutreApp();
+      await Share.share({ message: messageChauffeur(fiche, pays?.indicatif) });
+    } catch (e) {
+      signalerErreur(e, { etape: 'envoi-chauffeur' });
+    }
+  };
 
   return (
     <Ecran hautSur={false} barreClaire={compact ? estNuit : photoVisible || estNuit} testID="ecran-fiche">
@@ -277,7 +311,7 @@ function Fiche() {
       >
         {/* Photo de façade validée ; sinon, ou si elle ne charge pas, la devanture dessinée. */}
         <View
-          style={[styles.photo, { backgroundColor: c.surface }]}
+          style={[styles.photo, { height: hauteurHaut, backgroundColor: c.facadeCadre }]}
           accessible={photoVisible}
           accessibilityRole={photoVisible ? 'image' : undefined}
           accessibilityLabel={photoVisible ? t('fiche.photo') : undefined}
@@ -302,21 +336,7 @@ function Fiche() {
             style={[styles.cartePrincipale, { backgroundColor: c.carte }, estNuit ? null : ombres.fiche]}
             testID="fiche-carte"
           >
-            <View style={styles.puces}>
-              <View style={[styles.puce, { backgroundColor: fondStatut }]} testID="fiche-statut">
-                <Texte variante="libelleFort" couleur={texteStatut} numberOfLines={2}>
-                  {libelleStatut(fiche, 'carte')}
-                </Texte>
-              </View>
-              {accepte ? (
-                <View style={[styles.puce, styles.puceIcone, { backgroundColor: c.puceForteFond }]} testID="puce-accepte-assurance">
-                  <IconeCoche size={12} color={c.puceForteTexte} strokeWidth={3} />
-                  <Texte variante="libelleFort" couleur={c.puceForteTexte} style={styles.texteRetrecit}>
-                    {t('fiche.accepteVotreAssurance')}
-                  </Texte>
-                </View>
-              ) : null}
-            </View>
+            <RepereStatut statut={fiche.statut} ton={tonStatut(fiche)} libelle={libelleStatut(fiche, 'carte')} testID="fiche-statut" />
 
             <Texte variante="titreEcran" titre numberOfLines={4}>
               {fiche.nom}
@@ -325,63 +345,43 @@ function Fiche() {
             {metaLue ? (
               <View style={styles.meta} accessible accessibilityLabel={metaLue}>
                 {sansPosition ? <BadgePosition testID="fiche-position-a-confirmer" /> : null}
-                {lieu ? (
-                  <Texte variante="texte" couleur={c.texteSecondaire} style={styles.chiffres}>
-                    {lieu}
+                {distance || suite ? (
+                  <Texte variante="texte" couleur={c.texteSecondaire}>
+                    {distance ? (
+                      <Texte variante="distanceGrande" style={styles.chiffres}>
+                        {distance}
+                      </Texte>
+                    ) : null}
+                    {distance && suite ? ' · ' : null}
+                    {suite}
                   </Texte>
-                ) : null}
-                {fiche.note ? (
-                  <View style={styles.note}>
-                    <IconeEtoile size={14} color={c.etoile} />
-                    <Texte variante="texte" couleur={c.texteSecondaire}>
-                      <Texte variante="nomPetit">{fiche.note.moyenne.toLocaleString(localeActive())}</Texte>{' '}
-                      {t('carte.avis', { count: fiche.note.nombre })}
-                    </Texte>
-                  </View>
                 ) : null}
               </View>
             ) : null}
 
-            <View style={styles.actions}>
-              <Bouton
-                libelle={t('commun.appeler')}
-                typo="boutonGrand"
-                hauteur={HAUTEUR_ACTION}
-                icone={<HiPhone size={20} color={c.texteSurCouleur} />}
-                onPress={() => actions.appeler(fiche)}
-                style={grandesPolices ? styles.actionPleine : styles.action}
-                testID="bouton-appeler"
-              />
-              {sansPosition ? null : (
-                <Bouton
-                  libelle={t('fiche.yAllerCourt')}
-                  variante="blanc"
-                  typo="boutonGrand"
-                  hauteur={HAUTEUR_ACTION}
-                  icone={<IconeNaviguer size={18} color={c.pastilleActionIcone} />}
-                  onPress={() => actions.itineraire(fiche)}
-                  style={styles.action}
-                  testID="bouton-y-aller"
-                />
-              )}
-              {/* WhatsApp seulement si la pharmacie a donné un numéro ; Favori et Partager restent en haut. */}
-              {fiche.whatsapp ? (
-                <PressableAnime
-                  onPress={() => actions.whatsapp(fiche)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('fiche.whatsapp')}
-                  style={[styles.whatsapp, { backgroundColor: c.boutonBlocSecondaire }]}
-                  testID="bouton-whatsapp"
-                >
-                  <IconeBulle size={22} color={c.pastilleActionIcone} />
-                </PressableAnime>
-              ) : null}
-            </View>
+            {accepte ? (
+              <View style={[styles.puce, { backgroundColor: c.puceForteFond }]} testID="puce-accepte-assurance">
+                <IconeCoche size={12} color={c.puceForteTexte} strokeWidth={3} />
+                <Texte variante="libelleFort" couleur={c.puceForteTexte} style={styles.texteRetrecit}>
+                  {t('fiche.accepteVotreAssurance')}
+                </Texte>
+              </View>
+            ) : null}
+
             {sansPosition ? (
               <Texte variante="petit" couleur={c.texteSecondaire} testID="fiche-conseil-appeler">
                 {t('commun.positionAConfirmerTexte')}
               </Texte>
             ) : null}
+
+            <ActionsPharmacie
+              nom={fiche.nom}
+              // La garde, ou la nuit : on appelle avant de se déplacer.
+              conseil={fiche.statut === 'garde' || estNuit}
+              onAppeler={() => actions.appeler(fiche)}
+              onYAller={sansPosition ? undefined : () => actions.itineraire(fiche)}
+              testID="bouton"
+            />
           </Animated.View>
 
           {/* La carte d'infos et ce qui suit glissent quand les horaires ou les assurances se déplient. */}
@@ -393,44 +393,60 @@ function Fiche() {
           >
             <HorairesFiche horaires={fiche.horaires} h24={fiche.h24} aujourdhui={jour} />
             <LigneAvecFilet>
-              <View
-                style={styles.ligneInfo}
-                accessible
-                accessibilityLabel={[t('fiche.adresse'), fiche.adresse, villePays].filter(Boolean).join(', ')}
-              >
+              <View style={[styles.ligneInfo, styles.ligneHaut]}>
                 <IconeLieu size={20} color={c.pastilleActionIcone} />
                 <View style={styles.textesInfo}>
-                  <Texte variante="libelle" couleur={c.texteSecondaire}>
-                    {t('fiche.adresse')}
-                  </Texte>
-                  <Texte variante="corpsFort">{fiche.adresse}</Texte>
-                  {villePays ? (
-                    <Texte variante="texte" couleur={c.texteSecondaire}>
-                      {villePays}
+                  <View accessible accessibilityLabel={[t('fiche.repere'), fiche.adresse, communeVille].filter(Boolean).join(', ')}>
+                    <Texte variante="libelle" couleur={c.texteSecondaire}>
+                      {t('fiche.repere')}
                     </Texte>
-                  ) : null}
+                    <Texte variante="corpsFort">{fiche.adresse}</Texte>
+                    {communeVille ? (
+                      <Texte variante="petit" couleur={c.texteSecondaire}>
+                        {communeVille}
+                      </Texte>
+                    ) : null}
+                  </View>
+                  <ActionLigne
+                    libelle={t('fiche.envoyerChauffeur')}
+                    icone={<IconeVoiture size={18} color={c.pastilleActionIcone} />}
+                    onPress={() => void envoyerAuChauffeur()}
+                    testID="bouton-chauffeur"
+                  />
                 </View>
               </View>
             </LigneAvecFilet>
             {numero ? (
               <LigneAvecFilet>
-                <Pressable
-                  onPress={() => actions.appeler(fiche)}
-                  accessibilityRole="link"
-                  accessibilityLabel={`${t('fiche.telephone')}, ${numero}`}
-                  style={({ pressed }) => [styles.ligneInfo, pressed && styles.appuye]}
-                  testID="lien-telephone"
-                >
-                  <IconeTelephoneTrait size={20} color={c.pastilleActionIcone} />
-                  <View style={styles.textesInfo}>
-                    <Texte variante="libelle" couleur={c.texteSecondaire}>
-                      {t('fiche.telephone')}
-                    </Texte>
-                    <Texte variante="corpsFort" couleur={c.vertTexte} style={styles.chiffres}>
-                      {numero}
-                    </Texte>
-                  </View>
-                </Pressable>
+                <View style={styles.ligneInfo}>
+                  <Pressable
+                    onPress={() => actions.appeler(fiche)}
+                    accessibilityRole="link"
+                    accessibilityLabel={`${t('fiche.telephone')}, ${numero}`}
+                    style={({ pressed }) => [styles.lienTelephone, pressed && styles.appuye]}
+                    testID="lien-telephone"
+                  >
+                    <IconeTelephoneTrait size={20} color={c.pastilleActionIcone} />
+                    <View style={styles.textesInfo}>
+                      <Texte variante="libelle" couleur={c.texteSecondaire}>
+                        {t('fiche.telephone')}
+                      </Texte>
+                      <Texte variante="corpsFort" couleur={c.vertTexte} style={styles.chiffres}>
+                        {numero}
+                      </Texte>
+                    </View>
+                  </Pressable>
+                  {/* WhatsApp seulement si la pharmacie a donné un numéro ; Favori et Partager restent en haut. */}
+                  {fiche.whatsapp ? (
+                    <ActionLigne
+                      libelle={t('commun.whatsapp')}
+                      accessibilityLabel={t('fiche.whatsapp')}
+                      icone={<IconeBulle size={18} color={c.pastilleActionIcone} />}
+                      onPress={() => actions.whatsapp(fiche)}
+                      testID="bouton-whatsapp"
+                    />
+                  ) : null}
+                </View>
               </LigneAvecFilet>
             ) : null}
             {fiche.assurances.length > 0 || fiche.services.length > 0 ? (
@@ -524,28 +540,24 @@ const styles = StyleSheet.create({
   entetePlein: { paddingTop: 16, paddingHorizontal: 20 },
   retourPlein: { marginLeft: -10 },
   introuvable: { paddingTop: 60, paddingHorizontal: 24 },
-  photo: { height: HAUTEUR_PHOTO, overflow: 'hidden' },
+  photo: { overflow: 'hidden' },
   // La devanture reste au-dessus de la bande que recouvre la grande carte.
-  facade: { paddingBottom: CHEVAUCHEMENT },
+  facade: { paddingBottom: CHEVAUCHEMENT + 2 },
   voileHaut: { position: 'absolute', top: 0, left: 0, right: 0 },
   corps: { marginTop: -CHEVAUCHEMENT, paddingHorizontal: 16, gap: 14 },
-  cartePrincipale: { borderRadius: rayons.feuille, paddingTop: 18, paddingHorizontal: 16, paddingBottom: 16, gap: 8 },
-  puces: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
-  puce: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: rayons.pilule, flexShrink: 1 },
-  puceIcone: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  // Le conseil et les deux boutons (ActionsPharmacie) portent leurs propres marges.
+  cartePrincipale: { borderRadius: rayons.surface, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 8, gap: 6 },
+  puce: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', minHeight: 26, paddingHorizontal: 10, paddingVertical: 4, borderRadius: rayons.repere },
   texteRetrecit: { flexShrink: 1 },
   meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 8, rowGap: 4 },
-  note: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   /** Chiffres de même largeur pour les distances, durées et numéros. */
   chiffres: { fontVariant: ['tabular-nums'] },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 6 },
-  action: { flex: 1, minWidth: 0 },
-  // Grandes polices : « Appeler » seul sur sa ligne, « Y aller » et WhatsApp dessous.
-  actionPleine: { flexBasis: '100%', flexGrow: 1 },
-  whatsapp: { width: HAUTEUR_ACTION, minHeight: HAUTEUR_ACTION, borderRadius: rayons.moyen, alignItems: 'center', justifyContent: 'center' },
+  actionLigne: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', height: 40, marginTop: 8, paddingHorizontal: 14, borderRadius: rayons.touche },
   // overflow : la semaine qui se replie ne déborde pas pendant que la carte rétrécit.
-  carteInfos: { borderRadius: rayons.grandeCarte, paddingHorizontal: 16, paddingVertical: 4, overflow: 'hidden' },
+  carteInfos: { borderRadius: rayons.surface, paddingHorizontal: 16, paddingVertical: 4, overflow: 'hidden' },
   ligneInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, minHeight: CIBLE_TACTILE },
+  ligneHaut: { alignItems: 'flex-start' },
+  lienTelephone: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: CIBLE_TACTILE },
   textesInfo: { flex: 1, minWidth: 0, gap: 2 },
   /** Filet entre deux lignes : un aplat de 1 px, pas une bordure (charte). */
   filet: { height: 1 },
