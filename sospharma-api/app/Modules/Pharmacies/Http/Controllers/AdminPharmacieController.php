@@ -13,13 +13,18 @@ use App\Modules\Pharmacies\Http\Requests\HorairesRequest;
 use App\Modules\Pharmacies\Http\Requests\ImporterPharmaciesRequest;
 use App\Modules\Pharmacies\Http\Resources\PharmacieAdminResource;
 use App\Modules\Pharmacies\Models\Pharmacie;
+use App\Modules\Pharmacies\Services\ExportPharmacies;
 use App\Modules\Pharmacies\Services\FiltresPharmacies;
 use App\Modules\Pharmacies\Services\GestionPharmacies;
 use App\Modules\Pharmacies\Services\ImportPharmacies;
 use App\Modules\Territoire\Models\Ville;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminPharmacieController extends Controller
 {
@@ -28,25 +33,45 @@ class AdminPharmacieController extends Controller
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Pharmacie::class);
-        $p = ParametresListe::depuis($request, ['ville', 'zone', 'actif', 'h24', 'assurances'], ['nom' => 'nom', 'cree_le' => 'created_at', 'verifiee_le' => 'verifiee_le'], true, ['nom', 'asc']);
+        [$p, $requete] = $this->liste($request);
+
+        return ApiResponse::paginated(
+            $requete->with(['ville', 'zone', 'assurances', 'telephones'])->paginate($p->parPage, ['*'], 'page', $p->page),
+            PharmacieAdminResource::class,
+        );
+    }
+
+    /**
+     * Mêmes filtres et tri que index, sans pagination : le CSV que l'import relit (décision 60).
+     * Écrit en flux, par paquets de 500 fiches, pour tenir dans la mémoire de l'hébergement mutualisé.
+     */
+    public function exporter(Request $request, ExportPharmacies $export): StreamedResponse
+    {
+        Gate::authorize('viewAny', Pharmacie::class);
+        [$p, $requete] = $this->liste($request);
         /** @var CompteAvecRole $compte */
         $compte = $request->user();
 
-        $assurances = FiltresPharmacies::slugs($p->filtre('assurances'));
+        $ville = $compte->estAdmin()
+            ? ($p->filtre('ville') !== null ? Ville::query()->where('id_public', $p->filtre('ville'))->first() : null)
+            : Ville::query()->find($compte->villeId());
+        $nom = 'pharmacies-'.($ville !== null ? Str::slug($ville->nom) : 'toutes').'-'.now()->format('Y-m-d').'.csv';
 
-        $requete = Pharmacie::query()->with(['ville', 'zone', 'assurances', 'telephones'])
-            ->when(! $compte->estAdmin(), fn ($r) => $r->where('ville_id', $compte->villeId()))
-            ->when($p->filtre('ville') !== null, fn ($r) => $r->whereHas('ville', fn ($s) => $s->where('id_public', $p->filtre('ville'))))
-            ->when($p->filtre('zone') !== null, fn ($r) => $r->whereHas('zone', fn ($s) => $s->where('id_public', $p->filtre('zone'))))
-            ->when($p->filtreBooleen('actif') !== null, fn ($r) => $r->where('actif', $p->filtreBooleen('actif')))
-            ->when($p->filtreBooleen('h24') !== null, fn ($r) => $r->where('h24', $p->filtreBooleen('h24')))
-            ->when($assurances !== null, fn ($r) => FiltresPharmacies::appliquerAssurances($r, (array) $assurances))
-            ->when($p->q !== null, function ($r) use ($p): void {
-                $motif = '%'.addcslashes((string) $p->q, '%_\\').'%';
-                $r->where(fn ($s) => $s->where('nom', 'like', $motif)->orWhere('quartier', 'like', $motif)->orWhere('adresse', 'like', $motif));
-            });
+        // Tri complété par l'id : les paquets se suivent sans sauter ni répéter deux homonymes.
+        $fiches = $requete->with(['ville.pays', 'zone', 'assurances', 'telephones'])->orderBy('pharmacies.id')->lazy(500);
 
-        return ApiResponse::paginated($p->trier($requete)->paginate($p->parPage, ['*'], 'page', $p->page), PharmacieAdminResource::class);
+        return response()->stream(function () use ($export, $fiches, $p, $compte): void {
+            $flux = fopen('php://output', 'wb');
+            $lignes = $export->ecrire($flux, $fiches);
+            fclose($flux);
+            Log::info('Annuaire des pharmacies exporté', [
+                'lignes' => $lignes, 'filtres' => $p->filtres, 'recherche' => $p->q !== null, 'compte_id' => $compte->idInterne(),
+            ]);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$nom.'"',
+            'Cache-Control' => 'no-store',
+        ]);
     }
 
     public function store(EnregistrerPharmacieRequest $request): JsonResponse
@@ -97,5 +122,33 @@ class AdminPharmacieController extends Controller
         $bilan = $import->importer($ville, $request->file('fichier'), $simulation, $exclure);
 
         return $simulation ? ApiResponse::ok($bilan) : ApiResponse::created($bilan);
+    }
+
+    /**
+     * Filtres et tri de la liste de l'équipe ; l'éditeur ne voit que sa ville.
+     *
+     * @return array{0: ParametresListe, 1: Builder<Pharmacie>}
+     */
+    private function liste(Request $request): array
+    {
+        $p = ParametresListe::depuis($request, ['ville', 'zone', 'actif', 'h24', 'assurances'], ['nom' => 'nom', 'cree_le' => 'created_at', 'verifiee_le' => 'verifiee_le'], true, ['nom', 'asc']);
+        /** @var CompteAvecRole $compte */
+        $compte = $request->user();
+
+        $assurances = FiltresPharmacies::slugs($p->filtre('assurances'));
+
+        $requete = Pharmacie::query()
+            ->when(! $compte->estAdmin(), fn ($r) => $r->where('ville_id', $compte->villeId()))
+            ->when($p->filtre('ville') !== null, fn ($r) => $r->whereHas('ville', fn ($s) => $s->where('id_public', $p->filtre('ville'))))
+            ->when($p->filtre('zone') !== null, fn ($r) => $r->whereHas('zone', fn ($s) => $s->where('id_public', $p->filtre('zone'))))
+            ->when($p->filtreBooleen('actif') !== null, fn ($r) => $r->where('actif', $p->filtreBooleen('actif')))
+            ->when($p->filtreBooleen('h24') !== null, fn ($r) => $r->where('h24', $p->filtreBooleen('h24')))
+            ->when($assurances !== null, fn ($r) => FiltresPharmacies::appliquerAssurances($r, (array) $assurances))
+            ->when($p->q !== null, function ($r) use ($p): void {
+                $motif = '%'.addcslashes((string) $p->q, '%_\\').'%';
+                $r->where(fn ($s) => $s->where('nom', 'like', $motif)->orWhere('quartier', 'like', $motif)->orWhere('adresse', 'like', $motif));
+            });
+
+        return [$p, $p->trier($requete)];
     }
 }

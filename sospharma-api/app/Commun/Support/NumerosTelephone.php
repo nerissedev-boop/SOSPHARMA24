@@ -164,6 +164,25 @@ final class NumerosTelephone
         return str_starts_with($national, '+') ? $national : '+'.$this->indicatif.$national;
     }
 
+    /**
+     * Écriture d'un numéro E.164 pour un tableur, que lire() rend à l'identique :
+     * national par paires (« 07 07 12 34 56 ») s'il est conforme au plan du pays, sinon « 00 » à la place du « + »
+     * (« 00 225 00 00 00 01 01 », « 00 33 61 23 45 67 8 »). Jamais de « + » en tête, qu'un tableur prendrait
+     * pour une formule, ni de groupes réguliers de trois chiffres, qu'il prendrait pour un nombre (le zéro de tête
+     * resterait en route).
+     */
+    public function pourTableur(string $numero): string
+    {
+        $chiffres = preg_replace('/\D/', '', $numero) ?? '';
+        if ($this->indicatif === '' || ! str_starts_with($chiffres, $this->indicatif)) {
+            return '00 '.self::lisible($chiffres);
+        }
+        $national = substr($chiffres, strlen($this->indicatif));
+        // Seul un numéro conforme au plan se relit tel quel en national : « 00 00 00 01 01 » serait pris pour un « + ».
+
+        return $this->valide($national) ? self::lisible($national) : '00 '.$this->indicatif.' '.self::lisible($national);
+    }
+
     /** Clé de comparaison entre deux écritures d'un même numéro (« +225 07… » et « 07… »). */
     public static function dixChiffres(?string $telephone): ?string
     {

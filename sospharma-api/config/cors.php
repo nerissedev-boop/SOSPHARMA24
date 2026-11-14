@@ -11,7 +11,8 @@ return [
     'allowed_origins' => $origines,
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['Accept', 'Authorization', 'Content-Type', 'X-Requested-With', 'X-Request-Id', 'X-Device-Token'],
-    'exposed_headers' => ['X-Request-Id', 'Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
+    // Content-Disposition : le back-office lit le nom du fichier exporté (GET admin/pharmacies/export).
+    'exposed_headers' => ['X-Request-Id', 'Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'Content-Disposition'],
     'max_age' => 3600,
     'supports_credentials' => false,
 ];

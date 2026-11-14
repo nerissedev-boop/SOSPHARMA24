@@ -59,3 +59,19 @@ it('compare deux écritures d\'un même numéro par ses dix derniers chiffres', 
     expect(NumerosTelephone::dixChiffres('+2250707123456'))->toBe(NumerosTelephone::dixChiffres('07 07 12 34 56'))
         ->and(NumerosTelephone::dixChiffres('185'))->toBeNull();
 });
+
+it('écrit pour un tableur un numéro que lire() rend à l\'identique, sans « + » en tête', function (string $indicatif, string $numero, string $ecrit, int $avertissements = 0): void {
+    $numeros = NumerosTelephone::pour($indicatif);
+
+    expect($numeros->pourTableur($numero))->toBe($ecrit)
+        ->and($numeros->lire($ecrit)->numeros)->toBe([$numero])
+        // Un numéro hors plan revient identique, toujours signalé « à vérifier » comme à la saisie.
+        ->and($numeros->lire($ecrit)->avertissements)->toHaveCount($avertissements);
+})->with([
+    'fixe ivoirien' => ['+225', '+2252722496136', '27 22 49 61 36'],
+    'mobile ivoirien' => ['+225', '+2250707000002', '07 07 00 00 02'],
+    'numéro étranger' => ['+225', '+33612345678', '00 33 61 23 45 67 8'],
+    'pays au plan inconnu' => ['+242', '+242066123456', '00 242 06 61 23 45 6'],
+    'hors plan ivoirien (données de démonstration)' => ['+225', '+2250000000101', '00 225 00 00 00 01 01', 1],
+    'début inhabituel' => ['+225', '+2252812345678', '00 225 28 12 34 56 78', 1],
+]);

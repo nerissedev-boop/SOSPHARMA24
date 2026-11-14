@@ -32,6 +32,7 @@ Route::prefix('appareils/moi')->middleware('appareil')->group(function (): void 
 // Équipe
 Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,editeur_ville'])->group(function (): void {
     Route::post('pharmacies/import', [Admin::class, 'importer'])->middleware('role:admin');
+    Route::get('pharmacies/export', [Admin::class, 'exporter']);
     Route::get('pharmacies', [Admin::class, 'index']);
     Route::post('pharmacies', [Admin::class, 'store']);
     Route::get('pharmacies/{pharmacie}', [Admin::class, 'show']);

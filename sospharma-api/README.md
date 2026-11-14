@@ -202,6 +202,7 @@ Toutes les routes sont préfixées par `/api/v1`. Légende des colonnes « Qui �
 | GET | `/pharmacies/{id}` | 🌐 (📱 facultatif) | — |
 | GET | `/pharmacies/{id}/trajet?lat=&lng=` (30/heure/appareil) | 🌐 | — |
 | GET / POST | `/admin/pharmacies` (`filter[ville\|zone\|actif\|h24\|assurances]`, `q`, `sort=nom`) | 👥 (création 🔑) | par page |
+| GET | `/admin/pharmacies/export` (mêmes filtres, `q` et `sort` ; CSV à réimporter) | 👥 | aucune (flux) |
 | GET / PATCH / DELETE | `/admin/pharmacies/{id}` | 👥 (suppression 🔑) | — |
 | PUT | `/admin/pharmacies/{id}/horaires` | 👥 | — |
 | GET / POST | `/admin/pharmacies/{id}/telephones` (POST : `numero`, `whatsapp`?, `principal`?) | 👥 | aucune |
@@ -337,6 +338,20 @@ ph_test04;2026-10-24 20:00;2026-10-25 02:00
 - **ce n'est pas tout ou rien** : une ligne en erreur est écartée, les autres sont appliquées dans une transaction. `simulation=1` renvoie le même bilan sans rien écrire ;
 - réponse : `creees`, `mises_a_jour`, `inchangees`, `ambigues`, `erreurs` et `lignes[]` `{ligne, nom, action, pharmacie, methode, changements, messages}`.
 
+**Export de l'annuaire** (`GET /admin/pharmacies/export`, décision 60) : le fichier que l'import relit sans retouche, toutes les lignes « inchangées ».
+
+- réponse `200`, `text/csv; charset=UTF-8`, `Content-Disposition: attachment; filename="pharmacies-abidjan-2026-11-14.csv"` (`toutes` sans ville ; l'éditeur reçoit toujours sa ville) ; filtres invalides : `400 BAD_REQUEST`, comme la liste ;
+- UTF-8 avec BOM, séparateur `;`, guillemets doublés, colonnes dans cet ordre :
+
+```
+id;nom;adresse;quartier;commune;telephone;whatsapp;latitude;longitude;h24;services;assurances
+ph_k3x9q2;Pharmacie de l'Étoile;"Face au marché; près du ""grand carrefour""";Riviera 2;Cocody;27 22 49 61 36 / 07 07 00 00 02;07 07 00 00 02;5.355000;-3.970000;oui;Parapharmacie | Orthopédie;cmu | mugef-ci
+```
+
+- `commune` : le nom, ou `zo_…` si un quartier de la ville porte le même nom ; `telephone` : tous les numéros, principal en premier, séparés par ` / ` ; `whatsapp` : les numéros marqués WhatsApp ; `h24` : `oui` / `non` ; position vide si elle est à confirmer ; `assurances` : slugs actifs seulement ;
+- une cellule de texte qui commence par `=`, `+`, `-` ou `@` reçoit une apostrophe devant (`'=…`), que l'import retire ; un retour à la ligne devient une espace ;
+- pour réimporter : une ville par fichier (l'import est par ville), enregistrer dans Excel en « CSV UTF-8 ».
+
 **Zones** (`POST /admin/zones/import`) : une `FeatureCollection` GeoJSON. Chaque Feature porte `properties.nom` et `properties.type` (`commune` par défaut) et une géométrie Polygon ou MultiPolygon.
 
 Pour les imports de tours et de zones, c'est **tout ou rien** : la moindre erreur annule l'import et renvoie un 422 dont `error.details` liste les erreurs ligne par ligne (`ligne_3`) ou Feature par Feature (`features.2`).
@@ -372,7 +387,7 @@ Pour les imports de tours et de zones, c'est **tout ou rien** : la moindre erreu
    php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan event:cache
    php artisan up
    ```
-   Pendant `down`, l'API répond `503 MAINTENANCE` dans l'enveloppe standard.
+   Pendant `down`, l'API répond `503 MAINTENANCE` dans l'enveloppe standard. Une modification de `config/` (par exemple `config/cors.php`) ne compte qu'après `php artisan optimize` ou `config:cache` : sans cela, le serveur garde l'ancienne configuration en cache.
 9. **Contrôle.** `https://api…/up` doit répondre 200, et `https://api…/api/v1/pays` doit renvoyer l'enveloppe. `https://api…/docs/api` demande l'e-mail et le mot de passe d'un compte admin.
 
 ## Décisions
@@ -460,6 +475,8 @@ Les choix faits sans pouvoir demander, à valider :
 
 59. **Numéros vérifiés sur place par l'agent** (14 nov.) : `GET / POST /agent/pharmacies/{id}/telephones` et `PATCH / DELETE …/telephones/{tl}`, mêmes routes sous `/admin` pour l'équipe (éditeur : sa ville). C'est **une exception** à « l'agent ne modifie jamais une fiche, il propose un relevé » (règle de `PharmaciePolicy`) : WhatsApp ne se déduit pas d'un import, il faut qu'une personne appelle ou voie l'autocollant sur la vitrine, et passer par un relevé validé par l'équipe ajouterait des jours pour un oui ou un non. L'agent n'agit que sur les pharmacies de ses villes (sinon 403, comme l'éditeur hors de sa ville), et seulement sur les numéros : ni nom, ni position, ni horaires. Les routes sont dans le module Pharmacies, propriétaire de la table, et non dans Relevés : le contrat `EditionFichesPharmacies` reste inchangé. Identifiant public `tl_…` (colonne `telephones_pharmacie.id_public`, remplie par migration pour les lignes existantes). Ressource : `{id, numero, rang, principal, whatsapp, whatsapp_confirme_le, origine}` ; `whatsapp_confirme_le` vaut aussi pour un « non », `null` = personne n'a vérifié. Règles : `PATCH {"whatsapp": bool}` date et signe la réponse (`whatsapp_confirme_par`), la rejouer ne fait qu'avancer la date ; retirer le seul WhatsApp est permis (la fiche n'a plus de WhatsApp) ; `{"principal": true}` passe le numéro au rang 1, les autres gardent leur ordre, et ne change rien s'il l'est déjà ; `principal: false` donne 422. `POST` lit le numéro tel qu'on le tape (« 07 07 12 34 56 », « +225 … ») avec l'indicatif du pays de la pharmacie, mais refuse ce qu'un import corrigerait (numéro incomplet, début inhabituel, deux numéros collés) : la personne est sur place et peut le retaper. Un numéro déjà sur la fiche n'est pas recréé : `200` avec `meta.deja_present`, le WhatsApp et le principal envoyés s'appliquent quand même (renvoi de l'app après une coupure). `DELETE` retire un numéro faux (`204`) : les rangs sont recompactés et `pharmacies.telephone` / `whatsapp` recopiés ; le principal ne se retire pas tant qu'il reste d'autres numéros (422, « choisissez d'abord un autre numéro principal »), pour que « Appeler » ne bascule pas sur un numéro que personne n'a choisi ; le dernier numéro peut partir (la fiche n'a plus ni téléphone ni WhatsApp). Écriture directe par l'agent validée par l'utilisateur le 14 nov. ; le pharmacien n'a pas ces routes (plus tard). Origine `agent` pour l'agent, `admin` pour l'équipe. Journal : « Numéro de pharmacie ajouté », « … confirmé » et « … retiré » (identifiants publics et compte, jamais le numéro). La fiche publique et `agent/pharmacies/proches` ne changent pas : l'app de l'agent ouvre la liste des numéros quand il choisit la pharmacie.
 
+60. **Export de l'annuaire pour Excel** (14 nov.) : `GET /admin/pharmacies/export` donne un CSV que l'équipe corrige dans Excel puis renvoie à `POST /admin/pharmacies/import` ; sans retouche, toutes les lignes reviennent « inchangées » (test d'aller-retour dans `ExportPharmaciesTest`). Admin et éditeur (sa ville seulement, comme la liste) ; mêmes filtres, recherche et tri que `GET /admin/pharmacies`, par le même code (`AdminPharmacieController::liste`), sans pagination. Écrit en flux par paquets de 500 fiches (`lazy`), le tri complété par l'id pour que deux homonymes ne sautent pas d'un paquet à l'autre. Chaque ligne porte `id` (`ph_…`) : le réimport reconnaît la fiche sans passer par le téléphone ni le nom. **Numéros au format local par paires** (« 27 22 49 61 36 / 07 07 00 00 02 ») plutôt qu'en E.164 : un `+` en tête serait pris pour une formule par Excel, et l'apostrophe qui le neutralise empêcherait l'import d'y lire un numéro international ; les paires de chiffres ne sont pas prises pour un nombre (le zéro de tête resterait), et l'import rajoute l'indicatif du pays. Un numéro étranger, hors du plan du pays (comme les numéros de démonstration « +225 00 00 00 01 01 ») ou d'un pays au plan inconnu s'écrit avec `00` (« 00 33 61 23 45 67 8 », « 00 225 00 00 00 01 01 ») pour la même raison (`NumerosTelephone::pourTableur`). Les autres cellules qui commencent par `=`, `+`, `-` ou `@` reçoivent une apostrophe (sauf un nombre comme « -3.970000 ») ; `LecteurCsv` retire cette apostrophe à la lecture, pour tous les imports CSV. Les retours à la ligne deviennent des espaces : `LecteurCsv` lit une ligne de fichier par ligne de données, et les numéros de ligne de l'aperçu doivent rester ceux du tableur. Assurances retirées du référentiel non exportées (l'import mettrait la ligne en erreur) ; commune exportée par son nom, ou par `zo_…` si un quartier de la ville porte le même nom. `Content-Disposition` ajouté aux en-têtes exposés par le CORS : le back-office lit le nom du fichier. Journal : « Annuaire des pharmacies exporté » (nombre de lignes, filtres, compte), sans contenu. Un filtre invalide donne `400 BAD_REQUEST`, comme la liste, et non 422.
+
 ## Incohérences relevées dans le document d'architecture
 
 1. **Version de PHP** : « PHP 8.2 ou plus », alors que la version stable récente de Laravel (13) exige PHP 8.3. Il faut donc PHP 8.3 ou plus chez o2switch.
@@ -503,6 +520,7 @@ Encore à vérifier :
 - [ ] Tester l'envoi Expo Push réel avec un appareil (`POST /admin/notifications/test`), et vérifier l'heure locale du samedi.
 - [ ] Tester `sauvegarde:base` sur o2switch : chemin de `mysqldump`, droits, option `--no-tablespaces`. Mettre en place la copie hors serveur.
 - [ ] Vérifier sur o2switch le binaire PHP 8.3 en CLI (cron) et le comportement du cache `database` et des verrous `onOneServer`.
+- [ ] **Export de l'annuaire** (décision 60) : ouvrir le fichier dans un vrai Excel en français, le réenregistrer en « CSV UTF-8 » et le réimporter (seul l'aller-retour sans Excel est testé). Un enregistrement en « CSV (séparateur : point-virgule) » sort en Windows-1252, que `LecteurCsv` ne convertit pas (accents abîmés). Excel en français peut aussi reformater les coordonnées : ne pas toucher ces colonnes.
 
 Fonctionnel restant :
 

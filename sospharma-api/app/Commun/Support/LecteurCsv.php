@@ -20,7 +20,7 @@ final class LecteurCsv
 
     /**
      * @param  list<string>  $colonnesObligatoires
-     * @return list<array{ligne: int, valeurs: array<string, string>}>  ligne = numéro dans le fichier (en-tête = 1)
+     * @return list<array{ligne: int, valeurs: array<string, string>}> ligne = numéro dans le fichier (en-tête = 1)
      */
     public static function lire(UploadedFile $fichier, array $colonnesObligatoires): array
     {
@@ -38,7 +38,8 @@ final class LecteurCsv
                 if (! is_array($champs) || $champs === [null]) {
                     continue;
                 }
-                $champs = array_map(fn ($v): string => trim((string) $v), $champs);
+                // « '=… » : apostrophe posée par EcrivainCsv contre les formules, retirée pour retrouver la valeur.
+                $champs = array_map(fn ($v): string => preg_replace("/^'(?=[=+\\-@])/", '', trim((string) $v)) ?? '', $champs);
                 if ($entete === null) {
                     $champs[0] = preg_replace('/^\xEF\xBB\xBF/', '', $champs[0]) ?? $champs[0];
                     $entete = array_map(fn (string $c): string => mb_strtolower($c), $champs);
