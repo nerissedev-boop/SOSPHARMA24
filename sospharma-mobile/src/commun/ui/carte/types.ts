@@ -17,6 +17,8 @@ export type PropsCarteBase = {
   centreInitial: Coordonnees;
   zoomInitial?: number;
   onVueChange?: (vue: VueCarte) => void;
+  /** Appui sur le fond de carte (hors marqueur) : sert à fermer un aperçu ouvert. */
+  onPress?: () => void;
   refCarte?: Ref<RefCarte>;
   children?: ReactNode;
   style?: StyleProp<ViewStyle>;

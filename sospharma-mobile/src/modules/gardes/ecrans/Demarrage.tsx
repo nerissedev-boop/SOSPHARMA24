@@ -4,23 +4,21 @@ import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { signalerErreur, t, usePreferences, useSession } from '@/commun/lib';
-import { jetonsJour } from '@/commun/theme';
+import { useTheme } from '@/commun/theme';
 import { avecErrorBoundary, Ecran, HiPharmacy, Logo, Logotype, Texte } from '@/commun/ui';
 import { usePays, usePosition, useZoneCourante } from '@/modules/territoire';
 
 import { usePrechargerTour, useVilleSuivie } from '../hooks/useTourEnCours';
 
-/** Premier lancement seulement : le temps de lire le slogan. Ensuite, aucune attente forcée. */
-const DUREE_MINIMALE = 1400;
-/** Halo extérieur du logo (maquette 01). */
-const HALO = '#F6FBF8';
-const PISTE = '#E3EEE7';
-
-/** 01 Splash : logo, slogan, mise à jour du tour de garde de la semaine. */
+/**
+ * 01 Splash : logo, slogan, mise à jour du tour de garde de la semaine.
+ * Aucune attente imposée, même au premier lancement : quelqu'un peut ouvrir l'app en urgence.
+ * Suit le thème (nuit : fond sombre, rien d'éblouissant). La barre avance par `scaleX`, sur le fil natif.
+ */
 function Demarrage() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const c = jetonsJour;
+  const { couleurs: c } = useTheme();
   const [progression] = useState(() => new Animated.Value(0));
   const terminer = useSession((e) => e.terminerDemarrage);
   const localisationDemandee = usePreferences((e) => e.localisationDemandee);
@@ -36,17 +34,14 @@ function Demarrage() {
       toValue: 0.62,
       duration: 900,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
+      useNativeDriver: true,
     }).start();
   }, [progression]);
 
   useEffect(() => {
     if (fait.current) return;
-    const debut = Date.now();
-    const premierLancement = !localisationDemandee && !zone;
-    const minuterie = setTimeout(async () => {
-      if (fait.current) return;
-      fait.current = true;
+    fait.current = true;
+    (async () => {
       try {
         if (villeId) {
           const { enCache, mise } = precharger(villeId, point);
@@ -55,22 +50,19 @@ function Demarrage() {
       } catch (e) {
         signalerErreur(e, { etape: 'demarrage' });
       }
-      Animated.timing(progression, { toValue: 1, duration: 250, useNativeDriver: false }).start(() => {
+      Animated.timing(progression, { toValue: 1, duration: 250, useNativeDriver: true }).start(() => {
         terminer();
         router.replace(!localisationDemandee && !zone ? '/localisation' : '/');
       });
-    }, premierLancement ? Math.max(0, DUREE_MINIMALE - (Date.now() - debut)) : 0);
-    return () => clearTimeout(minuterie);
+    })();
     // Lancé une seule fois au montage.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const largeur = progression.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-
   return (
-    <Ecran fond={c.fond} barreClaire={false} testID="ecran-demarrage">
+    <Ecran fond={c.fond} testID="ecran-demarrage">
       <View style={styles.centre}>
-        <View style={[styles.halo, { backgroundColor: HALO }]}>
+        <View style={[styles.halo, { backgroundColor: c.surface2 }]}>
           <View style={[styles.cercle, { backgroundColor: c.vertClair }]}>
             <Logo largeur={150} variante="degrade" decoratif />
           </View>
@@ -88,8 +80,8 @@ function Demarrage() {
         </View>
       </View>
       <View style={[styles.pied, { bottom: 44 + insets.bottom }]} accessibilityRole="progressbar" accessibilityLabel={t('demarrage.miseAJour')}>
-        <View style={[styles.piste, { backgroundColor: PISTE }]}>
-          <Animated.View style={[styles.barre, { width: largeur, backgroundColor: c.vert }]} />
+        <View style={[styles.piste, { backgroundColor: c.etapeInactive }]}>
+          <Animated.View style={[styles.barre, { backgroundColor: c.vert, transform: [{ scaleX: progression }] }]} />
         </View>
         <View style={styles.message}>
           <HiPharmacy size={20} color={c.vert} />
@@ -111,7 +103,7 @@ const styles = StyleSheet.create({
   texte16: { fontSize: 16 },
   pied: { position: 'absolute', left: 40, right: 40, alignItems: 'center', gap: 12, paddingVertical: 8 },
   piste: { alignSelf: 'stretch', height: 4, overflow: 'hidden' },
-  barre: { position: 'absolute', left: 0, top: 0, bottom: 0 },
+  barre: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, transformOrigin: 'left' },
   message: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });
 

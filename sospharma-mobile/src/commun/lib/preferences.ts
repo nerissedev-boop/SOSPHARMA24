@@ -5,6 +5,11 @@ import { estModeDemo } from './config';
 import type { PreferenceLangue } from './i18n';
 import { stockageSynchrone } from './stockage';
 
+/**
+ * Thème choisi par l'usager. « auto » (par défaut) : nuit de 19:00 à 06:00, heure du pays,
+ * réévalué chaque minute et au retour au premier plan (commun/theme/Theme.tsx).
+ * « jour » / « nuit » : choix manuel (Profil, bouton de l'Accueil), prioritaire sur l'horaire.
+ */
 export type ModeNuit = 'auto' | 'jour' | 'nuit';
 /** Rayons proposés. 5 km au plus : c'est la limite de l'API (architecture validée), la maquette proposait aussi 10 km. */
 export type RayonKm = 1 | 2 | 5;

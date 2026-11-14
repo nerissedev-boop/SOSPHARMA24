@@ -30,7 +30,7 @@ describe('Feuille de vérification avant envoi (28b)', () => {
   it('montre le récapitulatif et les pharmacies connues ; « Oui » ouvre la fiche sans envoyer', async () => {
     const r = await afficher({ proches: [proche('ph_0001', 'Pharmacie Angré Château', 38), proche('ph_0002', 'Pharmacie des Jardins', 86)], verifiee: true });
     expect(screen.getByText('Pharmacie Bel Air')).toBeTruthy();
-    expect(screen.getByText("Est-ce l'une de celles-ci ?")).toBeTruthy();
+    expect(screen.getByText("Est-ce l’une de celles-ci ?")).toBeTruthy();
     expect(screen.getByText('38 m')).toBeTruthy();
 
     fireEvent.press(screen.getByTestId('bouton-cest-celle-ci-ph_0001'));
@@ -40,7 +40,7 @@ describe('Feuille de vérification avant envoi (28b)', () => {
 
   it('« Non, c\'est une autre : envoyer » transmet les pharmacies écartées', async () => {
     const r = await afficher({ proches: [proche('ph_0001', 'A', 38), proche('ph_0002', 'B', 86)], verifiee: true });
-    expect(screen.getByText("Non, c'est une autre : envoyer")).toBeTruthy();
+    expect(screen.getByText("Non, c’est une autre : envoyer")).toBeTruthy();
     fireEvent.press(screen.getByTestId('bouton-confirmer-envoi'));
     expect(r.onEnvoyer).toHaveBeenCalledWith(['ph_0001', 'ph_0002']);
   });

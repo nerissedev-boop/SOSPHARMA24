@@ -174,16 +174,16 @@ export function useEnTeteRepliable(hauteurDepliee: number, hauteurRepliee: numbe
 }
 
 /**
- * Nombre qui défile jusqu'à `valeur` à l'apparition, puis d'une valeur à l'autre quand elle
- * change (12 → 5 après un filtre). L'animation tourne sur le fil UI ; le texte n'est mis à
- * jour côté React qu'à chaque changement d'entier (une vingtaine de fois au plus).
- * Le composant qui l'utilise est rendu à chaque pas : le garder petit (voir `NombreAnime`).
- * « Supprimer les animations » : la valeur finale s'affiche directement.
+ * Nombre affiché tout de suite à sa valeur, puis qui défile d'une valeur à l'autre quand elle
+ * change (12 → 5 après un filtre). Pas de défilement depuis 0 à l'apparition : il retarderait
+ * la lecture sans rien expliquer (direction artistique, « le mouvement qui décore »).
+ * L'animation tourne sur le fil UI ; le texte n'est mis à jour côté React qu'à chaque changement
+ * d'entier (une vingtaine de fois au plus). Le composant qui l'utilise est rendu à chaque pas :
+ * le garder petit (voir `NombreAnime`). « Supprimer les animations » : la valeur s'affiche directement.
  */
 export function useCompteurAnime(valeur: number, duree: number = DUREES.compteur): number {
-  const reduit = useReducedMotion();
-  const anime = useSharedValue(reduit ? valeur : 0);
-  const [affiche, setAffiche] = useState(reduit ? valeur : 0);
+  const anime = useSharedValue(valeur);
+  const [affiche, setAffiche] = useState(valeur);
   useEffect(() => {
     anime.set(withTiming(valeur, { duration: duree, easing: COURBE_GLISSEMENT, reduceMotion: ReduceMotion.System }));
   }, [valeur, duree, anime]);

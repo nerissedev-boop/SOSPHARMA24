@@ -6,7 +6,7 @@ Ce dépôt est le **socle mobile** (étape 2 de la feuille de route) : navigatio
 
 Mise à jour du 21 oct. : icônes sur tous les boutons d'action et champs de saisie avec icône (ajouts de la charte), **assurances multiples** (référentiel par pays, « Mes assurances », filtre « au moins une », écran 16b) et **espace agent terrain** (module `releves`, écrans 22 à 27, file d'envoi hors connexion).
 
-> L'API n'est pas encore déployée. Par défaut, l'app tourne avec un **adaptateur de démonstration** qui sert des **données FICTIVES** d'Abidjan, au même format et sur les mêmes routes que l'API (`EXPO_PUBLIC_API_MOCK=1`). Aucune de ces pharmacies n'existe.
+> L'API est en ligne sur `https://api.oculismanager.com` (o2switch) : pour l'utiliser, mettre `EXPO_PUBLIC_API_MOCK=0` et cette adresse dans `EXPO_PUBLIC_API_URL`. Sans réglage, l'app tourne avec un **adaptateur de démonstration** qui sert des **données FICTIVES** d'Abidjan, au même format et sur les mêmes routes que l'API (`EXPO_PUBLIC_API_MOCK=1`). Aucune de ces pharmacies n'existe.
 
 ## Sommaire
 
@@ -422,7 +422,7 @@ Décisions du 21 oct. (icônes, assurances, espace agent) :
 
 Non vérifié faute d'appareil ou de réseau :
 
-- **Rendu sur appareil** (iOS et Android) : aucun simulateur disponible. Vérifiés : `tsc`, ESLint, Jest, `expo export` web et Android (le bundle se construit), `expo prebuild` Android (les plugins de configuration s'appliquent). À faire : passer chaque écran sur un appareil et le comparer aux maquettes.
+- **Rendu sur appareil** : depuis le 24 oct. 2026, l'app tourne sur l'émulateur Android et sur un Samsung Galaxy A14 (build compilé depuis la copie `D:\sp`, voir le `CLAUDE.md`). iOS : jamais lancé. Les écrans refaits selon la piste A (11 nov.) restent à passer sur le téléphone et à comparer aux maquettes.
 - **Carte native MapLibre** (marqueurs, caméra, marges, attribution, style de nuit) : non exécutée. Le type de la v11 a été suivi, mais le comportement réel reste à valider sur un development build.
 - **Compatibilité des versions** : `npx expo install` a tourné en mode hors ligne (les serveurs d'Expo n'étaient pas joignables) ; `expo-doctor` a réussi 18 vérifications sur 20, les deux échecs venant seulement de l'absence de réseau. Relancer `npx expo install --check` puis `npx expo-doctor` avec réseau.
 - **Lien profond Yango** : à vérifier ; repli Google Maps.

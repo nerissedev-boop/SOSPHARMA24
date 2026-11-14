@@ -25,6 +25,7 @@ export function CarteBase({
   centreInitial,
   zoomInitial = 14,
   onVueChange,
+  onPress,
   refCarte,
   children,
   style,
@@ -62,6 +63,7 @@ export function CarteBase({
       attribution
       attributionPosition={{ bottom: (marges?.bottom ?? 0) + 4, left: 8 }}
       onRegionDidChange={surChangement}
+      onPress={onPress ? () => onPress() : undefined}
       contentInset={marges ? { top: marges.top, bottom: marges.bottom, left: marges.left ?? 0, right: marges.right ?? 0 } : undefined}
     >
       <Camera

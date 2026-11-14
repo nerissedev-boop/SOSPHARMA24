@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { HiMedicalSearchOutline, HiPharmacyOutline } from './icones/healthicons';
+import { IllustrationGardeVide } from './IllustrationGardeVide';
 import { Texte } from './Texte';
 
 export type Suggestion = {
@@ -20,17 +21,22 @@ type Props = {
   texte?: string;
   /** Illustration ; par défaut la loupe verte + la coupe d'Hygie grise de la maquette « Vide ». */
   illustration?: ReactNode;
+  /**
+   * Dessin prêt à l'emploi (ignoré si `illustration` est donnée) :
+   * « gardeVide » = devanture fermée sous la lune (aucune pharmacie de garde).
+   */
+  dessin?: 'gardeVide';
   titreSuggestions?: string;
   suggestions?: Suggestion[];
   testID?: string;
 };
 
 /** État vide réutilisable (maquette 09 « Aucune pharmacie trouvée »). */
-export function EtatVide({ titre, texte, illustration, titreSuggestions, suggestions = [], testID }: Props) {
+export function EtatVide({ titre, texte, illustration, dessin, titreSuggestions, suggestions = [], testID }: Props) {
   const { couleurs: c } = useTheme();
   return (
     <View style={styles.conteneur} testID={testID}>
-      {illustration ?? (
+      {illustration ?? (dessin === 'gardeVide' ? <IllustrationGardeVide /> : null) ?? (
         <View style={[styles.cercle, { backgroundColor: c.vertClair }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <HiMedicalSearchOutline size={80} color={c.vert} />
           <View style={[styles.mini, { backgroundColor: c.feuille }]}>

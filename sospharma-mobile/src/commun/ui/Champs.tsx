@@ -216,7 +216,7 @@ type PropsCase = { coche: boolean; onChange: (v: boolean) => void; libelle: stri
 
 /** Case à cocher (petit arrondi, pas de bordure) : gris vide, vert coché. */
 export function CaseACocher({ coche, onChange, libelle, testID }: PropsCase) {
-  const { couleurs: c, estNuit } = useTheme();
+  const { couleurs: c } = useTheme();
   return (
     <Pressable
       testID={testID}
@@ -225,7 +225,7 @@ export function CaseACocher({ coche, onChange, libelle, testID }: PropsCase) {
       accessibilityLabel={libelle}
       accessibilityState={{ checked: coche }}
       hitSlop={11}
-      style={[styles.case, { backgroundColor: coche ? c.vert : estNuit ? c.boutonSecondaire : '#E5E7EB' }]}
+      style={[styles.case, { backgroundColor: coche ? c.vert : c.etapeInactive }]}
     >
       {coche ? <IconeCoche size={16} color={c.blanc} strokeWidth={3} /> : null}
     </Pressable>
@@ -234,9 +234,9 @@ export function CaseACocher({ coche, onChange, libelle, testID }: PropsCase) {
 
 /** Bouton radio (rond : élément réellement circulaire). */
 export function PointRadio({ actif }: { actif: boolean }) {
-  const { couleurs: c, estNuit } = useTheme();
+  const { couleurs: c } = useTheme();
   return (
-    <View style={[styles.radio, { backgroundColor: actif ? c.vert : estNuit ? c.boutonSecondaire : '#E5E7EB' }]}>
+    <View style={[styles.radio, { backgroundColor: actif ? c.vert : c.etapeInactive }]}>
       {actif ? <View style={[styles.radioPoint, { backgroundColor: c.blanc }]} /> : null}
     </View>
   );

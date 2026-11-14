@@ -26,7 +26,7 @@ describe('Partage de la liste de garde', () => {
         'Pharmacies de garde · Cocody, Abidjan',
         'Tour de garde du sam. 24 au sam. 31 oct.',
         '',
-        '• Pharmacie Alpha (Cocody) : +225 01 23 45 67 89',
+        '• Pharmacie Alpha (Cocody) : +225 01 23 45 67 89',
         '• Pharmacie Néré',
         '',
         'Liste envoyée avec SOS Pharma 24',

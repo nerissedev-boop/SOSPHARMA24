@@ -19,10 +19,10 @@ type Props = {
  * de façade validée. Tracés repris tels quels de la maquette B (Arrondi.dc.html).
  */
 export function FacadeIllustree({ taille, largeur = 150, style, testID }: Props) {
-  const { couleurs: c, estNuit } = useTheme();
-  const mur = estNuit ? '#2A3530' : '#F6F2EB';
-  const ouverture = estNuit ? '#3A4741' : '#CFC7B8';
-  const cadre = [styles.cadre, { backgroundColor: estNuit ? c.surface : '#E4DED3' }, style];
+  const { couleurs: c } = useTheme();
+  const mur = c.facadeMur;
+  const ouverture = c.facadeOuverture;
+  const cadre = [styles.cadre, { backgroundColor: c.facadeCadre }, style];
   if (taille === 'grande') {
     return (
       <View style={cadre} testID={testID}>
@@ -33,7 +33,7 @@ export function FacadeIllustree({ taille, largeur = 150, style, testID }: Props)
           <Rect x={20} y={46} width={28} height={22} fill={ouverture} />
           <Rect x={102} y={46} width={28} height={22} fill={ouverture} />
           <Rect x={66} y={0} width={18} height={18} fill={c.vert} />
-          <Path d="M75 3v12M69 9h12" stroke="#FFFFFF" strokeWidth={3} />
+          <Path d="M75 3v12M69 9h12" stroke={c.blanc} strokeWidth={3} />
         </Svg>
       </View>
     );
@@ -45,7 +45,7 @@ export function FacadeIllustree({ taille, largeur = 150, style, testID }: Props)
         <Path d="M1 14h46l-3-7H4z" fill={c.vert} />
         <Rect x={19} y={22} width={10} height={14} fill={ouverture} />
         <Rect x={20} y={0} width={8} height={8} fill={c.vert} />
-        <Path d="M24 1.5v5M21.5 4h5" stroke="#FFFFFF" strokeWidth={1.6} />
+        <Path d="M24 1.5v5M21.5 4h5" stroke={c.blanc} strokeWidth={1.6} />
       </Svg>
     </View>
   );

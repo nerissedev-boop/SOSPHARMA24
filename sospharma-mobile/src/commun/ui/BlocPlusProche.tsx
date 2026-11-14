@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { StatutPharmacie } from '../api/schema';
 import { distanceKm } from '../lib/format';
 import { t } from '../lib/i18n';
+import type { TonStatut } from '../regles/libelles';
 import { ombres } from '../theme/ombres';
 import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
@@ -13,6 +14,7 @@ import { DistanceMarche } from './DistanceMarche';
 import { FacadeIllustree } from './FacadeIllustree';
 import { HiPhone } from './icones/healthicons';
 import { IconeChevronDroite, IconeItineraire } from './icones/trait';
+import { PointStatut } from './LignePharmacie';
 import { PastilleStatut } from './PastilleStatut';
 import { PhotoFondu } from './PhotoFondu';
 import { Texte } from './Texte';
@@ -25,6 +27,8 @@ type Props = {
   libelleStatut: string;
   distanceM: number | null;
   marcheMin: number | null;
+  /** Ton calculé (tonAffiche) : « ocre » quand la pharmacie ferme dans moins de 30 min. */
+  ton?: TonStatut;
   /** Variante garde : fond rouge clair, titre rouge, pastille rouge avec badge 24. */
   garde?: boolean;
   /**
@@ -62,6 +66,7 @@ export function BlocPlusProche({
   libelleStatut,
   distanceM,
   marcheMin,
+  ton,
   garde = false,
   photoUrl,
   etiquettePhoto,
@@ -77,7 +82,7 @@ export function BlocPlusProche({
 }: Props) {
   const { couleurs: c, estNuit } = useTheme();
   const ombre = estNuit ? null : ombres.carte;
-  const couleurStatut = statut === 'garde' ? c.rougeTexteFort : statut === 'ouverte' ? c.vertTexte : c.texteTertiaire;
+  const couleurStatut = ton === 'ocre' ? c.ocreTexte : statut === 'garde' ? c.rougeTexteFort : statut === 'ouverte' ? c.vertTexte : c.texteTertiaire;
   const couleurDetail = detailOcre ? c.ocreTexte : detail !== undefined ? c.texteSecondaire : couleurStatut;
   const marcheVisible = marcheJusquA === undefined || (distanceM !== null && distanceM < marcheJusquA) ? marcheMin : null;
   const avecPhoto = photoUrl !== undefined;
@@ -114,11 +119,17 @@ export function BlocPlusProche({
         {avecPhoto ? (
           <View style={[styles.photo, { backgroundColor: c.surface }]}>
             {photoUrl ? (
-              <PhotoFondu uri={photoUrl} style={StyleSheet.absoluteFill} testID={testID ? `${testID}-photo` : undefined} />
+              <PhotoFondu
+                uri={photoUrl}
+                style={StyleSheet.absoluteFill}
+                repli={<FacadeIllustree taille="grande" style={StyleSheet.absoluteFill} testID={testID ? `${testID}-facade` : undefined} />}
+                testID={testID ? `${testID}-photo` : undefined}
+              />
             ) : (
               <FacadeIllustree taille="grande" style={StyleSheet.absoluteFill} testID={testID ? `${testID}-facade` : undefined} />
             )}
-            <View style={[styles.etiquette, { backgroundColor: c.rouge }]}>
+            {/* Rouge réservé à la garde ; une pharmacie simplement ouverte prend le vert profond de la marque. */}
+            <View style={[styles.etiquette, { backgroundColor: garde ? c.rouge : c.vertProfond }]}>
               <Texte variante="libelleFort" couleur={c.blanc}>
                 {etiquettePhoto ?? titre}
               </Texte>
@@ -128,6 +139,8 @@ export function BlocPlusProche({
         <View style={[styles.ligne, avecPhoto && styles.lignePhoto]}>
           {avecPhoto ? null : <PastilleStatut statut={statut} taille={46} tailleIcone={30} badge24={statut === 'garde'} />}
           <View style={styles.textes}>
+            {/* Avec photo, la grande pastille disparaît : le point coloré et son libellé court la remplacent. */}
+            {avecPhoto ? <PointStatut statut={statut} ton={ton} testID={testID ? `${testID}-statut` : undefined} /> : null}
             <Texte variante="nomGrand" numberOfLines={2} style={avecPhoto ? styles.nomPhoto : undefined}>
               {nom}
             </Texte>

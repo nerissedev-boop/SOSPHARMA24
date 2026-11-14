@@ -1,60 +1,132 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useMemo, useState, type ReactNode } from 'react';
-import { Pressable, Share, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
-import Animated from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { FlatList, Pressable, RefreshControl, Share, StyleSheet, View, type ListRenderItem } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 
-import type { PharmacieResume } from '@/commun/api';
-import { appeler, bornesLongues, commencerVisite, comparerDistance, dateCourte, marquerSortieVersAutreApp, signalerErreur, t, vibrationAction } from '@/commun/lib';
+import { estErreurAppel, type PharmacieResume } from '@/commun/api';
+import {
+  appeler,
+  bornesLongues,
+  commencerVisite,
+  comparerDistance,
+  dateCourte,
+  marquerSortieVersAutreApp,
+  signalerErreur,
+  t,
+  useEnLigne,
+  vibrationAction,
+} from '@/commun/lib';
 import { libelleStatut, tonAffiche } from '@/commun/regles';
-import { rayons, useTheme } from '@/commun/theme';
+import { espacements, rayons, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
   BandeauHorsConnexion,
-  BarreZone,
-  BlocPlusProche,
   ChargementCroix,
   Ecran,
-  EnTete,
-  HiPhone,
+  EtatVide,
+  IconeActualiser,
   IconeBouclier,
-  IconeLune,
-  IconePartage,
+  IconeChevronBas,
+  IconeSansReseau,
   LignePharmacie,
-  NombreAnime,
   PiluleFiltres,
-  SqueletteBlocProche,
   SqueletteListe,
   Texte,
-  useEnTeteRepliable,
-  useNavigationOnglets,
   useChargementBref,
 } from '@/commun/ui';
 import { usePaysCourant, useZoneCourante } from '@/modules/territoire';
 
+import { BandeauGarde, CHEVAUCHEMENT } from '../composants/BandeauGarde';
+import { CarteGardeProche, SqueletteCarteGarde } from '../composants/CarteGardeProche';
+import { ConseilGarde } from '../composants/ConseilGarde';
+import { EnTeteGroupe } from '../composants/EnTeteGroupe';
 import { useTourEnCours } from '../hooks/useTourEnCours';
 import { detailGarde, texteListeGardes } from '../partage';
+import { LIMITE_PREMIERES, regrouperParCommune, type GroupeCommune } from '../regroupement';
 
 type Choix = 'proches' | 'nuit' | 'commune';
+
+/**
+ * Éléments de la liste virtualisée, sous l'en-tête (bandeau, plus proche, conseil) : seules les
+ * lignes visibles sont dessinées, ce qui compte quand la ville a une centaine de pharmacies de garde.
+ */
+type Element =
+  | { type: 'filtres' }
+  | { type: 'etat' }
+  | { type: 'ligne'; p: PharmacieResume; rang: number }
+  | { type: 'plus'; nombre: number }
+  | { type: 'groupe'; groupe: GroupeCommune; ouvert: boolean }
+  | { type: 'pied' };
+
+function cleElement(e: Element): string {
+  switch (e.type) {
+    case 'ligne':
+      return `ligne-${e.p.id}`;
+    case 'groupe':
+      return `groupe-${e.groupe.cle}`;
+    default:
+      return e.type;
+  }
+}
 
 /** Au-delà de 2 km, le temps de marche n'est plus utile la nuit : seule la distance reste. */
 const MARCHE_UTILE_M = 2000;
 
-/** 05 Pharmacies de garde (jour) et 20 (nuit) : même écran, thème différent (maquette « cartes arrondies »). */
+/**
+ * 05 Pharmacies de garde, piste A (maquette validée le 11 nov.) : même écran le jour et la nuit,
+ * seul le thème change. Bandeau rouge foncé, la plus proche en grande carte qui le chevauche,
+ * le conseil d'appeler, puis les filtres (collés en haut au défilement) et la liste : les
+ * 10 plus proches, puis les autres par commune.
+ */
 function ListeGardes() {
   const router = useRouter();
-  const allerOnglet = useNavigationOnglets();
-  const { couleurs: c, estNuit } = useTheme();
+  const { couleurs: c } = useTheme();
+  const reduit = useReducedMotion();
+  const refListe = useRef<FlatList<Element>>(null);
   const [choix, setChoix] = useState<Choix>('proches');
   // Le tri se fait sur le téléphone (instantané) : la croix bat un court instant pour montrer que la liste change.
   const tri = useChargementBref();
+  // Au-delà des 10 premières : un bouton, puis les autres par commune.
+  const [toutAfficher, setToutAfficher] = useState(false);
+  // Communes dépliées ou repliées à la main : la commune de l'usager est ouverte d'office.
+  const [basculees, setBasculees] = useState<ReadonlySet<string>>(() => new Set());
   const changerChoix = (cle: Choix) => {
     setChoix(cle);
+    setToutAfficher(false);
     tri.declencher();
+    // Filtres collés en haut : on remonte là où s'affiche la plus proche du nouveau choix.
+    refListe.current?.scrollToOffset({ offset: 0, animated: !reduit });
   };
+  const basculer = (cle: string) =>
+    setBasculees((avant) => {
+      const apres = new Set(avant);
+      if (!apres.delete(cle)) apres.add(cle);
+      return apres;
+    });
   const { zone, libelle } = useZoneCourante();
   const { pays } = usePaysCourant();
-  const { tour, fuseau, dateEnregistree, isPending } = useTourEnCours();
+  const { tour, fuseau, dateEnregistree, isPending, isError, error, refetch } = useTourEnCours();
+  const client = useQueryClient();
+  const enLigne = useEnLigne();
+  const [actualisation, setActualisation] = useState(false);
+  // Glisser pour actualiser le tour de garde. Hors connexion, rien n'est relancé : la liste enregistrée
+  // reste affichée (le bandeau dit de quand elle date) et la roue ne tourne pas dans le vide.
+  const actualiser = async () => {
+    if (!enLigne) return;
+    setActualisation(true);
+    try {
+      await client.invalidateQueries({ queryKey: ['gardes', 'en-cours'] });
+    } finally {
+      setActualisation(false);
+    }
+  };
+
+  // Sans tour enregistré : premier chargement, hors connexion ou erreur (chacun son état).
+  const sansListe = tour === undefined;
+  const horsLigneSansListe = sansListe && !enLigne;
+  const enErreur = sansListe && enLigne && isError;
+  const chargement = sansListe && enLigne && !isError && isPending;
 
   const liste = useMemo(() => {
     const toutes = [...(tour?.pharmacies ?? [])].filter((p) => p.statut === 'garde');
@@ -83,7 +155,14 @@ function ListeGardes() {
     try {
       vibrationAction();
       marquerSortieVersAutreApp();
-      await Share.share({ message: texteListeGardes({ zone: libelle, bornes, pharmacies: liste, indicatif: pays?.indicatif }) });
+      await Share.share({
+        message: texteListeGardes({
+          zone: libelle,
+          bornes,
+          pharmacies: liste,
+          indicatif: pays?.indicatif,
+        }),
+      });
     } catch (e) {
       signalerErreur(e, { etape: 'partage-gardes' });
     }
@@ -95,33 +174,13 @@ function ListeGardes() {
       ton="garde"
       selection={choix}
       onChange={changerChoix}
-      style={styles.defilementFiltres}
-      styleContenu={styles.filtres}
+      styleContenu={styles.gouttiere}
       options={[
         { cle: 'proches', libelle: t('garde.plusProches'), testID: 'filtre-garde-proches' },
         { cle: 'nuit', libelle: t('garde.touteNuit'), testID: 'filtre-garde-nuit' },
         { cle: 'commune', libelle: t('garde.maCommune'), testID: 'filtre-garde-commune' },
       ]}
     />
-  );
-
-  const resume = (
-    <>
-      <NombreAnime variante="titreModal" couleur={c.blanc} valeur={nombre} rendu={(n) => t('garde.ouvertesNuit', { count: n })} />
-      {bornes ? (
-        <Texte variante="texte" couleur={c.blanc}>
-          {t('garde.tour', bornes)}
-        </Texte>
-      ) : null}
-    </>
-  );
-
-  // Commune en pastille (toute la pilule mène au choix de zone) et bouton « Partager » à droite.
-  const rangeeZone = (
-    <View style={styles.rangeeZone}>
-      <BarreZone variante="pastille" surFonce={!estNuit} libelle={libelle} onChanger={changerZone} testID="pastille-zone-garde" />
-      <BoutonPartager onPress={() => void partager()} />
-    </View>
   );
 
   const ligne = (p: PharmacieResume, i: number) => {
@@ -151,215 +210,227 @@ function ListeGardes() {
     );
   };
 
-  const detailPremiere = premiere ? detailGarde(premiere, fuseau) : null;
-  const repli = useEnTeteRepliableMesure();
+  // La plus proche du choix en cours : sa clé la fait apparaître en fondu quand un filtre la change.
+  const carte = premiere ? (
+    <CarteGardeProche
+      key={premiere.id}
+      testID="bloc-garde-plus-proche"
+      nom={premiere.nom}
+      libelleStatut={libelleStatut(premiere, fuseau, 'garde')}
+      ocre={detailGarde(premiere, fuseau).restreinte}
+      commune={premiere.commune}
+      distanceM={premiere.distance_m}
+      marcheMin={premiere.distance_m !== null && premiere.distance_m < MARCHE_UTILE_M ? premiere.marche_min : null}
+      assurance={premiere.accepte_mes_assurances === true}
+      positionAConfirmer={premiere.latitude === null}
+      onPress={() => ouvrir(premiere)}
+      onAppeler={premiere.telephone ? () => tel(premiere) : undefined}
+      onItineraire={
+        premiere.latitude === null
+          ? undefined
+          : () => router.push({ pathname: '/pharmacie/[id]/itineraire', params: { id: premiere.id } })
+      }
+    />
+  ) : chargement ? (
+    <SqueletteCarteGarde />
+  ) : null;
 
-  return (
-    <Ecran fond={c.fond} barreClaire hautSur={estNuit} testID="ecran-garde">
-      {estNuit ? (
-        <View style={styles.enteteNuit}>
-          <EnTete titre={t('garde.titre')} centre varianteTitre="titreBarre" onRetour={() => allerOnglet('accueil')} />
-          {rangeeZone}
-          <View style={[styles.banniereNuit, { backgroundColor: c.enTeteGarde }]}>
-            <View style={[styles.flex, styles.resume]}>{resume}</View>
-            <View style={styles.luneNuit}>
-              <IconeLune size={26} color={c.blanc} plein />
-            </View>
-          </View>
-          {filtres}
+  // En-tête de la liste (jamais virtualisé) : la carte chevauche le bas du bandeau.
+  const tete = (
+    <View>
+      <BandeauGarde
+        libelleZone={libelle}
+        onChangerZone={changerZone}
+        onPartager={() => void partager()}
+        partageActif={!sansListe}
+        nombre={tour ? nombre : null}
+        bornes={bornes}
+        reserverResume={chargement}
+        chevauche={carte !== null}
+      />
+      {carte ? (
+        <>
+          <View style={[styles.gouttiere, styles.chevauchement]}>{carte}</View>
+          <ConseilGarde style={styles.conseil} />
+        </>
+      ) : null}
+    </View>
+  );
+
+  // Les 10 premières d'office (la plus proche comprise, dans la carte), puis un bouton pour les autres.
+  const visibles = tri.visible ? [] : autres;
+  const enTete = visibles.slice(0, LIMITE_PREMIERES - 1);
+  const reste = visibles.slice(enTete.length);
+  // Sans liste à filtrer (hors connexion, erreur), les filtres n'ont rien à faire.
+  const avecFiltres = !horsLigneSansListe && !enErreur;
+  const elements: Element[] = [];
+  if (avecFiltres) elements.push({ type: 'filtres' });
+  if (chargement || horsLigneSansListe || enErreur || (tour !== undefined && (tri.visible || liste.length === 0))) elements.push({ type: 'etat' });
+  enTete.forEach((p, rang) => elements.push({ type: 'ligne', p, rang }));
+  if (reste.length > 0 && !toutAfficher) elements.push({ type: 'plus', nombre: reste.length });
+  if (reste.length > 0 && toutAfficher) {
+    const groupes = regrouperParCommune(reste, zone?.zoneId ?? null);
+    if (groupes.length === 1) {
+      // Une seule commune (filtre « Ma commune ») : pas de titre de groupe.
+      reste.forEach((p, rang) => elements.push({ type: 'ligne', p, rang }));
+    } else {
+      for (const groupe of groupes) {
+        const ouvert = basculees.has(groupe.cle) !== (groupe.cle !== '' && groupe.cle === zone?.zoneId);
+        elements.push({ type: 'groupe', groupe, ouvert });
+        if (ouvert) groupe.pharmacies.forEach((p, rang) => elements.push({ type: 'ligne', p, rang }));
+      }
+    }
+  }
+  if (tour?.confirme_le && !tri.visible) elements.push({ type: 'pied' });
+
+  // Premier chargement, croix du tri, liste vide, hors connexion sans liste, erreur.
+  const etat = (): ReactNode => {
+    if (chargement) {
+      // Cartes grises qui respirent à la place des lignes (la carte du haut a son propre squelette).
+      return (
+        <View testID="chargement-gardes">
+          <SqueletteListe nombre={5} ecart={8} />
         </View>
-      ) : (
-        <EnTeteRouge resume={resume} rangeeZone={rangeeZone} repli={repli} />
-      )}
+      );
+    }
+    if (horsLigneSansListe) {
+      return (
+        <EtatVide
+          titre={t('garde.erreurTitre')}
+          texte={t('garde.horsConnexionTexte')}
+          illustration={
+            <View style={[styles.picto, { backgroundColor: c.surface }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              <IconeSansReseau size={44} color={c.texteSecondaire} />
+            </View>
+          }
+          testID="garde-hors-connexion"
+        />
+      );
+    }
+    if (enErreur) {
+      const aucunTour = estErreurAppel(error) && error.code === 'NOT_FOUND';
+      return (
+        <EtatVide
+          titre={t('garde.erreurTitre')}
+          texte={aucunTour ? t('garde.aucunTour') : t('garde.erreurTexte')}
+          dessin="gardeVide"
+          suggestions={[
+            {
+              libelle: t('commun.reessayer'),
+              icone: <IconeActualiser size={20} color={c.vertTexte} />,
+              onPress: () => void refetch(),
+              accent: true,
+              testID: 'garde-reessayer',
+            },
+          ]}
+          testID="garde-erreur"
+        />
+      );
+    }
+    if (tri.visible) return <ChargementCroix style={styles.chargementFiltre} testID="chargement-filtre" />;
+    return <EtatVide titre={t('garde.aucuneTitre')} texte={t('garde.aucune')} dessin="gardeVide" testID="garde-aucune" />;
+  };
 
-      <BandeauHorsConnexion dateGarde={dateEnregistree} />
-
-      <Animated.ScrollView
-        onScroll={estNuit ? undefined : repli.onScroll}
-        scrollEventThrottle={16}
-        contentContainerStyle={[styles.contenu, !estNuit && repli.mesuree ? { flexGrow: 1, paddingBottom: 24 + repli.margeContenu } : null]}
-      >
-        {!estNuit ? filtres : null}
-        {isPending && !tour ? (
-          // Cartes grises qui respirent pendant le premier chargement, à la place d'une roue.
-          <View style={styles.liste} testID="chargement-gardes">
-            {estNuit ? null : <SqueletteBlocProche />}
-            <SqueletteListe nombre={5} ecart={8} />
+  const rendreElement: ListRenderItem<Element> = ({ item }) => {
+    switch (item.type) {
+      case 'filtres':
+        // Fond plein d'un bord à l'autre : la liste passe dessous quand les filtres restent collés en haut.
+        return <View style={[styles.filtres, { backgroundColor: c.fond }]}>{filtres}</View>;
+      case 'etat':
+        // Les dessins (vide, erreur) respirent davantage que les squelettes et la croix.
+        return <View style={[styles.gouttiere, styles.etat, !(chargement || tri.visible) && styles.etatDessin]}>{etat()}</View>;
+      case 'ligne':
+        return <View style={[styles.gouttiere, styles.cellule]}>{ligne(item.p, item.rang)}</View>;
+      case 'plus': {
+        const libellePlus = t('garde.afficherAutres', { count: item.nombre });
+        return (
+          <View style={styles.gouttiere}>
+            <Pressable
+              testID="bouton-afficher-autres"
+              onPress={() => setToutAfficher(true)}
+              accessibilityRole="button"
+              accessibilityLabel={libellePlus}
+              style={({ pressed }) => [styles.plus, { backgroundColor: c.surface, opacity: pressed ? 0.85 : 1 }]}
+            >
+              <Texte variante="boutonPetit" couleur={c.rougeTexteFort}>
+                {libellePlus}
+              </Texte>
+              <IconeChevronBas size={16} color={c.rougeTexteFort} />
+            </Pressable>
           </View>
-        ) : null}
-        {estNuit && tour?.confirme_le ? (
-          <View style={styles.confirmee}>
-            <IconeBouclier size={16} color={c.vertTexte} />
-            <Texte variante="libelle" couleur={c.texteSecondaire}>
+        );
+      }
+      case 'groupe':
+        return (
+          <View style={[styles.gouttiere, styles.celluleGroupe]}>
+            <EnTeteGroupe groupe={item.groupe} ouvert={item.ouvert} onPress={() => basculer(item.groupe.cle)} />
+          </View>
+        );
+      case 'pied':
+        return tour?.confirme_le ? (
+          <View style={[styles.gouttiere, styles.confirmee]} testID="garde-confirmee">
+            <IconeBouclier size={14} color={c.vertTexte} />
+            <Texte variante="libelle" couleur={c.texteSecondaire} style={styles.flex}>
               {t('garde.confirmee', { date: dateCourte(tour.confirme_le, fuseau) })}
             </Texte>
           </View>
-        ) : null}
-        {tour && liste.length === 0 ? (
-          <Texte variante="texte" couleur={c.texteSecondaire} style={styles.aucune}>
-            {t('garde.aucune')}
-          </Texte>
-        ) : null}
-        {tri.visible && tour ? <ChargementCroix style={styles.chargementFiltre} testID="chargement-filtre" /> : null}
-        {premiere && detailPremiere && !estNuit && !tri.visible ? (
-          <BlocPlusProche
-            testID="bloc-garde-plus-proche"
-            garde
-            titre={t('accueil.plusProcheGarde')}
-            etiquettePhoto={t('garde.plusProche')}
-            photoUrl={premiere.photo_url ?? null}
-            nom={premiere.nom}
-            statut={premiere.statut}
-            libelleStatut={libelleStatut(premiere, fuseau, 'garde')}
-            detail={detailPremiere.texte}
-            detailOcre={detailPremiere.restreinte}
-            assurance={premiere.accepte_mes_assurances === true}
-            positionAConfirmer={premiere.latitude === null}
-            marcheJusquA={MARCHE_UTILE_M}
-            distanceM={premiere.distance_m}
-            marcheMin={premiere.marche_min}
-            onPress={() => ouvrir(premiere)}
-            onAppeler={() => tel(premiere)}
-            onItineraire={() => router.push({ pathname: '/pharmacie/[id]/itineraire', params: { id: premiere.id } })}
-          />
-        ) : null}
-        {tri.visible ? null : <View style={styles.liste}>{(estNuit ? liste : autres).map(ligne)}</View>}
-        {!estNuit ? (
-          // Conseil en ocre (palette enrichie) : une précaution, pas une urgence.
-          <View style={[styles.conseil, { backgroundColor: c.ocreClair }]} testID="conseil-garde">
-            <HiPhone size={18} color={c.ocreTexte} />
-            <Texte variante="libelleMoyen" couleur={c.ocreTexte} style={styles.flex}>
-              {t('garde.conseil')}
-            </Texte>
-          </View>
-        ) : null}
-      </Animated.ScrollView>
-    </Ecran>
-  );
-}
-
-/** Bouton « Partager » en pilule : blanc sur l'en-tête rouge, aplat sombre la nuit. */
-function BoutonPartager({ onPress }: { onPress: () => void }) {
-  const { couleurs: c, estNuit } = useTheme();
-  const texte = estNuit ? c.texte : c.rougeTexteFort;
-  return (
-    <Pressable
-      testID="bouton-partager-gardes"
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={t('garde.partagerA11y')}
-      hitSlop={{ top: 4, bottom: 4 }}
-      style={({ pressed }) => [styles.partager, { backgroundColor: estNuit ? c.surface : c.blanc, opacity: pressed ? 0.85 : 1 }]}
-    >
-      <IconePartage size={16} color={estNuit ? c.rougeTexte : c.rougeTexteFort} strokeWidth={2.2} />
-      <Texte variante="boutonPetit" couleur={texte}>
-        {t('garde.partager')}
-      </Texte>
-    </Pressable>
-  );
-}
-
-/** Hauteur des parties de l'en-tête rouge qui restent une fois replié : marge haute + ligne du titre + marge basse. */
-const HAUTEUR_TITRE = 16 + 44 + 12;
-
-/**
- * En-tête repliable dont la hauteur dépliée est mesurée au premier affichage (elle dépend de la
- * langue, de la taille du texte et de la zone sûre) ; tant qu'elle n'est pas connue, rien ne bouge.
- */
-function useEnTeteRepliableMesure() {
-  const { top } = useSafeAreaInsets();
-  const [hauteur, setHauteur] = useState<number | null>(null);
-  const repliee = HAUTEUR_TITRE + top;
-  const repli = useEnTeteRepliable(hauteur ?? repliee + 1, repliee);
-  const mesurer = (e: LayoutChangeEvent) => {
-    if (hauteur === null) setHauteur(Math.round(e.nativeEvent.layout.height));
+        ) : null;
+    }
   };
-  return { ...repli, mesuree: hauteur !== null, mesurer };
-}
 
-type Repli = ReturnType<typeof useEnTeteRepliableMesure>;
-
-/** En-tête rouge du jour : au défilement, la commune et le résumé s'effacent, le titre reste. */
-function EnTeteRouge({ resume, rangeeZone, repli }: { resume: ReactNode; rangeeZone: ReactNode; repli: Repli }) {
-  const { couleurs: c } = useTheme();
-  // L'en-tête rouge passe sous la barre d'état : on y reporte la zone sûre.
-  const { top } = useSafeAreaInsets();
   return (
-    <Animated.View
-      onLayout={repli.mesurer}
-      style={[styles.enteteRouge, { backgroundColor: c.enTeteGarde, paddingTop: 16 + top }, repli.mesuree ? repli.styleEnTete : null]}
-    >
-      <View style={styles.ligneTitre}>
-        <Texte variante="titre" couleur={c.blanc} titre style={styles.flex}>
-          {t('garde.titre')}
-        </Texte>
-      </View>
-      <Animated.View style={[styles.resumeEnTete, repli.styleResume]}>
-        {rangeeZone}
-        <View style={styles.resume}>{resume}</View>
-      </Animated.View>
-    </Animated.View>
+    // La barre d'état prend la couleur du bandeau : il passe dessous au défilement sans laisser de trou.
+    <Ecran fond={c.bandeauGarde} barreClaire testID="ecran-garde">
+      {/* Sans aucune liste enregistrée, l'état « hors connexion » de la liste le dit déjà. */}
+      <BandeauHorsConnexion dateGarde={dateEnregistree} visible={horsLigneSansListe ? false : undefined} />
+      <FlatList
+        ref={refListe}
+        testID="liste-gardes"
+        data={elements}
+        keyExtractor={cleElement}
+        renderItem={rendreElement}
+        ListHeaderComponent={tete}
+        // 0 = l'en-tête (bandeau, plus proche, conseil), 1 = les filtres, qui restent collés en haut.
+        stickyHeaderIndices={avecFiltres ? [1] : undefined}
+        // L'en-tête n'est pas compté : 11 éléments couvrent largement le premier écran.
+        initialNumToRender={11}
+        windowSize={7}
+        style={[styles.flex, { backgroundColor: c.fond }]}
+        contentContainerStyle={styles.contenu}
+        refreshControl={
+          <RefreshControl refreshing={actualisation} onRefresh={() => void actualiser()} tintColor={c.vert} colors={[c.vert]} testID="actualiser-gardes" />
+        }
+      />
+    </Ecran>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  enteteRouge: {
-    paddingHorizontal: 20,
-    paddingBottom: 22,
-    gap: 6,
-    overflow: 'hidden',
-    borderBottomLeftRadius: rayons.feuille,
-    borderBottomRightRadius: rayons.feuille,
-  },
-  ligneTitre: { height: 44, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  rangeeZone: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 2, marginBottom: 4 },
-  partager: {
-    height: 36,
+  // Pas de marge sur le conteneur : bandeau et filtres vont d'un bord à l'autre, le reste porte la gouttière.
+  contenu: { paddingBottom: 24 },
+  gouttiere: { paddingHorizontal: espacements.gouttiere },
+  chevauchement: { marginTop: -CHEVAUCHEMENT },
+  conseil: { marginTop: 14, marginHorizontal: espacements.gouttiere },
+  filtres: { paddingTop: 14, paddingBottom: 6 },
+  etat: { marginTop: 8 },
+  etatDessin: { paddingVertical: 16 },
+  chargementFiltre: { height: 220 },
+  // Pas de gap sur la liste virtualisée : chaque élément porte son propre écart.
+  cellule: { marginTop: 8 },
+  celluleGroupe: { marginTop: 12 },
+  plus: {
+    marginTop: 12,
+    minHeight: 44,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingLeft: 12,
-    paddingRight: 14,
-    borderRadius: rayons.pilule,
-    flexShrink: 0,
-  },
-  resume: { gap: 2 },
-  resumeEnTete: { gap: 6 },
-  enteteNuit: { paddingTop: 16, paddingHorizontal: 20, gap: 14 },
-  banniereNuit: {
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    borderRadius: rayons.grandeCarte,
-  },
-  luneNuit: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    borderRadius: rayons.pilule,
   },
-  // Le défilement des pilules va d'un bord à l'autre de l'écran ; la gouttière passe dans le contenu.
-  defilementFiltres: { marginHorizontal: -20 },
-  filtres: { paddingHorizontal: 20 },
-  chargementFiltre: { height: 220 },
-  contenu: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 24, gap: 12 },
-  confirmee: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: -4 },
-  aucune: { paddingVertical: 16 },
-  liste: { gap: 8 },
-  conseil: {
-    marginTop: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: rayons.moyen,
-  },
+  confirmee: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 },
+  picto: { width: 112, height: 112, borderRadius: 56, alignItems: 'center', justifyContent: 'center' },
 });
 
 export default avecErrorBoundary(ListeGardes, 'ListeGardes');

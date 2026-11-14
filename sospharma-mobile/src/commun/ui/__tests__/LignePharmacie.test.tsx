@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
 import { rendre } from '../../lib/tests/rendu';
@@ -40,6 +40,14 @@ describe('Ligne de pharmacie en carte (charte « cartes », 28 oct.)', () => {
     expect(screen.getByTestId('l-facade')).toBeTruthy();
     expect(screen.queryByTestId('l-photo')).toBeNull();
     expect(screen.queryByTestId('pastille-garde', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('photo qui ne charge pas : la devanture dessinée prend sa place ; voile sombre la nuit', async () => {
+    await rendre(<LignePharmacie {...base} photoUrl="https://exemple.test/cassee.jpg" />, { theme: 'nuit' });
+    expect(screen.getByTestId('l-photo-voile')).toBeTruthy();
+    fireEvent(screen.getByTestId('l-photo'), 'error');
+    await waitFor(() => expect(screen.queryByTestId('l-photo')).toBeNull());
+    expect(screen.getByTestId('l-facade')).toBeTruthy();
   });
 
   it('photo, détail, badge assurance ; marche masquée au-delà de 2 km', async () => {

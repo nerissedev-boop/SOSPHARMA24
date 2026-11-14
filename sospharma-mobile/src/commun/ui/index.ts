@@ -11,7 +11,7 @@ export { FacadeIllustree } from './FacadeIllustree';
 export { PhotoFondu } from './PhotoFondu';
 export { PiluleFiltres, type OptionPilule } from './PiluleFiltres';
 export { PressableAnime, type PropsPressableAnime } from './PressableAnime';
-export { Squelette, SqueletteBlocProche, SqueletteCartePharmacie, SqueletteListe, ZoneSquelette } from './Squelette';
+export { Squelette, SqueletteBlocProche, SqueletteCartePharmacie, SqueletteFiche, SqueletteListe, ZoneSquelette } from './Squelette';
 export { Bouton, type VarianteBouton } from './Bouton';
 export { BoutonIcone } from './BoutonIcone';
 export { PastilleStatut } from './PastilleStatut';

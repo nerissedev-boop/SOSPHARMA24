@@ -4,14 +4,24 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { alerte, appliquerLangue, estModeDemo, initiales, t, usePreferences, type ModeNuit, type PreferenceLangue } from '@/commun/lib';
-import { libelleStatut } from '@/commun/regles';
-import { rayons, useTheme } from '@/commun/theme';
-import { avecErrorBoundary, CaseACocher, Ecran, IconeBulle, IconePlus, LigneMenu, LignePharmacie, revenirAuLogo, Texte } from '@/commun/ui';
+import { CIBLE_TACTILE, rayons, useTheme } from '@/commun/theme';
+import {
+  avecErrorBoundary,
+  CaseACocher,
+  Ecran,
+  HiUiUserProfile,
+  IconeChevronDroite,
+  LigneMenu,
+  PressableAnime,
+  revenirAuLogo,
+  Texte,
+} from '@/commun/ui';
 import { useNotificationGarde } from '@/modules/notifications';
 import { usePaysCourant, useZoneCourante } from '@/modules/territoire';
 
+import { CarteFavoris } from '../composants/CarteFavoris';
 import { EditionProfil } from '../composants/EditionProfil';
-import { useFavoris } from '../hooks/useFavoris';
+import { GroupeReglages } from '../composants/GroupeReglages';
 
 const CYCLE_MODE: Record<ModeNuit, ModeNuit> = { auto: 'nuit', nuit: 'jour', jour: 'auto' };
 /** Chaque langue s'écrit dans sa propre langue (« English » même en français). */
@@ -20,8 +30,13 @@ const NOM_LANGUE: Record<PreferenceLangue, () => string> = {
   fr: () => t('profil.francais'),
   en: () => t('profil.anglais'),
 };
+/** Bas du bandeau recouvert par la carte des favoris (piste A). */
+const CHEVAUCHEMENT = 40;
 
-/** 14 Profil et favoris. */
+/**
+ * 14 Profil et favoris (piste A, 11 nov.) : bandeau vert profond (avatar, nom, « Modifier »),
+ * carte des favoris qui chevauche son bas, puis les groupes « Préférences » et « Aide ».
+ */
 function Profil() {
   const router = useRouter();
   const { couleurs: c } = useTheme();
@@ -31,11 +46,11 @@ function Profil() {
   const modeNuit = usePreferences((e) => e.modeNuit);
   const definirModeNuit = usePreferences((e) => e.definirModeNuit);
   const { zone } = useZoneCourante();
-  const { pays, fuseau } = usePaysCourant();
-  const favoris = useFavoris();
+  const { pays } = usePaysCourant();
   const notification = useNotificationGarde();
   const mesAssurances = usePreferences((e) => e.mesAssurances);
   const nomComplet = `${profil.prenom} ${profil.nom}`.trim();
+  const lettres = initiales(profil.prenom, profil.nom);
   const langue = usePreferences((e) => e.langue);
   const definirLangue = usePreferences((e) => e.definirLangue);
   const clientRequetes = useQueryClient();
@@ -60,71 +75,67 @@ function Profil() {
     ]);
 
   return (
-    <Ecran testID="ecran-profil">
-      <ScrollView contentContainerStyle={styles.contenu}>
-        <View style={styles.entete}>
-          <Texte variante="titreEcran" titre>
-            {t('profil.titre')}
-          </Texte>
-        </View>
-
-        <View style={[styles.carteProfil, { backgroundColor: c.surface }]}>
-          <View style={[styles.avatar, { backgroundColor: c.vert }]}>
-            <Texte variante="nomGrand" couleur={c.blanc} style={styles.initiales}>
-              {initiales(profil.prenom, profil.nom) || '?'}
-            </Texte>
+    // Fond vert profond : la zone de la barre d'état prolonge le bandeau ; la liste garde le fond sable.
+    <Ecran testID="ecran-profil" fond={c.vertProfond} barreClaire>
+      <ScrollView style={{ backgroundColor: c.fond }} contentContainerStyle={styles.contenu} testID="defilement-profil">
+        <View style={[styles.bandeau, { backgroundColor: c.vertProfond }]} testID="bandeau-profil">
+          {/* Liste tirée vers le bas (rebond iOS) : le vert continue au-dessus du bandeau. */}
+          <View pointerEvents="none" style={[styles.prolongement, { backgroundColor: c.vertProfond }]} />
+          {/* Avatar décoratif : le nom, juste à côté, est lu par le lecteur d'écran. */}
+          <View
+            style={[styles.avatar, { backgroundColor: c.vert }]}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            testID="avatar-profil"
+          >
+            {lettres ? (
+              <Texte variante="titre" couleur={c.blanc} maxFontSizeMultiplier={1.2}>
+                {lettres}
+              </Texte>
+            ) : (
+              <HiUiUserProfile size={30} color={c.blanc} />
+            )}
           </View>
-          <View style={styles.flex}>
-            <Texte variante="nomGrand">{nomComplet || t('profil.ajouterNom')}</Texte>
-            <Texte variante="petit" couleur={c.texteSecondaire}>
+          <View style={styles.identite}>
+            <Texte variante="titre" titre couleur={c.blanc} numberOfLines={2}>
+              {nomComplet || t('profil.ajouterNom')}
+            </Texte>
+            <Texte variante="petit" couleur={c.vertTendre} numberOfLines={2}>
               {profil.telephone || t('profil.localSeulement')}
             </Texte>
           </View>
-          <Pressable onPress={() => setEdition(true)} accessibilityRole="button" style={styles.modifier} hitSlop={6}>
-            <Texte variante="boutonPetit" couleur={c.vertTexte} style={styles.texte13}>
+          <PressableAnime
+            onPress={() => setEdition(true)}
+            accessibilityRole="button"
+            style={[styles.modifier, { backgroundColor: c.profilBandeauBouton }]}
+            testID="bouton-modifier-profil"
+          >
+            <Texte variante="boutonPetit" couleur={c.blanc} numberOfLines={1}>
               {t('profil.modifier')}
             </Texte>
-          </Pressable>
+          </PressableAnime>
         </View>
 
-        {/* Favoris : cartes arrondies espacées de 8 (charte « cartes »). */}
-        <View style={styles.favoris}>
-          <Texte variante="sectionMoyenne" titre style={styles.titreSection}>
-            {t('profil.favoris')}
-          </Texte>
-          {(favoris.data ?? []).map((p) => (
-            <LignePharmacie
-              key={p.id}
-              variante="favori"
-              photoUrl={p.photo_url ?? null}
-              positionAConfirmer={p.latitude === null}
-              nom={p.nom}
-              statut={p.statut}
-              libelleStatut={libelleStatut(p, fuseau)}
-              distanceM={p.distance_m}
-              marcheMin={p.marche_min}
-              onPress={() => router.push({ pathname: '/pharmacie/[id]', params: { id: p.id } })}
-            />
-          ))}
-          {favoris.data && favoris.data.length === 0 ? (
-            <Texte variante="petit" couleur={c.texteSecondaire} style={styles.vide}>
-              {t('profil.aucunFavori')}
-            </Texte>
-          ) : null}
-        </View>
+        <CarteFavoris style={styles.chevauchement} />
 
-        <View>
-          <Texte variante="sectionMoyenne" titre style={styles.titreSection}>
-            {t('profil.preferences')}
-          </Texte>
+        <GroupeReglages titre={t('profil.preferences')} style={styles.groupe} testID="groupe-preferences">
+          <LigneMenu libelle={t('profil.communeDefaut')} valeur={zone?.nom ?? t('profil.aucune')} onPress={() => router.push('/zone')} />
+          <LigneMenu libelle={t('profil.pays')} valeur={pays?.nom ?? ''} onPress={() => router.push('/zone/pays')} />
           <LigneMenu
             libelle={t('profil.mesAssurances')}
             valeur={resumeAssurances(mesAssurances.map((a) => a.nom))}
             onPress={() => router.push({ pathname: '/assurances', params: { contexte: 'profil' } })}
             testID="ligne-mes-assurances"
           />
-          <LigneMenu libelle={t('profil.communeDefaut')} valeur={zone?.nom ?? t('profil.aucune')} onPress={() => router.push('/zone')} />
-          <LigneMenu libelle={t('profil.pays')} valeur={pays?.nom ?? ''} onPress={() => router.push('/zone/pays')} />
+          <LigneMenu libelle={t('profil.langue')} valeur={NOM_LANGUE[langue]()} onPress={choisirLangue} testID="ligne-langue" />
+          <LigneMenu
+            libelle={t('profil.modeNuit')}
+            sousTitre={modeNuit === 'auto' ? t('profil.modeNuitAuto') : undefined}
+            valeur={t(`profil.modes.${modeNuit}`)}
+            onPress={() => definirModeNuit(CYCLE_MODE[modeNuit])}
+            testID="ligne-mode-nuit"
+          />
+          {/* Refus de l'autorisation : le message est donné par useNotificationGarde (réglages du téléphone). */}
           <LigneMenu
             libelle={t('profil.notifTitre')}
             sousTitre={t('profil.notifTexte')}
@@ -137,46 +148,28 @@ function Profil() {
               />
             }
           />
-          <LigneMenu
-            libelle={t('profil.modeNuit')}
-            valeur={t(`profil.modes.${modeNuit}`)}
-            onPress={() => definirModeNuit(CYCLE_MODE[modeNuit])}
-            testID="ligne-mode-nuit"
-          />
-          <LigneMenu
-            libelle={t('profil.langue')}
-            valeur={NOM_LANGUE[langue]()}
-            onPress={choisirLangue}
-            testID="ligne-langue"
-          />
-        </View>
+        </GroupeReglages>
 
-        <View>
-          <Texte variante="sectionMoyenne" titre style={styles.titreSection}>
-            {t('profil.aide')}
-          </Texte>
-          <Pressable onPress={() => router.push('/contact')} accessibilityRole="button" style={styles.lienAide}>
-            <IconeBulle size={20} color={c.vertTexte} />
-            <Texte variante="corpsFort" couleur={c.vertTexte} style={styles.gras}>
-              {t('profil.contact')}
-            </Texte>
-          </Pressable>
-          <Pressable onPress={() => router.push('/proposer')} accessibilityRole="button" style={styles.lienAide} testID="lien-proposer">
-            <IconePlus size={20} color={c.vert} strokeWidth={2.2} />
-            <Texte variante="corps">{t('profil.proposer')}</Texte>
-          </Pressable>
+        <GroupeReglages titre={t('profil.aide')} style={styles.groupe} testID="groupe-aide">
+          <LigneMenu libelle={t('profil.contact')} onPress={() => router.push('/contact')} testID="lien-contact" />
+          <LigneMenu libelle={t('profil.proposer')} onPress={() => router.push('/proposer')} testID="lien-proposer" />
+        </GroupeReglages>
+
+        {/* Entrée des agents et pharmaciens : discrète, sous les réglages du public. */}
+        <View style={styles.pied}>
           <Pressable
             onPress={() => router.push('/agent/connexion')}
             accessibilityRole="link"
-            style={styles.lienSignaler}
+            style={({ pressed }) => [styles.lienAgent, { opacity: pressed ? 0.7 : 1 }]}
             testID="lien-espace-agent"
           >
             <Texte variante="petit" couleur={c.texteSecondaire}>
               {t('profil.espaceAgent')}
             </Texte>
+            <IconeChevronDroite size={14} color={c.texteSecondaire} strokeWidth={2.4} />
           </Pressable>
           {estModeDemo() ? (
-            <Texte variante="libelle" couleur={c.texteTertiaire} style={styles.demo}>
+            <Texte variante="libelle" couleur={c.texteTertiaire}>
               {t('profil.demo')}
             </Texte>
           ) : null}
@@ -203,21 +196,32 @@ function resumeAssurances(noms: string[]): string {
 }
 
 const styles = StyleSheet.create({
-  contenu: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 24, gap: 16 },
-  entete: { height: 44, justifyContent: 'center' },
-  carteProfil: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: rayons.carte },
-  favoris: { gap: 8 },
-  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  initiales: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontSize: 17 },
-  flex: { flex: 1, gap: 2 },
-  modifier: { height: 44, justifyContent: 'center' },
-  texte13: { fontSize: 13 },
-  titreSection: { marginBottom: 4 },
-  vide: { paddingVertical: 8 },
-  lienAide: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  gras: { fontFamily: 'PlusJakartaSans_700Bold' },
-  lienSignaler: { minHeight: 44, justifyContent: 'center' },
-  demo: { marginTop: 8 },
+  contenu: { paddingBottom: 24 },
+  bandeau: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 20 + CHEVAUCHEMENT,
+    borderBottomLeftRadius: rayons.feuille,
+    borderBottomRightRadius: rayons.feuille,
+  },
+  prolongement: { position: 'absolute', left: 0, right: 0, bottom: '100%', height: 600 },
+  avatar: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  identite: { flex: 1, minWidth: 0, gap: 2 },
+  modifier: {
+    minHeight: CIBLE_TACTILE,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    borderRadius: rayons.pilule,
+  },
+  chevauchement: { marginTop: -CHEVAUCHEMENT, marginHorizontal: 16 },
+  groupe: { marginTop: 20, marginHorizontal: 16 },
+  pied: { marginTop: 12, marginHorizontal: 20, gap: 4 },
+  lienAgent: { minHeight: CIBLE_TACTILE, flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' },
 });
 
 export default avecErrorBoundary(Profil, 'Profil');

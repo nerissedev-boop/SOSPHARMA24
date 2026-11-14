@@ -43,6 +43,9 @@
     "pastilleBientot": "Pharmacy closing soon",
     "inconnue": "Hours to be confirmed",
     "pastilleInconnue": "Hours to be confirmed",
+    "courtGarde": "On duty",
+    "courtBientot": "Closing soon",
+    "courtInconnue": "To be confirmed",
     "appelerAvant": "Hours not checked yet: call before you go."
   },
   "onglets": {
@@ -98,7 +101,9 @@
     "fermeesNuit_one": "{{count}} nearby pharmacy is closed tonight.",
     "fermeesNuit_other": "{{count}} nearby pharmacies are closed tonight.",
     "modeJour": "Switch to day mode",
-    "modeNuit": "Switch to night mode"
+    "modeNuit": "Switch to night mode",
+    "resume_one": "{{heure}} · {{count}} pharmacy open near you",
+    "resume_other": "{{heure}} · {{count}} pharmacies open near you"
   },
   "carte": {
     "titre": "Around you",
@@ -121,7 +126,10 @@
     "commune_one": "{{nom}}, {{count}} pharmacy including {{gardes}} on duty",
     "commune_other": "{{nom}}, {{count}} pharmacies including {{gardes}} on duty",
     "horsLigne": "Without a network, the map is replaced by the list.",
-    "nonDisponible": "The map requires a development build (MapLibre). Here is the list."
+    "nonDisponible": "The map requires a development build (MapLibre). Here is the list.",
+    "ouvrirFicheIndice": "Opens the pharmacy details",
+    "appelerNom": "Call {{nom}}",
+    "itineraireNom": "Directions to {{nom}}"
   },
   "garde": {
     "titre": "On-duty pharmacies",
@@ -134,13 +142,28 @@
     "conseil": "At night, call before you go.",
     "confirmee": "List confirmed on {{date}}",
     "aucune": "No on-duty pharmacy matches this choice.",
+    "aucuneTitre": "No on-duty pharmacy found",
     "plusProche": "Nearest",
     "partager": "Share",
     "partagerA11y": "Share the list of on-duty pharmacies",
     "partageTitre": "On-duty pharmacies · {{zone}}",
     "partageLigne": "• {{pharmacie}}: {{telephone}}",
     "partageLigneSansTelephone": "• {{pharmacie}}",
-    "partageSignature": "List shared with SOS Pharma 24"
+    "partageSignature": "List shared with SOS Pharma 24",
+    "afficherAutres_one": "Show the other on-duty pharmacy",
+    "afficherAutres_other": "Show the {{count}} others",
+    "groupeNombre_one": "{{count}} on duty",
+    "groupeNombre_other": "{{count}} on duty",
+    "groupeDetail_one": "{{count}} on duty, {{distance}} away",
+    "groupeDetail_other": "{{count}} on duty, nearest {{distance}} away",
+    "sansCommune": "Area not specified",
+    "plusProcheTitre": "Nearest on duty",
+    "aPied": "{{minutes}} min on foot",
+    "itineraireA11y": "Directions to {{nom}}",
+    "erreurTitre": "On-duty list unavailable",
+    "erreurTexte": "The list could not be loaded. Check your connection, then try again.",
+    "aucunTour": "No on-duty list has been published for this city yet.",
+    "horsConnexionTexte": "No internet connection. The list will appear as soon as you are back online."
   },
   "fiche": {
     "photo": "Storefront photo",
@@ -170,7 +193,12 @@
     "autresAssurances_other": "+ {{count}} others",
     "servicesListe": "Services: {{services}}.",
     "mettreAJour": "Update this listing (agent)",
-    "ferme": "Closed"
+    "ferme": "Closed",
+    "yAllerCourt": "Go there",
+    "whatsapp": "Message on WhatsApp",
+    "aPied": "{{minutes}} min on foot",
+    "voirSemaine": "Shows the opening hours for the whole week",
+    "masquerSemaine": "Hides the week's opening hours"
   },
   "services": {
     "ordonnances": "Prescriptions",
@@ -328,6 +356,7 @@
     "localSeulement": "Stays on your phone",
     "favoris": "Favourite pharmacies",
     "aucunFavori": "Add a pharmacy to your favourites from its page.",
+    "favorisErreur": "Your favourites could not be loaded. Check your connection.",
     "preferences": "Preferences",
     "communeDefaut": "Default commune",
     "aucune": "None",
@@ -341,6 +370,7 @@
     "langueAuto": "Phone language",
     "langueTexte": "The app will return to the home screen in the chosen language.",
     "modeNuit": "Night mode",
+    "modeNuitAuto": "In the evening, from 7 pm to 6 am",
     "modes": {
       "auto": "Automatic",
       "jour": "Off",

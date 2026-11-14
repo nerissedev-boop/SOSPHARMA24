@@ -67,6 +67,19 @@ export type Jetons = {
   fermeFond: string;
   fermeIcone: string;
   enTeteGarde: string;
+  /**
+   * Écran Garde, piste A (maquette validée le 11 nov.) : bandeau rouge foncé en tête d'écran, plus
+   * sombre la nuit pour ne pas éblouir. Texte blanc 7,9:1 (jour) et 13,5:1 (nuit) ; sous-titre
+   * `rougeTendre` 5,7:1 et 7,9:1.
+   */
+  bandeauGarde: string;
+  /** Bouton rond posé sur ce bandeau (blanc translucide, comme la pastille de zone) : icône blanche ≥ 5,5:1. */
+  bandeauGardeBouton: string;
+  /**
+   * Bouton « Itinéraire » et étiquette de la carte « La plus proche de garde » : rouge très pâle le
+   * jour, aplat relevé la nuit pour se détacher de la carte sombre. Texte `rougeTexteFort` 5,7:1 et 5,4:1.
+   */
+  boutonGardeClair: string;
   bandeauInfo: string;
   bandeauInfoTexte: string;
   /** Bandeau « relevés en attente d'envoi » (orange doux de la maquette 23). */
@@ -77,6 +90,10 @@ export type Jetons = {
   etapeInactive: string;
   photoFond: string;
   photoTexte: string;
+  /** Devanture dessinée (fiche sans photo) : mur, vitrine et porte, cadre autour. */
+  facadeMur: string;
+  facadeOuverture: string;
+  facadeCadre: string;
   etoile: string;
   bleuPosition: string;
   bleuPositionHalo: string;
@@ -85,6 +102,45 @@ export type Jetons = {
   etiquetteCarteTexte: string;
   etiquetteSelection: string;
   etiquetteSelectionTexte: string;
+  // Écran Urgence (fond rouge, bouton SOS) : contrastes WCAG AA vérifiés dans les deux thèmes.
+  /** Fond de l'écran Urgence ; plus sombre la nuit pour ne pas éblouir. */
+  sosFond: string;
+  /** Texte et icônes posés sur le fond d'urgence. */
+  sosTexte: string;
+  /** Gros bouton SOS, son texte rouge et sa légende. */
+  sosBouton: string;
+  sosBoutonTexte: string;
+  sosBoutonLegende: string;
+  /** Anneaux décoratifs autour du bouton, et halo qui pulse (opacité animée par-dessus). */
+  sosAnneauExterieur: string;
+  sosAnneauInterieur: string;
+  sosHalo: string;
+  /** Bandeau « pharmacie de garde la plus proche » et sa pastille ronde. */
+  sosBandeau: string;
+  sosPastille: string;
+  sosPastilleIcone: string;
+  /**
+   * Gros boutons blancs des numéros d'urgence (piste A, 11 nov.) et leur texte rouge foncé.
+   * Contraste du texte : 6,6:1 sur blanc le jour, 5,6:1 sur blanc cassé la nuit.
+   */
+  sosNumero: string;
+  sosNumeroTexte: string;
+  /**
+   * Bouton « Modifier » posé sur le bandeau vert profond du Profil (piste A) : blanc translucide.
+   * Libellé blanc dessus : 7,6:1 le jour, 11,5:1 la nuit.
+   */
+  profilBandeauBouton: string;
+  // Puces et filets posés sur une carte blanche (fiche pharmacie, piste A, 11 nov.).
+  // Contrastes WCAG AA vérifiés dans les deux thèmes (texte ≥ 4,5:1 sur ces fonds).
+  /** Puce neutre posée sur une carte (assurances) ; texte en `texte` ou `vertTexte`. */
+  puceFond: string;
+  /** Puce verte douce (statut « ouverte ») ; texte en `vertTexte`. Visible aussi la nuit sur `carte`. */
+  puceVerteFond: string;
+  /** Puce verte forte (« Accepte votre assurance », vos assurances) et son texte. */
+  puceForteFond: string;
+  puceForteTexte: string;
+  /** Filet de 1 px entre deux lignes d'une carte. */
+  separateur: string;
   // Carte (style MapLibre)
   carteFond: string;
   carteRoute: string;
@@ -153,6 +209,9 @@ export const jetonsJour: Jetons = {
   fermeFond: '#F2EDE4',
   fermeIcone: '#5A5F55',
   enTeteGarde: '#D32F2F',
+  bandeauGarde: '#9E1F1F',
+  bandeauGardeBouton: 'rgba(255,255,255,0.18)',
+  boutonGardeClair: '#FDECEC',
   bandeauInfo: '#F2EDE4',
   bandeauInfoTexte: '#5A5F55',
   attenteFond: '#FFF1D6',
@@ -161,6 +220,9 @@ export const jetonsJour: Jetons = {
   etapeInactive: '#E6E0D5',
   photoFond: '#2F3A34',
   photoTexte: '#C9D3CD',
+  facadeMur: '#F6F2EB',
+  facadeOuverture: '#CFC7B8',
+  facadeCadre: '#E4DED3',
   etoile: '#F5A623',
   bleuPosition: '#2563EB',
   bleuPositionHalo: 'rgba(37,99,235,0.14)',
@@ -169,6 +231,27 @@ export const jetonsJour: Jetons = {
   etiquetteCarteTexte: '#1C1F1A',
   etiquetteSelection: '#0F3D22',
   etiquetteSelectionTexte: '#FFFFFF',
+
+  sosFond: '#D32F2F',
+  sosTexte: '#FFFFFF',
+  sosBouton: '#FFFFFF',
+  sosBoutonTexte: '#D32F2F',
+  sosBoutonLegende: '#1C1F1A',
+  sosAnneauExterieur: 'rgba(255,255,255,0.08)',
+  sosAnneauInterieur: 'rgba(255,255,255,0.12)',
+  sosHalo: 'rgba(255,255,255,0.45)',
+  sosBandeau: 'rgba(0,0,0,0.18)',
+  sosPastille: '#FFFFFF',
+  sosPastilleIcone: '#D32F2F',
+  sosNumero: '#FFFFFF',
+  sosNumeroTexte: '#B71C1C',
+  profilBandeauBouton: 'rgba(255,255,255,0.16)',
+
+  puceFond: '#F2EDE4',
+  puceVerteFond: '#EEF7F1',
+  puceForteFond: '#0F3D22',
+  puceForteTexte: '#FFFFFF',
+  separateur: '#F2EDE4',
 
   carteFond: '#EEF1EF',
   carteRoute: '#FFFFFF',
@@ -237,6 +320,9 @@ export const jetonsNuit: Jetons = {
   fermeFond: '#1F2B23',
   fermeIcone: '#9FB0A6',
   enTeteGarde: '#9E1F1F',
+  bandeauGarde: '#5E1010',
+  bandeauGardeBouton: 'rgba(255,255,255,0.18)',
+  boutonGardeClair: '#2A382F',
   bandeauInfo: '#17211B',
   bandeauInfoTexte: '#C9D6CE',
   attenteFond: '#2B2214',
@@ -245,6 +331,9 @@ export const jetonsNuit: Jetons = {
   etapeInactive: '#2A382F',
   photoFond: '#1F2B23',
   photoTexte: '#A3B3A9',
+  facadeMur: '#2A3530',
+  facadeOuverture: '#3A4741',
+  facadeCadre: '#17211B',
   etoile: '#F5A623',
   bleuPosition: '#3B82F6',
   bleuPositionHalo: 'rgba(59,130,246,0.18)',
@@ -253,6 +342,27 @@ export const jetonsNuit: Jetons = {
   etiquetteCarteTexte: '#E8EFEA',
   etiquetteSelection: '#E8EFEA',
   etiquetteSelectionTexte: '#0E1511',
+
+  sosFond: '#9E1F1F',
+  sosTexte: '#FFFFFF',
+  sosBouton: '#F3EAE9',
+  sosBoutonTexte: '#B71C1C',
+  sosBoutonLegende: '#1C1F1A',
+  sosAnneauExterieur: 'rgba(255,255,255,0.06)',
+  sosAnneauInterieur: 'rgba(255,255,255,0.10)',
+  sosHalo: 'rgba(255,255,255,0.30)',
+  sosBandeau: 'rgba(0,0,0,0.22)',
+  sosPastille: '#F3EAE9',
+  sosPastilleIcone: '#B71C1C',
+  sosNumero: '#F3EAE9',
+  sosNumeroTexte: '#B71C1C',
+  profilBandeauBouton: 'rgba(255,255,255,0.12)',
+
+  puceFond: '#24302A',
+  puceVerteFond: '#1E3326',
+  puceForteFond: '#136B30',
+  puceForteTexte: '#FFFFFF',
+  separateur: '#24302A',
 
   carteFond: '#121C17',
   carteRoute: '#24322A',

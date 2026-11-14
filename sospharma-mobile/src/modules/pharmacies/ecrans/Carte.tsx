@@ -1,12 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PharmacieResume } from '@/commun/api';
 import { dateCourte, distanceKm, distanceNombre, localeActive, positionDe, t, useEnLigne, usePreferences } from '@/commun/lib';
 import { ombres, rayons, useTheme } from '@/commun/theme';
-import { estInactive } from '@/commun/regles';
 import {
   avecErrorBoundary,
   BandeauHorsConnexion,
@@ -14,22 +13,17 @@ import {
   Bouton,
   BoutonIcone,
   ChampRecherche,
-  DistanceMarche,
   Ecran,
   EnTete,
   Filtre,
   HiMedicalSearchOutline,
-  HiPhone,
-  IconeBulle,
   IconeCalques,
   IconeEtoile,
   IconeFermer,
   IconeFiltres,
-  IconeItineraire,
   IconeLune,
   IconeViseur,
   LignePharmacie,
-  PastilleStatut,
   ChargementCroix,
   Texte,
   useNavigationOnglets,
@@ -49,6 +43,7 @@ import { useTourEnCours } from '@/modules/gardes';
 import { useCompteurs, usePaysCourant, useVilles, useZoneCourante } from '@/modules/territoire';
 
 import { AucunResultat } from '../composants/AucunResultat';
+import { FeuillePharmacieCarte } from '../composants/FeuillePharmacieCarte';
 import { useActionsPharmacie } from '../hooks/useActions';
 import { useLibelleStatut, usePharmacie, usePharmaciesCadre, usePharmaciesProches, useRecherche } from '../hooks/usePharmacies';
 
@@ -64,7 +59,7 @@ function Carte() {
   const enLigne = useEnLigne();
   const refCarte = useRef<RefCarte>(null);
   const [vue, setVue] = useState<VueCarte | null>(null);
-  const [selection, setSelection] = useState<string | null>(null);
+  const [selection, setSelection] = useState<PharmacieResume | null>(null);
   const [saisie, setSaisie] = useState('');
   const [recherche, setRecherche] = useState('');
   // Recherche lancée depuis l'Accueil (?q=…&n=…) : reprise ici une fois par envoi.
@@ -104,10 +99,25 @@ function Carte() {
     }),
     [cadre.liste, proches.liste],
   );
+  // Pharmacie touchée : rafraîchie depuis les points chargés, gardée si la carte bouge et qu'elle sort du cadre.
   const choisie = useMemo<PharmacieResume | undefined>(
-    () => points.find((p) => p.id === selection) ?? proches.liste?.[0] ?? points[0],
-    [points, selection, proches.liste],
+    () => (selection ? (points.find((p) => p.id === selection.id) ?? selection) : undefined),
+    [points, selection],
   );
+  // Sur certains téléphones, toucher un marqueur déclenche aussi l'appui sur le fond de carte.
+  // On ignore donc l'appui sur le fond qui suit de près un toucher de marqueur.
+  const marqueurVientDEtreTouche = useRef(false);
+  const choisir = (p: PharmacieResume) => {
+    marqueurVientDEtreTouche.current = true;
+    setTimeout(() => {
+      marqueurVientDEtreTouche.current = false;
+    }, 400);
+    setSelection(p);
+  };
+  const fermerApercu = () => {
+    if (!marqueurVientDEtreTouche.current) setSelection(null);
+  };
+  const fermer = useCallback(() => setSelection(null), []);
   const ficheChoisie = usePharmacie(choisie?.id ?? '', Boolean(choisie) && !modeCommunes);
   const noteChoisie = ficheChoisie.fiche?.id === choisie?.id ? ficheChoisie.fiche?.note : null;
   const communeResumee = compteurs.data?.find((x) => x.zone_id === zone?.zoneId) ?? compteurs.data?.[0];
@@ -273,6 +283,7 @@ function Carte() {
         centreInitial={point ?? { latitude: ville?.latitude ?? 5.33, longitude: ville?.longitude ?? -4.02 }}
         zoomInitial={14}
         onVueChange={setVue}
+        onPress={fermerApercu}
         marges={{ top: hauteurEnTete, bottom: hauteurFiche + 20 }}
       >
         {point ? (
@@ -301,7 +312,7 @@ function Carte() {
               const choisi = p.id === choisie?.id;
               const libelle = t('carte.marqueur', { nom: p.nom, statut: libelleStatut(p), distance: distanceKm(p.distance_m) });
               return (
-                <Repere key={p.id} id={p.id} coordonnees={p} ancre="left" onPress={() => setSelection(p.id)}>
+                <Repere key={p.id} id={p.id} coordonnees={p} ancre="left" onPress={() => choisir(p)}>
                   <View accessible accessibilityRole="button" accessibilityLabel={choisi ? t('carte.selectionnee', { libelle }) : libelle}>
                     <MarqueurPharmacie
                       statut={p.statut}
@@ -365,130 +376,60 @@ function Carte() {
         </View>
       ) : null}
 
-      {!recherche ? (
+      {!recherche && modeCommunes ? (
         <View
           onLayout={(e) => setHauteurFiche(e.nativeEvent.layout.height)}
           style={[styles.fiche, { backgroundColor: c.feuille }, ombres.fiche]}
           testID="fiche-carte"
         >
-          {modeCommunes ? (
-            <>
-              <View style={styles.legende}>
-                <View style={styles.elementLegende}>
-                  <View style={[styles.pointLegende, { backgroundColor: c.vert, borderRadius: 8 }]} />
-                  <Texte variante="libelle" couleur={c.texteSecondaire}>
-                    {t('carte.legendePharmacies')}
-                  </Texte>
-                </View>
-                <View style={styles.elementLegende}>
-                  <View style={[styles.pointLegende, { backgroundColor: c.rouge }]} />
-                  <Texte variante="libelle" couleur={c.texteSecondaire}>
-                    {t('carte.legendeGarde')}
-                  </Texte>
-                </View>
-              </View>
-              {communeResumee ? (
-                <Texte variante="titreModal" titre style={styles.titreCommune}>
-                  {t('carte.resumeCommune', {
-                    commune: communeResumee.nom,
-                    count: communeResumee.nombre_pharmacies,
-                    gardes: communeResumee.nombre_gardes,
-                  })}
-                </Texte>
-              ) : null}
-              <Texte variante="petit" couleur={c.texteSecondaire}>
-                {t('carte.zoomez')}
+          <View style={styles.legende}>
+            <View style={styles.elementLegende}>
+              <View style={[styles.pointLegende, { backgroundColor: c.vert, borderRadius: 8 }]} />
+              <Texte variante="libelle" couleur={c.texteSecondaire}>
+                {t('carte.legendePharmacies')}
               </Texte>
-              <Bouton libelle={t('carte.voirGardes')} icone="lune" hauteur={50} onPress={() => allerOnglet('garde')} />
-            </>
-          ) : choisie ? (
-            estNuit ? (
-              <>
-                <View style={styles.ligneFiche}>
-                  <View style={styles.textesFiche}>
-                    <Texte variante="nomGrand" numberOfLines={1}>
-                      {choisie.nom}
-                    </Texte>
-                    <Texte variante="petitFort" couleur={choisie.statut === 'garde' ? c.rougeTexte : choisie.statut === 'ouverte' ? c.vertTexte : c.texteTertiaire}>
-                      {libelleStatut(choisie, 'carte')}
-                    </Texte>
-                    {choisie.garde?.confirmee_le ? (
-                      <Texte variante="libelle" couleur={c.texteSecondaire}>
-                        {t('statut.confirmeeLe', { date: dateCourte(choisie.garde.confirmee_le, fuseau) })}
-                      </Texte>
-                    ) : null}
-                  </View>
-                  <DistanceMarche distanceM={choisie.distance_m} marcheMin={choisie.marche_min} grande varianteDistance="distanceGrande" />
-                </View>
-                <View style={styles.actions2}>
-                  <Bouton
-                    libelle={t('commun.appeler')}
-                    hauteur={50}
-                    icone={<HiPhone size={18} color={c.blanc} />}
-                    onPress={() => actions.appeler(choisie)}
-                    style={styles.flex}
-                  />
-                  <Bouton
-                    libelle={t('commun.itineraire')}
-                    variante="blanc"
-                    hauteur={50}
-                    typo="bouton"
-                    icone={<IconeItineraire size={16} color={c.pastilleActionIcone} />}
-                    onPress={() => actions.itineraire(choisie)}
-                    style={styles.flex}
-                  />
-                </View>
-              </>
-            ) : (
-              <>
-                <View style={styles.ligneFiche}>
-                  <PastilleStatut statut={choisie.statut} taille={46} tailleIcone={estInactive(choisie.statut) ? 28 : 30} />
-                  <View style={styles.textesFiche}>
-                    <Texte variante="nomGrand" numberOfLines={1}>
-                      {choisie.nom}
-                    </Texte>
-                    <Texte variante="petitFort" couleur={choisie.statut === 'garde' ? c.rougeTexteFort : choisie.statut === 'ouverte' ? c.vertTexte : c.texteTertiaire}>
-                      {libelleStatut(choisie)}
-                    </Texte>
-                    {noteChoisie ? <NoteAvis note={noteChoisie} /> : null}
-                  </View>
-                  <DistanceMarche distanceM={choisie.distance_m} marcheMin={choisie.marche_min} grande varianteDistance="distanceGrande" />
-                </View>
-                <View style={styles.actions3}>
-                  <Bouton
-                    libelle={t('commun.appeler')}
-                    variante="clair"
-                    hauteur={60}
-                    empile
-                    icone={<HiPhone size={18} color={c.pastilleActionIcone} />}
-                    onPress={() => actions.appeler(choisie)}
-                    style={styles.flex}
-                  />
-                  <Bouton
-                    libelle={t('commun.itineraire')}
-                    variante="clair"
-                    hauteur={60}
-                    empile
-                    icone={<IconeItineraire size={16} color={c.pastilleActionIcone} />}
-                    onPress={() => actions.itineraire(choisie)}
-                    style={styles.flex}
-                  />
-                  <Bouton
-                    libelle={t('commun.whatsapp')}
-                    variante="clair"
-                    hauteur={60}
-                    empile
-                    icone={<IconeBulle size={17} color={c.pastilleActionIcone} />}
-                    onPress={() => actions.whatsapp(choisie)}
-                    style={styles.flex}
-                  />
-                </View>
-                <Bouton libelle={t('commun.voirDetails')} icone="voir" hauteur={50} onPress={() => actions.ouvrir(choisie)} testID="bouton-voir-details" />
-              </>
-            )
+            </View>
+            <View style={styles.elementLegende}>
+              <View style={[styles.pointLegende, { backgroundColor: c.rouge }]} />
+              <Texte variante="libelle" couleur={c.texteSecondaire}>
+                {t('carte.legendeGarde')}
+              </Texte>
+            </View>
+          </View>
+          {communeResumee ? (
+            <Texte variante="titreModal" titre style={styles.titreCommune}>
+              {t('carte.resumeCommune', {
+                commune: communeResumee.nom,
+                count: communeResumee.nombre_pharmacies,
+                gardes: communeResumee.nombre_gardes,
+              })}
+            </Texte>
           ) : null}
+          <Texte variante="petit" couleur={c.texteSecondaire}>
+            {t('carte.zoomez')}
+          </Texte>
+          <Bouton libelle={t('carte.voirGardes')} icone="lune" hauteur={50} onPress={() => allerOnglet('garde')} />
         </View>
       ) : null}
+
+      <FeuillePharmacieCarte
+        pharmacie={!recherche && !modeCommunes ? (choisie ?? null) : null}
+        libelleStatut={(p) => libelleStatut(p, estNuit ? 'carte' : undefined)}
+        complement={
+          estNuit && choisie?.garde?.confirmee_le ? (
+            <Texte variante="libelle" couleur={c.texteSecondaire}>
+              {t('statut.confirmeeLe', { date: dateCourte(choisie.garde.confirmee_le, fuseau) })}
+            </Texte>
+          ) : !estNuit && noteChoisie ? (
+            <NoteAvis note={noteChoisie} />
+          ) : null
+        }
+        onOuvrir={actions.ouvrir}
+        onAppeler={actions.appeler}
+        onItineraire={actions.itineraire}
+        onFermer={fermer}
+        onHauteur={setHauteurFiche}
+      />
     </Ecran>
   );
 }
@@ -535,10 +476,6 @@ const styles = StyleSheet.create({
   listeResultats: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24, gap: 8 },
   listeRemplacement: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 24, gap: 8 },
   fiche: { position: 'absolute', left: 12, right: 12, bottom: 20, paddingTop: 16, paddingHorizontal: 18, paddingBottom: 18, gap: 14, borderRadius: rayons.grandeCarte },
-  ligneFiche: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  textesFiche: { flex: 1, gap: 3, minWidth: 0 },
-  actions3: { flexDirection: 'row', gap: 8 },
-  actions2: { flexDirection: 'row', gap: 8 },
   note: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legende: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   elementLegende: { flexDirection: 'row', alignItems: 'center', gap: 8 },

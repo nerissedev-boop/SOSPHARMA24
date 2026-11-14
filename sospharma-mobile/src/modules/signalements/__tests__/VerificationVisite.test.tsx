@@ -40,17 +40,19 @@ describe('Suivi de visite', () => {
 
 describe('Question « Était-elle ouverte ? »', () => {
   it('apparaît au retour dans l’app et se ferme sur « Oui »', async () => {
-    let ecouteur: ((etat: AppStateStatus) => void) | undefined;
+    // Plusieurs composants écoutent le retour au premier plan (dont l'horloge du thème) : on les prévient tous.
+    const ecouteurs: ((etat: AppStateStatus) => void)[] = [];
+    const ecouteur = (etat: AppStateStatus) => ecouteurs.forEach((r) => r(etat));
     jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, rappel) => {
-      ecouteur = rappel as (etat: AppStateStatus) => void;
+      ecouteurs.push(rappel as (etat: AppStateStatus) => void);
       return { remove: jest.fn() } as unknown as ReturnType<typeof AppState.addEventListener>;
     });
     await rendre(<VerificationVisite />);
     useVisite.setState({ enCours: { ...PHARMACIE, depuis: Date.now() - ABSENCE_MIN_VISITE_MS } });
 
     await act(async () => {
-      ecouteur?.('background');
-      ecouteur?.('active');
+      ecouteur('background');
+      ecouteur('active');
     });
     expect(screen.getByText('Pharmacie de la Paix était-elle ouverte ?')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('visite-ouverte'));

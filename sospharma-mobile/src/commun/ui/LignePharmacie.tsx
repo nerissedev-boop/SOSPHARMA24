@@ -10,6 +10,7 @@ import { t } from '../lib/i18n';
 import { CIBLE_TACTILE } from '../theme/espacements';
 import { ombres } from '../theme/ombres';
 import { rayons } from '../theme/rayons';
+import type { Jetons } from '../theme/jetons';
 import { useTheme } from '../theme/Theme';
 import { apparitionLigne, transitionListe, useAppui } from './animations';
 import { BadgeAssurance } from './BadgeAssurance';
@@ -21,6 +22,39 @@ import { IconeChevronDroite } from './icones/trait';
 import { PastilleStatut } from './PastilleStatut';
 import { PhotoFondu } from './PhotoFondu';
 import { Texte } from './Texte';
+
+/**
+ * Statut en un coup d'œil : couleur du point, couleur et libellé court du texte, libellé lu.
+ * vert = ouverte, rouge = de garde, ocre = ferme bientôt (moins de 30 min), gris = fermée ou à confirmer.
+ */
+export function infosStatut(statut: StatutPharmacie, ton: TonStatut | undefined, c: Jetons) {
+  if (ton === 'ocre' && !estInactive(statut)) {
+    return { point: c.ocrePoint, texte: c.ocreTexte, court: t('statut.courtBientot'), lu: t('statut.pastilleBientot') };
+  }
+  if (statut === 'garde') return { point: c.rouge, texte: c.rougeTexteFort, court: t('statut.courtGarde'), lu: t('statut.pastilleGarde') };
+  if (statut === 'ouverte') return { point: c.vert, texte: c.vertTexte, court: t('statut.ouverte'), lu: t('statut.pastilleOuverte') };
+  if (statut === 'inconnue') {
+    return { point: c.texteTertiaire, texte: c.texteSecondaire, court: t('statut.courtInconnue'), lu: t('statut.pastilleInconnue') };
+  }
+  return { point: c.texteTertiaire, texte: c.texteSecondaire, court: t('statut.fermee'), lu: t('statut.pastilleFermee') };
+}
+
+/**
+ * Petit point coloré suivi d'un libellé court (« Ouverte », « De garde », « Ferme bientôt », « Fermée ») :
+ * le texte porte l'information, la couleur ne fait que la doubler.
+ */
+export function PointStatut({ statut, ton, testID }: { statut: StatutPharmacie; ton?: TonStatut; testID?: string }) {
+  const { couleurs: c } = useTheme();
+  const infos = infosStatut(statut, ton, c);
+  return (
+    <View style={styles.pointStatut} accessible accessibilityLabel={infos.lu} testID={testID}>
+      <View style={[styles.point, { backgroundColor: infos.point }]} testID={testID ? `${testID}-point` : undefined} />
+      <Texte variante="libelleFort" couleur={infos.texte} numberOfLines={1} style={styles.textePoint}>
+        {infos.court}
+      </Texte>
+    </View>
+  );
+}
 
 export type PropsLignePharmacie = {
   nom: string;
@@ -91,6 +125,9 @@ export function LignePharmacie({
   const couleurStatut = ton === 'ocre' ? c.ocreTexte : statut === 'garde' ? c.rougeTexteFort : statut === 'ouverte' ? c.vertTexte : statut === 'inconnue' ? c.texteSecondaire : c.texteTertiaire;
   const couleurDetail = detailOcre ? c.ocreTexte : detail !== undefined ? c.texteSecondaire : couleurStatut;
   const favori = variante === 'favori';
+  // Libellé court en tête (listes) ; la 2e ligne ne le répète pas s'il dit déjà tout (« Ouverte »).
+  const court = favori ? null : infosStatut(statut, ton, c).court;
+  const secondeLigne = detail ?? (libelleStatut === court ? null : libelleStatut);
   const description = [nom, libelleStatut, assurance ? t('commun.votreAssurance') : null, positionAConfirmer ? t('commun.positionAConfirmer') : distanceKm(distanceM)].filter(Boolean).join(', ');
   // La carte entière se comprime sous le doigt (retour tactile façon cartes).
   const appui = useAppui(0.98);
@@ -124,6 +161,7 @@ export function LignePharmacie({
           <PhotoFondu
             uri={photoUrl}
             style={[styles.vignette, favori && styles.vignetteFavori, { backgroundColor: c.surface }]}
+            repli={<FacadeIllustree taille="vignette" style={[styles.vignette, favori && styles.vignetteFavori]} testID={testID ? `${testID}-facade` : undefined} />}
             testID={testID ? `${testID}-photo` : undefined}
           />
         ) : photoUrl === null ? (
@@ -138,12 +176,15 @@ export function LignePharmacie({
           />
         )}
         <View style={styles.textes}>
+          {favori ? null : <PointStatut statut={statut} ton={ton} testID={testID ? `${testID}-statut` : undefined} />}
           <Texte variante={favori ? 'nom' : 'nomPetit'} numberOfLines={favori ? 1 : 2}>
             {nom}
           </Texte>
-          <Texte variante={detail !== undefined ? 'petit' : 'libelleMoyen'} couleur={couleurDetail} numberOfLines={1}>
-            {detail ?? libelleStatut}
-          </Texte>
+          {secondeLigne ? (
+            <Texte variante={detail !== undefined ? 'petit' : 'libelleMoyen'} couleur={couleurDetail} numberOfLines={2}>
+              {secondeLigne}
+            </Texte>
+          ) : null}
           {assurance ? <BadgeAssurance petit testID={testID ? `${testID}-assurance` : undefined} /> : null}
           {positionAConfirmer ? <BadgePosition petit testID={testID ? `${testID}-position` : undefined} /> : null}
         </View>
@@ -186,7 +227,10 @@ const styles = StyleSheet.create({
   zone: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0, minHeight: CIBLE_TACTILE },
   vignette: { width: 56, height: 56, borderRadius: rayons.vignette, flexShrink: 0 },
   vignetteFavori: { width: 48, height: 48 },
-  textes: { flex: 1, gap: 3, minWidth: 0 },
+  textes: { flex: 1, flexShrink: 1, gap: 3, minWidth: 0 },
+  pointStatut: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', maxWidth: '100%' },
+  point: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
+  textePoint: { flexShrink: 1 },
   distanceFavori: { fontSize: 13 },
   appel: {
     width: CIBLE_TACTILE,

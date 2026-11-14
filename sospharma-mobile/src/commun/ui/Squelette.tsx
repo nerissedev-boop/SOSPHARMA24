@@ -3,6 +3,7 @@ import { StyleSheet, View, type DimensionValue, type StyleProp, type ViewStyle }
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 
 import { t } from '../lib/i18n';
+import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { DUREES, usePulsation } from './animations';
 
@@ -96,6 +97,46 @@ export function SqueletteBlocProche({ style, testID = 'squelette-bloc-proche' }:
   );
 }
 
+/**
+ * Forme de la fiche pharmacie : façade en en-tête, feuille arrondie avec pastille et nom,
+ * trois pastilles d'action et quelques lignes d'horaires. Une seule respiration pour tout.
+ */
+export function SqueletteFiche({ style, testID = 'squelette-fiche', hauteurPhoto = 230 }: PropsForme & { hauteurPhoto?: number }) {
+  const { couleurs: c } = useTheme();
+  return (
+    <ZoneSquelette testID={testID} style={[styles.fiche, style]}>
+      <Squelette anime={false} hauteur={hauteurPhoto} rayon={0} />
+      <View style={[styles.feuilleFiche, { backgroundColor: c.fond }]}>
+        <View style={[styles.ligne, styles.titreFiche]}>
+          <Squelette anime={false} largeur={52} hauteur={52} rayon={26} style={styles.pastilleFiche} />
+          <View style={styles.textes}>
+            <Squelette anime={false} largeur="78%" hauteur={22} />
+            <Squelette anime={false} largeur="42%" hauteur={14} />
+          </View>
+          <Squelette anime={false} largeur={48} hauteur={18} />
+        </View>
+        <View style={styles.actionsFiche}>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={styles.actionFiche}>
+              <Squelette anime={false} largeur={50} hauteur={50} rayon={25} />
+              <Squelette anime={false} largeur={56} hauteur={10} />
+            </View>
+          ))}
+        </View>
+        <View style={[styles.bloc, { backgroundColor: c.feuille }]}>
+          <Squelette anime={false} largeur="40%" hauteur={16} />
+          {LIGNES_HORAIRES.map((largeur, i) => (
+            <Squelette key={i} anime={false} largeur={largeur} hauteur={12} />
+          ))}
+        </View>
+      </View>
+    </ZoneSquelette>
+  );
+}
+
+/** Largeurs des lignes d'horaires du squelette de fiche (irrégulières, comme du vrai texte). */
+const LIGNES_HORAIRES: DimensionValue[] = ['70%', '62%', '70%', '55%', '66%'];
+
 /** Plusieurs cartes squelettes à la suite (premier chargement d'une liste). */
 export function SqueletteListe({ nombre = 4, ecart = 10 }: { nombre?: number; ecart?: number }) {
   return (
@@ -113,4 +154,10 @@ const styles = StyleSheet.create({
   ligne: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   textes: { flex: 1, gap: 8, minWidth: 0 },
   bouton: { flex: 1, width: undefined },
+  fiche: { flexGrow: 1 },
+  feuilleFiche: { flexGrow: 1, marginTop: -24, padding: 20, gap: 20, borderTopLeftRadius: rayons.feuille, borderTopRightRadius: rayons.feuille },
+  titreFiche: { alignItems: 'flex-start' },
+  pastilleFiche: { marginTop: -34 },
+  actionsFiche: { flexDirection: 'row', gap: 8 },
+  actionFiche: { flex: 1, alignItems: 'center', gap: 8 },
 });
