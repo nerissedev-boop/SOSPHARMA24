@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* Couleurs reprises de l'app mobile (sospharma-mobile/src/commun/theme/jetons.ts). */
+@theme {
+  --color-marque: #1b8a3e;
+  --color-marque-fonce: #136b30;
+  --color-marque-clair: #eef7f1;
+  --color-marque-profond: #0f3d22;
+  --color-alerte: #d32f2f;
+  --color-alerte-clair: #fdecec;
+  --color-ocre: #8a5300;
+  --color-ocre-clair: #fff1d6;
+  --color-fond: #fbf8f3;
+  --color-surface: #f2ede4;
+  --color-texte: #1c1f1a;
+  --color-texte-2: #5a5f55;
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    @apply bg-fond text-texte antialiased;
+  }
+  h1 {
+    @apply text-2xl font-semibold;
+  }
+  h2 {
+    @apply text-lg font-semibold;
+  }
+}
+
+/* Classes maison : déclarées en @utility pour pouvoir se combiner entre elles (Tailwind 4). */
+
+@utility champ {
+  @apply block w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-marque focus:ring-2 focus:ring-marque/20 disabled:bg-stone-100;
+}
+
+@utility etiquette {
+  @apply mb-1 block text-sm font-medium text-texte-2;
+}
+
+@utility bouton {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility bouton-principal {
+  @apply bouton bg-marque text-white hover:bg-marque-fonce;
+}
+
+@utility bouton-secondaire {
+  @apply bouton border border-stone-300 bg-white text-texte hover:bg-surface;
+}
+
+@utility carte {
+  @apply rounded-xl border border-stone-200 bg-white p-5 shadow-sm;
+}
+
+@utility tableau {
+  @apply w-full text-left text-sm;
+  & th {
+    @apply border-b border-stone-200 px-3 py-2 text-xs font-semibold tracking-wide text-texte-2 uppercase;
+  }
+  & td {
+    @apply border-b border-stone-100 px-3 py-2.5 align-top;
+  }
+  & tbody tr:hover {
+    @apply bg-marque-clair/50;
+  }
+}
+
+@utility pastille {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap;
+}
+
+@utility pastille-verte {
+  @apply pastille bg-marque-clair text-marque-fonce;
+}
+
+/* Pas de pastille ni de bouton rouges : le rouge est réservé à la garde. Une ligne à revoir est
+   en ocre ; une suppression est un bouton neutre au libellé exact, avec confirmation. */
+
+@utility pastille-ocre {
+  @apply pastille bg-ocre-clair text-ocre;
+}
+
+@utility pastille-grise {
+  @apply pastille bg-stone-100 text-stone-600;
+}
+
+@utility erreur {
+  @apply rounded-lg border border-red-200 bg-alerte-clair px-3 py-2 text-sm text-red-800;
+}
+
+@utility succes {
+  @apply rounded-lg border border-green-200 bg-marque-clair px-3 py-2 text-sm text-marque-fonce;
+}
