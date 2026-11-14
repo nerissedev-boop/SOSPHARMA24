@@ -13,6 +13,7 @@ import { transitionListe } from './animations';
 import { BadgeAssurance } from './BadgeAssurance';
 import { BadgePosition } from './BadgePosition';
 import { HiPhone } from './icones/healthicons';
+import { IconeChevronDroite } from './icones/trait';
 import { RepereStatut } from './RepereStatut';
 import { Texte } from './Texte';
 
@@ -59,7 +60,8 @@ export type PropsLignePharmacie = {
 
 /**
  * Ligne d'une liste imprimée (refonte v2) : une seule surface blanche par liste, un filet entre deux
- * lignes, ni carte ni ombre par ligne, ni vignette ni flèche. Le nom prend toute la largeur.
+ * lignes, ni carte ni ombre par ligne, ni vignette. Le nom prend toute la largeur. Un petit chevron
+ * tout à droite dit que la ligne ouvre la fiche.
  * Pas d'entrée en cascade : une liste qui vient du cache s'affiche telle quelle.
  */
 export function LignePharmacie({
@@ -121,6 +123,7 @@ export function LignePharmacie({
         onPressOut={() => setAppuyee(false)}
         accessibilityRole="button"
         accessibilityLabel={description}
+        accessibilityHint={onPress ? t('carte.ouvrirFicheIndice') : undefined}
         style={[styles.zone, garde ? styles.zoneGarde : styles.zoneDense]}
       >
         {garde ? (
@@ -189,6 +192,21 @@ export function LignePharmacie({
           <HiPhone size={garde ? 22 : 20} color={c.pastilleActionIcone} />
         </Pressable>
       ) : null}
+      {onPress ? (
+        // Le chevron prolonge la zone de la ligne (même appui, même teinte) ; le lecteur d'écran ne
+        // le voit pas, la ligne porte déjà le libellé et l'indice.
+        <Pressable
+          onPress={onPress}
+          onPressIn={() => setAppuyee(true)}
+          onPressOut={() => setAppuyee(false)}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+          style={styles.chevron}
+          testID={testID ? `${testID}-chevron` : undefined}
+        >
+          <IconeChevronDroite size={16} color={c.texteTertiaire} />
+        </Pressable>
+      ) : null}
     </Animated.View>
   );
 }
@@ -211,4 +229,6 @@ const styles = StyleSheet.create({
   appel: { alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   appelDense: { width: APPEL_DENSE, height: APPEL_DENSE, borderRadius: APPEL_DENSE / 2 },
   appelGarde: { width: CIBLE_TACTILE, height: CIBLE_TACTILE, borderRadius: CIBLE_TACTILE / 2 },
+  // Collé au bouton d'appel (l'écart de la ligne est de 12) et au bord droit : il ne prend pas de place au nom.
+  chevron: { alignSelf: 'stretch', justifyContent: 'center', marginLeft: -6, marginRight: -6, paddingHorizontal: 2 },
 });

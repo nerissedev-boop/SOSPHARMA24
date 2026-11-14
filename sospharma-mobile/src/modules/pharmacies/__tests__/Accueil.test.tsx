@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 
 import { useSession } from '@/commun/lib';
 import { rendre } from '@/commun/lib/tests/rendu';
@@ -25,6 +25,21 @@ describe('Accueil', () => {
     expect(screen.getAllByTestId('bloc-plus-proche')).toHaveLength(1);
     expect(screen.getByTestId('champ-recherche-accueil')).toBeTruthy();
     expect(screen.getAllByTestId(/^ligne-ph_[a-z0-9]+$/)).toHaveLength(5);
+  });
+
+  it('jour : sous les 5 lignes, « Voir les N pharmacies » ouvre la liste complète', async () => {
+    await rendre(<Accueil />);
+    const lien = await screen.findByTestId('voir-toutes');
+    expect(lien).toHaveTextContent(/^Voir les \d+ pharmacies$/);
+    expect(lien.props.accessibilityRole).toBe('link');
+    await fireEvent.press(lien);
+    expect(mockRouteur.push).toHaveBeenCalledWith('/pharmacies');
+  });
+
+  it('jour : la carte la plus proche dit qu’elle ouvre la fiche, les lignes portent un chevron', async () => {
+    await rendre(<Accueil />);
+    expect(await screen.findByTestId('bloc-plus-proche-lien-fiche')).toHaveTextContent('Horaires, repère et photo');
+    expect(screen.getAllByTestId(/^ligne-ph_[a-z0-9]+-chevron$/, { includeHiddenElements: true })).toHaveLength(5);
   });
 
   it('jour : le titre donne l’état du moment, sans salutation ni raccourci vers la garde', async () => {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { Easing, FadeIn, FadeOut, LayoutAnimationConfig, ReduceMotion } from 'react-native-reanimated';
 
@@ -14,12 +15,18 @@ import { BadgeAssurance } from './BadgeAssurance';
 import { BadgePosition } from './BadgePosition';
 import { Bouton } from './Bouton';
 import { HiPhone } from './icones/healthicons';
-import { IconeItineraire, IconeTelephoneTrait } from './icones/trait';
+import { IconeChevronDroite, IconeItineraire, IconeTelephoneTrait } from './icones/trait';
+import { PhotoFondu } from './PhotoFondu';
 import { RepereStatut } from './RepereStatut';
 import { Texte } from './Texte';
 
 /** Au-delà, « Y aller » ne tient plus à côté d'« Appeler » : les deux boutons s'empilent. */
 const ECHELLE_EMPILEMENT = 1.3;
+/**
+ * Bandeau photo en tête de carte : hauteur fixe (rien ne saute quand l'image arrive), gardée basse
+ * parce que chaque point pris ici repousse Appeler vers le bas de l'écran.
+ */
+const HAUTEUR_PHOTO = 104;
 
 type PropsActions = {
   nom: string;
@@ -96,6 +103,11 @@ type Props = {
   marcheMin: number | null;
   /** Adresse écrite comme un repère, avec la commune (« Face à la mairie · Cocody »). */
   repere?: string | null;
+  /**
+   * Photo de façade validée (`photo_url`), pour reconnaître la devanture en arrivant. Sans photo, rien :
+   * pas de devanture dessinée sur la carte. Ignorée dans la variante compacte (plan).
+   */
+  photoUrl?: string | null;
   /** Commune ajoutée après la distance quand le repère n'est pas affiché (variante compacte). */
   commune?: string | null;
   /** Variante de la Carte : sans repère, nom un peu plus petit. */
@@ -118,9 +130,9 @@ type Props = {
 
 /**
  * Carte « la plus proche » (refonte v2, 14 nov.), la même sur l'Accueil, la Garde, l'Urgence et la
- * Carte : l'état, le nom en grand, la distance, le repère, puis Appeler et Y aller. Pas de photo ni
- * de lien « Voir la fiche » : Appeler reste dans le premier écran, même à 130 %. C'est le seul
- * élément de l'écran qui porte une ombre (le jour).
+ * Carte : la photo de façade quand elle est validée, l'état, le nom en grand, la distance, le repère,
+ * un lien discret vers la fiche, puis Appeler et Y aller. C'est le seul élément de l'écran qui porte
+ * une ombre (le jour). Sous le doigt, la carte se teinte comme une ligne de liste.
  *
  * Mouvement : quand la plus proche change (filtre, position), fondu croisé au même endroit (entrée
  * 220 ms, sortie 160 ms, fil UI). Rien au premier affichage, ni quand le téléphone supprime les animations.
@@ -134,6 +146,7 @@ export function CartePlusProche({
   distanceM,
   marcheMin,
   repere,
+  photoUrl,
   commune,
   compacte = false,
   plusProche = true,
@@ -148,6 +161,8 @@ export function CartePlusProche({
   testID,
 }: Props) {
   const { couleurs: c, estNuit } = useTheme();
+  const [appuyee, setAppuyee] = useState(false);
+  const photo = compacte ? null : photoUrl || null;
   const repereVisible = compacte ? null : repere || null;
   const distance = positionAConfirmer ? null : distanceKm(distanceM) || null;
   const marche = distance && marcheMin !== null ? t('garde.aPied', { minutes: marcheMin }) : null;
@@ -170,17 +185,23 @@ export function CartePlusProche({
         key={id}
         entering={FadeIn.duration(DUREES.glissement).easing(Easing.out(Easing.cubic)).reduceMotion(ReduceMotion.System)}
         exiting={FadeOut.duration(DUREES.disparition).reduceMotion(ReduceMotion.System)}
-        style={[styles.carte, { backgroundColor: c.blocProche }, ombre, style]}
+        style={[styles.carte, { backgroundColor: appuyee ? c.carteAppuyee : c.blocProche }, ombre, style]}
         testID={testID}
       >
         <Pressable
           onPress={onPress}
+          onPressIn={() => setAppuyee(true)}
+          onPressOut={() => setAppuyee(false)}
           disabled={!onPress}
           accessibilityRole={onPress ? 'button' : undefined}
           accessibilityLabel={description}
           accessibilityHint={onPress ? t('carte.ouvrirFicheIndice') : undefined}
-          style={({ pressed }) => [styles.infos, { opacity: pressed ? 0.75 : 1 }]}
+          style={styles.infos}
         >
+          {photo ? (
+            // Si l'image ne charge pas, le bandeau disparaît plutôt que de rester gris.
+            <PhotoFondu uri={photo} repli={null} style={[styles.photo, { backgroundColor: c.surface }]} testID={testID ? `${testID}-photo` : undefined} />
+          ) : null}
           <View style={styles.haut}>
             <RepereStatut statut={statut} ton={ton} libelle={libelleStatut} testID={testID ? `${testID}-statut` : undefined} />
             {plusProche ? (
@@ -214,6 +235,15 @@ export function CartePlusProche({
               {positionAConfirmer ? <BadgePosition testID={testID ? `${testID}-position` : undefined} /> : null}
             </View>
           ) : null}
+          {/* Simple indice : c'est toute la partie haute, bien plus grande que 48 dp, qui ouvre la fiche. */}
+          {onPress ? (
+            <View style={styles.lienFiche} testID={testID ? `${testID}-lien-fiche` : undefined}>
+              <Texte variante="petitFort" couleur={c.vertTexte} style={styles.texteLien}>
+                {t('carte.lienFiche')}
+              </Texte>
+              <IconeChevronDroite size={16} color={c.vertTexte} strokeWidth={2.6} />
+            </View>
+          ) : null}
         </Pressable>
         <ActionsPharmacie
           nom={nom}
@@ -230,10 +260,14 @@ export function CartePlusProche({
 const styles = StyleSheet.create({
   carte: { paddingTop: 14, paddingHorizontal: 16, paddingBottom: 8, borderRadius: rayons.surface },
   infos: { gap: 4 },
+  // À 8 du bord de la carte, rayon 12 : ses coins suivent ceux de la carte, comme les boutons.
+  photo: { height: HAUTEUR_PHOTO, marginTop: -6, marginHorizontal: -8, marginBottom: 8, borderRadius: rayons.touche },
   haut: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 10, rowGap: 4 },
   nom: { marginTop: 2 },
   chiffres: { fontVariant: ['tabular-nums'] },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  lienFiche: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 2, marginTop: 2 },
+  texteLien: { flexShrink: 1 },
   conseil: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
   flexible: { flex: 1 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 14, marginHorizontal: -8 },

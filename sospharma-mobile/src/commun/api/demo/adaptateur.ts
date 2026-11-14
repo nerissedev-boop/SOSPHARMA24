@@ -22,6 +22,7 @@ import type {
   Proposition,
   ReleveApi,
   StatutReleve,
+  TelephonePharmacie,
   TourGarde,
   Zone,
   ZoneDetectee,
@@ -330,6 +331,57 @@ export function reinitialiserDemoAgent(): void {
   stockage().remove(CLE_RELEVES);
   stockage().remove(CLE_MES_ASSURANCES);
   stockage().remove(CLE_PROPOSITIONS);
+  stockage().remove(CLE_TELEPHONES);
+}
+
+// ----- Numéros des fiches (espace agent) ------------------------------------------------------
+const CLE_TELEPHONES = 'demo.telephones';
+
+function telephonesParDefaut(p: PharmacieDemo): TelephonePharmacie[] {
+  const liste: TelephonePharmacie[] = [
+    { id: `tl_${p.id.slice(3)}_1`, numero: TELEPHONE_FICTIF, rang: 1, principal: true, whatsapp: p.whatsapp, whatsapp_confirme_le: null, origine: 'import' },
+  ];
+  // La Paix (de garde) : un second numéro venu de la liste de l'Ordre, pour voir une fiche à plusieurs numéros.
+  if (p.id === 'ph_0142') {
+    liste.push({ id: 'tl_0142_2', numero: '+2250707000002', rang: 2, principal: false, whatsapp: false, whatsapp_confirme_le: null, origine: 'liste_garde' });
+  }
+  return liste;
+}
+
+function lireTelephones(): Record<string, TelephonePharmacie[]> {
+  try {
+    return JSON.parse(stockage().getString(CLE_TELEPHONES) ?? '{}') as Record<string, TelephonePharmacie[]>;
+  } catch {
+    return {};
+  }
+}
+
+function telephonesDemo(p: PharmacieDemo): TelephonePharmacie[] {
+  return lireTelephones()[p.id] ?? telephonesParDefaut(p);
+}
+
+/** Enregistre l'ordre donné : le premier devient le principal, les rangs suivent. */
+function enregistrerTelephones(pharmacieId: string, liste: TelephonePharmacie[]): TelephonePharmacie[] {
+  const rangees = liste.map((t, i) => ({ ...t, rang: i + 1, principal: i === 0 }));
+  stockage().set(CLE_TELEPHONES, JSON.stringify({ ...lireTelephones(), [pharmacieId]: rangees }));
+  return rangees;
+}
+
+/** Comme l'API : « 07 07 12 34 56 » ou « +225… » → E.164 ; null si illisible. */
+function numeroDemo(saisie: string): string | null {
+  const chiffres = saisie.replace(/\D/g, '');
+  const numero = saisie.trim().startsWith('+') ? `+${chiffres}` : chiffres.length === 10 ? `+225${chiffres}` : null;
+  return numero && /^\+225\d{10}$/.test(numero) ? numero : null;
+}
+
+/** 204 : pas de corps, comme fetch (json() échoue). */
+function sansContenu(): Reponse {
+  return {
+    status: 204,
+    json: async () => {
+      throw new SyntaxError('Unexpected end of JSON input');
+    },
+  };
 }
 
 // ----- Propositions des usagers (sans compte) ------------------------------------------------
@@ -663,6 +715,60 @@ function router(r: Requete): Reponse {
       .sort((a, b) => b.releve_le.localeCompare(a.releve_le))
       .map(versReleveApi);
     return ok(liste, 200, { next_cursor: null, prev_cursor: null });
+  }
+
+  if ((m = chemin.match(/^\/agent\/pharmacies\/(ph_\w+)\/telephones(?:\/(tl_\w+))?$/))) {
+    const pharmacie = PHARMACIES.find((x) => x.id === m?.[1]);
+    if (!pharmacie) return erreur(404, 'NOT_FOUND', 'Pharmacie introuvable.');
+    const liste = telephonesDemo(pharmacie);
+    const idNumero = m[2];
+    const c = (corps ?? {}) as { numero?: unknown; whatsapp?: unknown; principal?: unknown };
+    const confirme = (t: TelephonePharmacie): TelephonePharmacie =>
+      typeof c.whatsapp === 'boolean' ? { ...t, whatsapp: c.whatsapp, whatsapp_confirme_le: isoUtc(horloge()) } : t;
+    const enTete = (l: TelephonePharmacie[], id: string) => [...l.filter((t) => t.id === id), ...l.filter((t) => t.id !== id)];
+
+    if (!idNumero && methode === 'GET') return ok(liste);
+    if (!idNumero && methode === 'POST') {
+      const numero = typeof c.numero === 'string' ? numeroDemo(c.numero) : null;
+      if (!numero) {
+        return erreur(422, 'VALIDATION_FAILED', 'Certaines informations sont invalides.', {
+          numero: ['Ce numéro n’est pas reconnu. Saisissez-le en entier, par exemple 07 07 12 34 56.'],
+        });
+      }
+      const existant = liste.find((t) => t.numero === numero);
+      const cible = confirme(
+        existant ?? { id: `tl_demo_${Math.random().toString(36).slice(2, 10)}`, numero, rang: liste.length + 1, principal: false, whatsapp: false, whatsapp_confirme_le: null, origine: 'agent' },
+      );
+      const suite = existant ? liste.map((t) => (t.id === cible.id ? cible : t)) : [...liste, cible];
+      const enregistree = enregistrerTelephones(pharmacie.id, c.principal === true ? enTete(suite, cible.id) : suite);
+      const renvoye = enregistree.find((t) => t.id === cible.id);
+      return existant ? ok(renvoye, 200, { deja_present: true }) : ok(renvoye, 201);
+    }
+
+    const numero = liste.find((t) => t.id === idNumero);
+    if (!numero) return erreur(404, 'NOT_FOUND', 'Ce numéro n’est plus sur la fiche.');
+    if (methode === 'PATCH') {
+      if (c.principal === false) {
+        return erreur(422, 'VALIDATION_FAILED', 'Certaines informations sont invalides.', {
+          principal: ['Pour changer de numéro principal, choisissez l’autre numéro comme principal.'],
+        });
+      }
+      if (typeof c.whatsapp !== 'boolean' && c.principal !== true) {
+        return erreur(422, 'VALIDATION_FAILED', 'Certaines informations sont invalides.', {
+          whatsapp: ['Indiquez si ce numéro a WhatsApp, ou s’il devient le numéro principal.'],
+        });
+      }
+      const suite = liste.map((t) => (t.id === numero.id ? confirme(t) : t));
+      const enregistree = enregistrerTelephones(pharmacie.id, c.principal === true ? enTete(suite, numero.id) : suite);
+      return ok(enregistree.find((t) => t.id === numero.id));
+    }
+    if (methode === 'DELETE') {
+      if (numero.principal && liste.length > 1) {
+        return erreur(422, 'VALIDATION_FAILED', 'Ce numéro est le principal. Choisissez d’abord un autre numéro principal, puis retirez celui-ci.');
+      }
+      enregistrerTelephones(pharmacie.id, liste.filter((t) => t.id !== numero.id));
+      return sansContenu();
+    }
   }
 
   // ---------------- Propositions des usagers ----------------

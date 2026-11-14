@@ -96,7 +96,9 @@
     "titreJour_zero": "Aucune pharmacie ouverte autour de vous",
     "titreJour_one": "{{count}} pharmacie ouverte autour de vous",
     "titreJour_other": "{{count}} pharmacies ouvertes autour de vous",
-    "tourGarde": "Tour de garde du {{debut}} au {{fin}}"
+    "tourGarde": "Tour de garde du {{debut}} au {{fin}}",
+    "voirToutes_one": "Voir la pharmacie",
+    "voirToutes_other": "Voir les {{count}} pharmacies"
   },
   "carte": {
     "recherche": "Rechercher une pharmacie…",
@@ -118,7 +120,26 @@
     "commune_other": "{{nom}}, {{count}} pharmacies dont {{gardes}} de garde",
     "horsLigne": "Sans réseau, la carte est remplacée par la liste.",
     "nonDisponible": "La carte n’est pas disponible ici. Voici la liste des pharmacies.",
-    "ouvrirFicheIndice": "Ouvre la fiche de la pharmacie"
+    "ouvrirFicheIndice": "Ouvre la fiche : horaires, repère et photo",
+    "lienFiche": "Horaires, repère et photo"
+  },
+  "pharmacies": {
+    "titre": "Pharmacies autour de vous",
+    "nombre_one": "{{count}} pharmacie",
+    "nombre_other": "{{count}} pharmacies",
+    "recherche": "Nom, commune ou repère…",
+    "rechercheA11y": "Filtrer par nom, commune ou repère",
+    "resultats_zero": "Aucune pharmacie ne correspond",
+    "resultats_one": "{{count}} pharmacie correspond",
+    "resultats_other": "{{count}} pharmacies correspondent",
+    "aucuneTitre": "Aucune pharmacie ne correspond à « {{saisie}} ».",
+    "aucuneTexte": "La liste contient les pharmacies les plus proches. La carte cherche dans toute la ville.",
+    "effacer": "Effacer la recherche",
+    "chercherCarte": "Chercher sur la carte",
+    "erreurTitre": "Liste indisponible",
+    "erreurTexte": "La liste n’a pas pu être chargée. Vérifiez votre connexion, puis réessayez.",
+    "horsConnexionTitre": "Pas de réseau, et aucune liste sur ce téléphone",
+    "horsConnexionTexte": "La liste s’affichera dès le retour du réseau. Les appels, eux, passent sans internet."
   },
   "garde": {
     "titre": "Pharmacies de garde",
@@ -191,7 +212,8 @@
     "voirSemaine": "Affiche les horaires de toute la semaine",
     "masquerSemaine": "Masque les horaires de la semaine",
     "repere": "Repère",
-    "envoyerChauffeur": "Envoyer au chauffeur"
+    "envoyerChauffeur": "Envoyer au chauffeur",
+    "numerosAgent": "Numéros de téléphone (agent)"
   },
   "services": {
     "ordonnances": "Ordonnances",
@@ -575,7 +597,38 @@
     "positionManquante": "Revenez à l’étape 1 pour valider la position.",
     "adresse": "Adresse ou repère",
     "adressePlaceholder": "Ex. : face au marché, boulevard Latrille",
-    "adresseObligatoire": "Indiquez l’adresse ou un repère : obligatoire pour une nouvelle pharmacie."
+    "adresseObligatoire": "Indiquez l’adresse ou un repère : obligatoire pour une nouvelle pharmacie.",
+    "numerosFiche": "Numéros de la fiche",
+    "numerosFicheTexte": "WhatsApp, principal, numéros faux : changés tout de suite"
+  },
+  "numeros": {
+    "titre": "Numéros de téléphone",
+    "appelerA11y": "Appeler le {{numero}}",
+    "principal": "Principal",
+    "choisirPrincipal": "Choisir comme principal",
+    "choisirPrincipalA11y": "Choisir le {{numero}} comme numéro principal",
+    "whatsapp": "WhatsApp",
+    "whatsappA11y": "WhatsApp sur le {{numero}}",
+    "oui": "Oui",
+    "non": "Non",
+    "verifieLe": "Vérifié le {{date}}",
+    "pasVerifie": "Pas encore vérifié",
+    "retirer": "Retirer ce numéro",
+    "retirerTitre": "Retirer le {{numero}} ?",
+    "retirerTexte": "Il disparaîtra tout de suite de la fiche.",
+    "ajouterTitre": "Ajouter un numéro relevé",
+    "champ": "Numéro lu sur place",
+    "champExemple": "07 07 12 34 56",
+    "aWhatsapp": "Ce numéro a WhatsApp",
+    "ajouter": "Ajouter ce numéro",
+    "ajoute": "Numéro ajouté à la fiche.",
+    "dejaPresent": "Ce numéro était déjà sur la fiche.",
+    "aucun": "Aucun numéro sur la fiche. Ajoutez celui de la devanture.",
+    "nonEnregistre": "Changement non enregistré",
+    "horsConnexion": "Sans réseau, les numéros ne peuvent pas être modifiés. Les appels passent.",
+    "horsConnexionTitre": "Pas de réseau, et aucun numéro enregistré sur ce téléphone",
+    "erreurTitre": "Numéros indisponibles",
+    "refuseTitre": "Pharmacie hors de vos villes"
   },
   "horaires": {
     "fermee": "fermée",

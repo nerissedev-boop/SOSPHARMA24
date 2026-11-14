@@ -198,6 +198,11 @@ export async function appeler<T>(chemin: string, options: OptionsAppel = {}): Pr
       return { success: false, error: erreurLocale('NETWORK_ERROR', t('erreurs.reseau')), meta: null, status: null };
     }
 
+    // 204 (retrait d'un numéro de fiche) : pas de corps, donc pas d'enveloppe à lire.
+    if (reponse.status === 204) {
+      return { success: true, data: null as T, meta: { request_id: '', generated_at: new Date().toISOString() }, status: 204 };
+    }
+
     let json: unknown;
     try {
       json = await reponse.json();

@@ -96,7 +96,9 @@
     "titreJour_zero": "No pharmacy open near you",
     "titreJour_one": "{{count}} pharmacy open near you",
     "titreJour_other": "{{count}} pharmacies open near you",
-    "tourGarde": "On-duty rota from {{debut}} to {{fin}}"
+    "tourGarde": "On-duty rota from {{debut}} to {{fin}}",
+    "voirToutes_one": "See the pharmacy",
+    "voirToutes_other": "See all {{count}} pharmacies"
   },
   "carte": {
     "recherche": "Search for a pharmacy...",
@@ -118,7 +120,26 @@
     "commune_other": "{{nom}}, {{count}} pharmacies including {{gardes}} on duty",
     "horsLigne": "Without a network, the map is replaced by the list.",
     "nonDisponible": "The map isn’t available here. Here is the list of pharmacies.",
-    "ouvrirFicheIndice": "Opens the pharmacy details"
+    "ouvrirFicheIndice": "Opens the details: hours, landmark and photo",
+    "lienFiche": "Hours, landmark and photo"
+  },
+  "pharmacies": {
+    "titre": "Pharmacies around you",
+    "nombre_one": "{{count}} pharmacy",
+    "nombre_other": "{{count}} pharmacies",
+    "recherche": "Name, commune or landmark…",
+    "rechercheA11y": "Filter by name, commune or landmark",
+    "resultats_zero": "No pharmacy matches",
+    "resultats_one": "{{count}} pharmacy matches",
+    "resultats_other": "{{count}} pharmacies match",
+    "aucuneTitre": "No pharmacy matches “{{saisie}}”.",
+    "aucuneTexte": "The list holds the nearest pharmacies. The map searches the whole city.",
+    "effacer": "Clear the search",
+    "chercherCarte": "Search on the map",
+    "erreurTitre": "List unavailable",
+    "erreurTexte": "The list could not be loaded. Check your connection, then try again.",
+    "horsConnexionTitre": "No network, and no list on this phone",
+    "horsConnexionTexte": "The list will appear as soon as the network is back. Calls still work without internet."
   },
   "garde": {
     "titre": "On-duty pharmacies",
@@ -191,7 +212,8 @@
     "voirSemaine": "Shows the opening hours for the whole week",
     "masquerSemaine": "Hides the week's opening hours",
     "repere": "Landmark",
-    "envoyerChauffeur": "Send to driver"
+    "envoyerChauffeur": "Send to driver",
+    "numerosAgent": "Phone numbers (agent)"
   },
   "services": {
     "ordonnances": "Prescriptions",
@@ -575,7 +597,38 @@
     "positionManquante": "Go back to step 1 to confirm the location.",
     "adresse": "Address or landmark",
     "adressePlaceholder": "E.g.: opposite the market, boulevard Latrille",
-    "adresseObligatoire": "Enter the address or a landmark: required for a new pharmacy."
+    "adresseObligatoire": "Enter the address or a landmark: required for a new pharmacy.",
+    "numerosFiche": "Numbers on the listing",
+    "numerosFicheTexte": "WhatsApp, main number, wrong numbers: changed right away"
+  },
+  "numeros": {
+    "titre": "Phone numbers",
+    "appelerA11y": "Call {{numero}}",
+    "principal": "Main",
+    "choisirPrincipal": "Make main number",
+    "choisirPrincipalA11y": "Make {{numero}} the main number",
+    "whatsapp": "WhatsApp",
+    "whatsappA11y": "WhatsApp on {{numero}}",
+    "oui": "Yes",
+    "non": "No",
+    "verifieLe": "Checked on {{date}}",
+    "pasVerifie": "Not checked yet",
+    "retirer": "Remove this number",
+    "retirerTitre": "Remove {{numero}}?",
+    "retirerTexte": "It will disappear from the listing right away.",
+    "ajouterTitre": "Add a number found on site",
+    "champ": "Number read on site",
+    "champExemple": "07 07 12 34 56",
+    "aWhatsapp": "This number has WhatsApp",
+    "ajouter": "Add this number",
+    "ajoute": "Number added to the listing.",
+    "dejaPresent": "This number was already on the listing.",
+    "aucun": "No number on the listing. Add the one on the shopfront.",
+    "nonEnregistre": "Change not saved",
+    "horsConnexion": "Without a network, numbers can’t be changed. Calls still work.",
+    "horsConnexionTitre": "No network, and no numbers saved on this phone",
+    "erreurTitre": "Numbers unavailable",
+    "refuseTitre": "Pharmacy outside your cities"
   },
   "horaires": {
     "fermee": "closed",

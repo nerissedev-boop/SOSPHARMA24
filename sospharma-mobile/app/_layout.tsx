@@ -68,6 +68,7 @@ function Navigation() {
       <Stack.Screen name="(onglets)" />
       <Stack.Screen name="demarrage" options={{ animation: 'fade' }} />
       <Stack.Screen name="localisation" options={{ animation: 'fade' }} />
+      <Stack.Screen name="pharmacies" />
       <Stack.Screen name="pharmacie/[id]/index" />
       <Stack.Screen name="pharmacie/[id]/itineraire" />
       <Stack.Screen
@@ -83,6 +84,7 @@ function Navigation() {
       <Stack.Screen name="assurances" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="contact" />
       <Stack.Screen name="agent/connexion" />
+      <Stack.Screen name="agent/numeros/[id]" />
       <Stack.Screen name="releve/position" options={{ gestureEnabled: false }} />
       <Stack.Screen name="releve/doublons" />
       <Stack.Screen name="releve/photos" />

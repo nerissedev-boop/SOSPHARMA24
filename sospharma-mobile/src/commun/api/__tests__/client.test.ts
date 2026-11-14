@@ -56,6 +56,21 @@ describe('Client API : enveloppe standard', () => {
     }
   });
 
+  it('accepte un 204 sans corps (retrait d’un numéro)', async () => {
+    definirTransport(async () => ({
+      status: 204,
+      json: async () => {
+        throw new SyntaxError('Unexpected end of JSON input');
+      },
+    }));
+    const r = await appeler('/agent/pharmacies/ph_0142/telephones/tl_1', { methode: 'DELETE' });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data).toBeNull();
+      expect(r.status).toBe(204);
+    }
+  });
+
   it('refuse une réponse hors enveloppe (erreur de format)', async () => {
     definirTransport(transportFixe(200, { id: 'ph_0142' }));
     const r = await appeler('/pharmacies/ph_0142');

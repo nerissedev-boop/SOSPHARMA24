@@ -15,6 +15,7 @@ import {
   HiInsuranceCardOutline,
   IconeChevronDroite,
   IconeHorloge,
+  IconeTelephoneTrait,
   PiedFixe,
   Texte,
   useRetour,
@@ -158,6 +159,27 @@ function FicheReleve() {
               />
             </View>
           </View>
+          {/* Fiche existante : ses autres numéros se corrigent à part, tout de suite, sans attendre l'envoi du relevé. */}
+          {brouillon.type === 'mise_a_jour' && brouillon.pharmacieId ? (
+            <Pressable
+              onPress={() => router.push({ pathname: '/agent/numeros/[id]', params: { id: brouillon.pharmacieId as string } })}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('releve.numerosFiche')}, ${t('releve.numerosFicheTexte')}`}
+              style={({ pressed }) => [styles.horaires, { backgroundColor: c.surface, opacity: pressed ? 0.8 : 1 }]}
+              testID="ligne-numeros-fiche"
+            >
+              <IconeTelephoneTrait size={22} color={c.vert} />
+              <View style={styles.textes}>
+                <Texte variante="petitFort" style={styles.gras}>
+                  {t('releve.numerosFiche')}
+                </Texte>
+                <Texte variante="petit" couleur={c.texteSecondaire}>
+                  {t('releve.numerosFicheTexte')}
+                </Texte>
+              </View>
+              <IconeChevronDroite size={16} color={c.texteTertiaire} />
+            </Pressable>
+          ) : null}
 
           <Pressable
             onPress={() => setHorairesOuverts(true)}

@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { alerte, estContexteAssurances, t, usePreferences, useSelectionAssurances, type ContexteAssurances } from '@/commun/lib';
+import { alerte, estContexteAssurances, normaliserRecherche, t, usePreferences, useSelectionAssurances, type ContexteAssurances } from '@/commun/lib';
 import { ombres, policeTexte, useTheme } from '@/commun/theme';
 import {
   avecErrorBoundary,
@@ -20,14 +20,6 @@ import {
 } from '@/commun/ui';
 
 import { grouperAssurances, useAssurances } from '../hooks/useAssurances';
-
-/** Recherche sans accents ni casse (« mugef » trouve « MUGEF-CI »). */
-function normaliser(texte: string): string {
-  return texte
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLocaleLowerCase('fr');
-}
 
 function LigneAssurance({ nom, coche, onChange, testID }: { nom: string; coche: boolean; onChange: (v: boolean) => void; testID?: string }) {
   const { couleurs: c } = useTheme();
@@ -69,8 +61,8 @@ function ChoixAssurances() {
   const [saisieLibre, setSaisieLibre] = useState<string | null>(null);
 
   const groupes = useMemo(() => {
-    const q = normaliser(recherche.trim());
-    const liste = (referentiel ?? []).filter((a) => !q || normaliser(a.nom).includes(q) || a.slug.includes(q));
+    const q = normaliserRecherche(recherche.trim());
+    const liste = (referentiel ?? []).filter((a) => !q || normaliserRecherche(a.nom).includes(q) || a.slug.includes(q));
     return grouperAssurances(liste);
   }, [referentiel, recherche]);
 

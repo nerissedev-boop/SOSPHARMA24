@@ -239,6 +239,7 @@ function ListeGardes() {
       distanceM={premiere.distance_m}
       marcheMin={premiere.distance_m !== null && premiere.distance_m < MARCHE_UTILE_M ? premiere.marche_min : null}
       repere={repereEtCommune(premiere)}
+      photoUrl={premiere.photo_url}
       assurance={premiere.accepte_mes_assurances === true}
       positionAConfirmer={premiere.latitude === null}
       conseil

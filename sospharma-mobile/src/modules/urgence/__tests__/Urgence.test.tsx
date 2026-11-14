@@ -81,7 +81,8 @@ describe('Écran Urgence (refonte v2 : trois appels, un appui chacun)', () => {
     await unmount();
     await rendre(<Urgence />, { theme: 'nuit' });
     expect(await screen.findByTestId('bandeau-urgence')).toHaveStyle({ backgroundColor: jetonsNuit.sosFond });
-    expect(screen.getByTestId('numeros-urgence')).toHaveStyle({ backgroundColor: jetonsNuit.rougeClair });
+    // Le bandeau s'affiche tout de suite ; les numéros attendent la configuration du pays.
+    expect(await screen.findByTestId('numeros-urgence')).toHaveStyle({ backgroundColor: jetonsNuit.rougeClair });
     expect(await screen.findByTestId('conseil-garde')).toBeTruthy();
   });
 });

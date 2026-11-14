@@ -25,7 +25,7 @@ export const clesReleves = {
 /** Rayon de recherche des doublons possibles (architecture : « Rayon et limite (100 m) »). */
 export const RAYON_DOUBLONS_M = 100;
 
-async function entetesAgent(): Promise<Record<string, string>> {
+export async function entetesAgent(): Promise<Record<string, string>> {
   const jeton = await lireJeton();
   return jeton ? { Authorization: `Bearer ${jeton}` } : {};
 }

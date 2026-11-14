@@ -42,7 +42,7 @@ describe('Ligne de liste imprimée (refonte v2)', () => {
     expect(style('b').borderTopLeftRadius).toBeUndefined();
   });
 
-  it('dense : nom, distance, état et quartier ; ni vignette ni flèche', async () => {
+  it('dense : nom, distance, état et quartier ; ni vignette, ni chevron sans fiche à ouvrir', async () => {
     await rendre(<LignePharmacie {...base} statut="ouverte" commune="Cocody Danga" />);
     expect(screen.getByText('Pharmacie Gazelle')).toBeTruthy();
     expect(screen.getByText('0,9 km')).toBeTruthy();
@@ -50,6 +50,19 @@ describe('Ligne de liste imprimée (refonte v2)', () => {
     expect(screen.getByText('· Cocody Danga')).toBeTruthy();
     expect(screen.queryByTestId('l-photo')).toBeNull();
     expect(screen.queryByTestId('pastille-ouverte', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByTestId('l-chevron', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('qui ouvre la fiche : chevron tout à droite, après Appeler, et indice pour le lecteur d’écran', async () => {
+    const ouvrir = jest.fn();
+    await rendre(<LignePharmacie {...base} onPress={ouvrir} onAppeler={jest.fn()} />);
+    const enfants = screen.getByTestId('l').children as { props: { testID?: string } }[];
+    expect(enfants[enfants.length - 1]!.props.testID).toBe('l-chevron');
+    expect(enfants[enfants.length - 2]!.props.testID).toBe('l-appeler');
+    const chevron = screen.getByTestId('l-chevron', { includeHiddenElements: true });
+    expect(screen.getByRole('button', { name: /^Pharmacie Gazelle/ }).props.accessibilityHint).toBe('Ouvre la fiche : horaires, repère et photo');
+    await fireEvent.press(chevron);
+    expect(ouvrir).toHaveBeenCalledTimes(1);
   });
 
   it('garde : distance, marche et quartier, puis le numéro ; seule la restriction est en ocre', async () => {
@@ -117,6 +130,8 @@ describe('Carte « la plus proche » (une seule, partout)', () => {
     expect(screen.getByText('Appeler')).toBeTruthy();
     expect(screen.getByText('Y aller')).toBeTruthy();
     expect(screen.queryByText('Voir la fiche')).toBeNull();
+    expect(screen.queryByTestId('b-lien-fiche')).toBeNull();
+    expect(screen.queryByTestId('b-photo')).toBeNull();
     expect(style('b').borderRadius).toBe(rayons.surface);
     expect(style('b').elevation).toBe(ombres.carte.elevation);
     await rendre(<CartePlusProche {...carte} onAppeler={jest.fn()} onYAller={jest.fn()} />, { theme: 'nuit' });
@@ -157,10 +172,34 @@ describe('Carte « la plus proche » (une seule, partout)', () => {
     expect(screen.getByTestId('b-appeler')).toBeTruthy();
   });
 
-  it('toute la partie haute ouvre la fiche', async () => {
+  it('toute la partie haute ouvre la fiche : lien vert discret, indice, teinte sous le doigt', async () => {
     const ouvrir = jest.fn();
-    await rendre(<CartePlusProche {...carte} onPress={ouvrir} />);
-    await fireEvent.press(screen.getByRole('button', { name: /La plus proche : Pharmacie de la Paix/ }));
+    await rendre(<CartePlusProche {...carte} onPress={ouvrir} onAppeler={jest.fn()} />);
+    const lien = screen.getByText('Horaires, repère et photo');
+    expect(StyleSheet.flatten(lien.props.style).color).toBe(jetonsJour.vertTexte);
+    expect(style('b-lien-fiche').backgroundColor).toBeUndefined();
+    const zone = screen.getByRole('button', { name: /La plus proche : Pharmacie de la Paix/ });
+    expect(zone.props.accessibilityHint).toBe('Ouvre la fiche : horaires, repère et photo');
+    await fireEvent(zone, 'pressIn');
+    expect(style('b').backgroundColor).toBe(jetonsJour.carteAppuyee);
+    await fireEvent(zone, 'pressOut');
+    expect(style('b').backgroundColor).toBe(jetonsJour.blocProche);
+    await fireEvent.press(lien);
     expect(ouvrir).toHaveBeenCalledTimes(1);
+  });
+
+  it('photo de façade validée en tête de carte, sinon rien (ni devanture dessinée, ni sur le plan)', async () => {
+    await rendre(<CartePlusProche {...carte} photoUrl="https://exemple.test/facade.jpg" onAppeler={jest.fn()} />);
+    expect(screen.getByTestId('b-photo').props.source).toEqual({ uri: 'https://exemple.test/facade.jpg' });
+    await rendre(<CartePlusProche {...carte} photoUrl={null} onAppeler={jest.fn()} />);
+    expect(screen.queryByTestId('b-photo')).toBeNull();
+    expect(screen.queryByTestId('b-facade')).toBeNull();
+    await rendre(<CartePlusProche {...carte} compacte photoUrl="https://exemple.test/facade.jpg" onAppeler={jest.fn()} />);
+    expect(screen.queryByTestId('b-photo')).toBeNull();
+  });
+
+  it('la nuit, la photo passe sous un voile : pas d’aplat clair qui éblouit', async () => {
+    await rendre(<CartePlusProche {...carte} photoUrl="https://exemple.test/facade.jpg" />, { theme: 'nuit' });
+    expect(style('b-photo-voile').backgroundColor).toBe(jetonsNuit.voilePhoto);
   });
 });

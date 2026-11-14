@@ -29,6 +29,7 @@ import {
   EtatVide,
   Filtre,
   HiMedicalSearchOutline,
+  IconeChevronDroite,
   IconeLune,
   LignePharmacie,
   Squelette,
@@ -48,7 +49,7 @@ import { useLibelleStatut, usePharmaciesProches, useTonStatut } from '../hooks/u
 
 /** Hauteur dont la grande carte « La plus proche » remonte sur le bandeau. */
 const CHEVAUCHEMENT = 52;
-/** L'Accueil sert à trouver vite : quelques lignes, la suite est sur la carte ou dans l'onglet Garde. */
+/** L'Accueil sert à trouver vite : quelques lignes, la suite dans la liste complète, sur la carte ou dans l'onglet Garde. */
 const LIGNES_ACCUEIL = 5;
 
 /**
@@ -123,6 +124,7 @@ function Accueil() {
       distanceM={p.distance_m}
       marcheMin={p.marche_min}
       repere={repereEtCommune(p)}
+      photoUrl={p.photo_url}
       assurance={p.accepte_mes_assurances === true}
       positionAConfirmer={p.latitude === null}
       conseil={estNuit}
@@ -339,6 +341,19 @@ function Accueil() {
           ))}
           {proches.isSuccess && !filtreEnCours && liste.length === 0 ? <AucunResultat onActualiser={() => void proches.refetch()} /> : null}
         </View>
+        {liste.length > reste.length + (premiere ? 1 : 0) ? (
+          <Pressable
+            onPress={() => router.push('/pharmacies')}
+            accessibilityRole="link"
+            style={({ pressed }) => [styles.voirToutes, { opacity: pressed ? 0.7 : 1 }]}
+            testID="voir-toutes"
+          >
+            <Texte variante="boutonPetit" couleur={c.vertTexte}>
+              {t('accueil.voirToutes', { count: liste.length })}
+            </Texte>
+            <IconeChevronDroite size={16} color={c.vertTexte} strokeWidth={2.6} />
+          </Pressable>
+        ) : null}
       </ScrollView>
     </Ecran>
   );
@@ -367,6 +382,7 @@ const styles = StyleSheet.create({
   filtres: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   liste: { marginTop: 12 },
   chargementFiltre: { height: 220 },
+  voirToutes: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 2, minHeight: CIBLE_TACTILE, marginTop: 4, paddingHorizontal: 4 },
   fermees: { marginTop: 12, paddingHorizontal: 4 },
 });
 

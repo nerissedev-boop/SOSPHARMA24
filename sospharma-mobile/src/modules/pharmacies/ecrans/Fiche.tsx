@@ -491,6 +491,16 @@ function Fiche() {
                 onPress={() => router.push({ pathname: '/releve/position', params: { pharmacie: fiche.id } })}
                 testID="bouton-mettre-a-jour-fiche"
               />
+              {/* Les numéros se corrigent tout de suite, sans passer par un relevé complet. */}
+              <Bouton
+                libelle={t('fiche.numerosAgent')}
+                icone={<IconeTelephoneTrait size={20} color={c.vertTexte} />}
+                variante="clair"
+                typo="boutonPetit"
+                onPress={() => router.push({ pathname: '/agent/numeros/[id]', params: { id: fiche.id } })}
+                style={styles.boutonAgent}
+                testID="bouton-numeros-fiche"
+              />
             </Animated.View>
           ) : null}
         </View>
@@ -558,6 +568,7 @@ const styles = StyleSheet.create({
   ligneInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, minHeight: CIBLE_TACTILE },
   ligneHaut: { alignItems: 'flex-start' },
   lienTelephone: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: CIBLE_TACTILE },
+  boutonAgent: { marginTop: 8 },
   textesInfo: { flex: 1, minWidth: 0, gap: 2 },
   /** Filet entre deux lignes : un aplat de 1 px, pas une bordure (charte). */
   filet: { height: 1 },

@@ -89,6 +89,13 @@ export function telephoneAffiche(numero: string, indicatif?: string): string {
   return [ind, ...groupes].filter(Boolean).join(' ');
 }
 
+/** "+2250707000002" -> "07 07 00 00 02" dans le pays ; un numéro d'un autre pays garde son indicatif. */
+export function telephoneLocal(numero: string, indicatif?: string): string {
+  const propre = numero.replace(/[^\d+]/g, '');
+  if (!indicatif || !propre.startsWith(indicatif)) return telephoneAffiche(numero, indicatif);
+  return (propre.slice(indicatif.length).match(/.{1,2}/g) ?? []).join(' ');
+}
+
 /** "Abidjan" -> "d'Abidjan" ; "Bouaké" -> "de Bouaké" */
 export function de(nom: string): string {
   return /^[aeiouyàâéèêîôûhAEIOUYÀÂÉÈÊÎÔÛH]/.test(nom) ? `d'${nom}` : `de ${nom}`;
@@ -116,4 +123,12 @@ export function momentPasse(instant: Date, fuseau: string, maintenant: Date = ne
 /** Adresse écrite comme un repère, suivie de la commune : « Face à la mairie · Cocody ». */
 export function repereEtCommune(p: { adresse?: string | null; commune?: string | null }): string {
   return [p.adresse, p.commune].filter(Boolean).join(' · ');
+}
+
+/** Texte comparable pour une recherche locale, sans accents ni casse (« lycee » trouve « Lycée »). */
+export function normaliserRecherche(texte: string): string {
+  return texte
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLocaleLowerCase('fr');
 }

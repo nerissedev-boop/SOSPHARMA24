@@ -308,6 +308,23 @@ export type Proposition = {
 /** Doublon possible (GET /agent/pharmacies/proches). */
 export type PharmacieProche = PharmacieResume & { verifiee_le: string | null };
 
+export type OrigineTelephone = 'import' | 'liste_garde' | 'osm' | 'agent' | 'admin' | 'pharmacien' | 'reprise';
+
+/**
+ * Un numéro d'une fiche (GET /agent/pharmacies/{id}/telephones), triés par rang : le rang 1 est le principal.
+ * `whatsapp_confirme_le` vaut aussi pour un « non » ; null : personne n'a encore vérifié.
+ */
+export type TelephonePharmacie = {
+  id: string;
+  /** Format international (E.164) : +2250707000002. */
+  numero: string;
+  rang: number;
+  principal: boolean;
+  whatsapp: boolean;
+  whatsapp_confirme_le: string | null;
+  origine: OrigineTelephone;
+};
+
 export type Pagination = { page: number; per_page: number; total: number; last_page: number };
 
 export type Meta = {
@@ -322,4 +339,6 @@ export type Meta = {
   prev_cursor?: string | null;
   /** Renvoi idempotent : la ressource avait déjà été reçue (relevés, propositions). */
   deja_recu?: boolean;
+  /** Numéro déjà sur la fiche (POST …/telephones) : les valeurs envoyées s'y appliquent. */
+  deja_present?: boolean;
 };
