@@ -11,7 +11,9 @@ use App\Commun\Geo\Rectangle;
  * lire des fiches et les créer ou les mettre à jour sans toucher au modèle ni aux tables.
  *
  * Champs acceptés par creer() et mettreAJour() (tous facultatifs en mise à jour) :
- *   nom, adresse, quartier, telephone, whatsapp (E.164), h24 (bool), services (list<string>),
+ *   nom, adresse, quartier, h24 (bool), services (list<string>),
+ *   telephone (E.164, devient le numéro principal ; les autres numéros de la fiche restent),
+ *   whatsapp (E.164, devient le numéro marqué WhatsApp),
  *   horaires (list<{jour, ouverture, fermeture}>, remplace toutes les plages),
  *   assurances (list<{id: as_…, tiers_payant?: bool, remarque?: string}>, remplace toutes les assurances).
  * Les écritures marquent la fiche « vérifiée maintenant ». Elles doivent être appelées dans la transaction de l'appelant.

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Gardes\Services;
 
+use App\Commun\Support\NumerosTelephone;
 use App\Modules\Pharmacies\Models\Pharmacie;
+use App\Modules\Pharmacies\Models\TelephonePharmacie;
 use App\Modules\Territoire\Enums\TypeZone;
 use App\Modules\Territoire\Models\Ville;
 use App\Modules\Territoire\Models\Zone;
@@ -13,7 +15,7 @@ use Illuminate\Support\Str;
 
 /**
  * Retrouve dans l'annuaire chaque pharmacie de la liste de garde, sans rien écrire :
- *  1. même numéro de téléphone (fiche ou WhatsApp) : trouvée ;
+ *  1. un des numéros de la fiche : trouvée ;
  *  2. même nom (sans « pharmacie », « nouvelle », articles…) dans la ville ou la commune : trouvée ;
  *  3. nom approchant (fautes de lecture, « St » pour « Saint », nom plus long) : à vérifier ;
  *  4. sinon : inconnue.
@@ -75,7 +77,7 @@ final class RapprochementListeGarde
             $statut = PharmacieRapprochee::A_VERIFIER;
         }
         if ($pharmacie !== null && $entree->telephones !== []) {
-            $connus = array_filter([$this->dixChiffres($pharmacie->telephone), $this->dixChiffres($pharmacie->whatsapp)]);
+            $connus = $pharmacie->telephones->map(fn (TelephonePharmacie $t): ?string => NumerosTelephone::dixChiffres($t->numero))->filter()->all();
             if ($connus === []) {
                 $alertes[] = PharmacieRapprochee::TELEPHONE_A_AJOUTER;
             } elseif (array_intersect($connus, $entree->telephones) === []) {
@@ -135,7 +137,8 @@ final class RapprochementListeGarde
     {
         foreach ($numeros as $numero) {
             $trouvees = Pharmacie::query()->actives()
-                ->where(fn ($r) => $r->where('telephone', 'like', '%'.$numero)->orWhere('whatsapp', 'like', '%'.$numero))
+                ->whereHas('telephones', fn ($r) => $r->where('numero', 'like', '%'.$numero))
+                ->with('telephones')
                 ->limit(2)
                 ->get();
             // Un numéro partagé par deux fiches (groupement, standard) ne tranche rien.
@@ -152,6 +155,7 @@ final class RapprochementListeGarde
     {
         return $this->candidats[$type.$id] ??= Pharmacie::query()->actives()
             ->where($type === 'zone' ? 'zone_id' : 'ville_id', $id)
+            ->with('telephones')
             ->get(['id', 'id_public', 'nom', 'ville_id', 'zone_id', 'telephone', 'whatsapp', 'latitude', 'longitude']);
     }
 
@@ -196,12 +200,5 @@ final class RapprochementListeGarde
         }
 
         return $score;
-    }
-
-    private function dixChiffres(?string $telephone): ?string
-    {
-        $chiffres = preg_replace('/\D/', '', (string) $telephone) ?? '';
-
-        return strlen($chiffres) >= 10 ? substr($chiffres, -10) : null;
     }
 }

@@ -95,10 +95,12 @@ it('rattache une fiche à vérifier quand on la confirme, sans écraser son num�
     importerListe(['decisions' => [['rang' => 1, 'action' => 'rattacher']]])
         ->assertCreated()
         ->assertJsonPath('data.tours.0.gardes', 3)
-        ->assertJsonPath('data.telephones_completes', 1);
+        // Lagunes reçoit son premier numéro, Saint Jean Bosco un second.
+        ->assertJsonPath('data.telephones_completes', 2);
 
     expect(Garde::query()->where('pharmacie_id', $this->saintJean->id)->exists())->toBeTrue()
-        ->and($this->saintJean->fresh()->telephone)->toBe('+2250102030405');
+        ->and($this->saintJean->fresh()->telephone)->toBe('+2250102030405')
+        ->and($this->saintJean->telephones()->pluck('numero')->all())->toBe(['+2250102030405', '+2250707070707']);
 });
 
 it('rattache à la fiche choisie à la main, ou refuse une fiche inexistante', function (): void {

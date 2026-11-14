@@ -8,6 +8,7 @@ use App\Commun\Erreurs\DonneesInvalides;
 use App\Commun\Geo\Rectangle;
 use App\Modules\Pharmacies\Contrats\EditionFichesPharmacies;
 use App\Modules\Pharmacies\Contrats\FichePharmacie;
+use App\Modules\Pharmacies\Enums\OrigineTelephone;
 use App\Modules\Pharmacies\Enums\SourceProposition;
 use App\Modules\Pharmacies\Models\Assurance;
 use App\Modules\Pharmacies\Models\Horaire;
@@ -17,11 +18,13 @@ use Carbon\CarbonImmutable;
 /** Implémentation Eloquent du contrat EditionFichesPharmacies (liée par PharmaciesServiceProvider). */
 final class EditionFichesEloquent implements EditionFichesPharmacies
 {
-    private const CHAMPS_FICHE = ['nom', 'adresse', 'quartier', 'telephone', 'whatsapp', 'h24', 'services'];
+    /** Téléphone et WhatsApp à part : ils passent par TelephonesPharmacie. */
+    private const CHAMPS_FICHE = ['nom', 'adresse', 'quartier', 'h24', 'services'];
 
     public function __construct(
         private readonly GestionPharmacies $gestion,
         private readonly AssurancesPharmacie $assurances,
+        private readonly TelephonesPharmacie $telephones,
     ) {}
 
     public function dansRectangle(Rectangle $rectangle, bool $activesSeulement = true, int $max = 200): array
@@ -65,6 +68,7 @@ final class EditionFichesEloquent implements EditionFichesPharmacies
             + $this->gestion->localiserDansVille($lat, $lng, $villeId)
             + ['latitude' => round($lat, 6), 'longitude' => round($lng, 6), 'verifiee_le' => now(), 'actif' => true]
         );
+        $this->telephones->appliquerSaisie($pharmacie, $champs, OrigineTelephone::Agent);
         $this->ecrireLiens($pharmacie, $champs);
 
         return self::fiche($pharmacie->refresh()->load(['zone', 'horaires', 'assurancesActives']));
@@ -81,6 +85,7 @@ final class EditionFichesEloquent implements EditionFichesPharmacies
                 + $this->gestion->localiserDansVille($lat, $lng, $pharmacie->ville_id);
         }
         $pharmacie->update($attributs);
+        $this->telephones->appliquerSaisie($pharmacie, $champs, OrigineTelephone::Agent);
         $this->ecrireLiens($pharmacie, $champs);
 
         return self::fiche($pharmacie->refresh()->load(['zone', 'horaires', 'assurancesActives']));

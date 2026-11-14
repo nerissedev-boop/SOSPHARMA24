@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Pharmacies\Services;
 
 use App\Commun\Geo\Distance;
+use App\Modules\Pharmacies\Enums\OrigineTelephone;
 use App\Modules\Pharmacies\Models\Pharmacie;
 use App\Modules\Territoire\Services\ZoneDepuisPosition;
 use Illuminate\Support\Str;
@@ -28,7 +29,10 @@ final class ImportPharmaciesOsm
     /** Identifiants des fiches fictives de PharmaciesTestSeeder (ph_test01 à ph_test20). */
     public const PREFIXE_DONNEES_TEST = 'ph_test';
 
-    public function __construct(private readonly ZoneDepuisPosition $zones) {}
+    public function __construct(
+        private readonly ZoneDepuisPosition $zones,
+        private readonly TelephonesPharmacie $telephones,
+    ) {}
 
     /**
      * @param  list<array<string, mixed>>  $elements  éléments Overpass (type, id, lat/lon ou center, tags)
@@ -77,7 +81,7 @@ final class ImportPharmaciesOsm
                 }
                 $bilan['mises_a_jour']++;
                 if (! $simulation) {
-                    $existante->update($attributs + $this->seulementVides($existante, $complements));
+                    $this->enregistrer($existante, $attributs + $this->seulementVides($existante, $complements));
                 }
 
                 continue;
@@ -88,7 +92,7 @@ final class ImportPharmaciesOsm
                 $bilan['rattachees']++;
                 if (! $simulation) {
                     // Une fiche saisie par l'équipe garde son nom et sa position : on complète seulement les vides.
-                    $doublon->update(['osm_id' => $osmId] + $this->seulementVides($doublon, $complements));
+                    $this->enregistrer($doublon, ['osm_id' => $osmId] + $this->seulementVides($doublon, $complements));
                 }
 
                 continue;
@@ -96,7 +100,7 @@ final class ImportPharmaciesOsm
 
             $bilan['creees']++;
             if (! $simulation) {
-                Pharmacie::query()->create($attributs + $complements + [
+                $this->enregistrer(new Pharmacie, $attributs + $complements + [
                     'osm_id' => $osmId,
                     'adresse' => self::ADRESSE_INCONNUE,
                     'h24' => false,
@@ -181,6 +185,17 @@ final class ImportPharmaciesOsm
      * @param  array<string, mixed>  $complements
      * @return array<string, mixed>
      */
+    /** Le téléphone lu dans OpenStreetMap rejoint les numéros de la fiche ; le reste s'écrit sur la fiche. */
+    private function enregistrer(Pharmacie $pharmacie, array $attributs): void
+    {
+        $telephone = $attributs['telephone'] ?? null;
+        unset($attributs['telephone']);
+        $pharmacie->fill($attributs)->save();
+        if ($telephone !== null) {
+            $this->telephones->ajouter($pharmacie, [$telephone], OrigineTelephone::Osm);
+        }
+    }
+
     private function seulementVides(Pharmacie $pharmacie, array $complements): array
     {
         return array_filter($complements, function (mixed $valeur, string $champ) use ($pharmacie): bool {

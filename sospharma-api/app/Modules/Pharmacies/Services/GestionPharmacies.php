@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Pharmacies\Services;
 
 use App\Commun\Erreurs\DonneesInvalides;
+use App\Modules\Pharmacies\Enums\OrigineTelephone;
 use App\Modules\Pharmacies\Models\Pharmacie;
 use App\Modules\Territoire\Models\Ville;
 use App\Modules\Territoire\Models\Zone;
@@ -14,7 +15,10 @@ use Illuminate\Support\Facades\DB;
 /** Écritures sur les fiches et les horaires. */
 final class GestionPharmacies
 {
-    public function __construct(private readonly ZoneDepuisPosition $zones) {}
+    public function __construct(
+        private readonly ZoneDepuisPosition $zones,
+        private readonly TelephonesPharmacie $telephones,
+    ) {}
 
     /** @param array<string, mixed> $donnees validées */
     public function creer(array $donnees): Pharmacie
@@ -22,7 +26,12 @@ final class GestionPharmacies
         $attributs = $this->attributs($donnees);
         $attributs += $this->localiser($donnees, null);
 
-        return Pharmacie::query()->create($attributs)->load(['ville', 'zone', 'horaires', 'assurances']);
+        return DB::transaction(function () use ($attributs, $donnees): Pharmacie {
+            $pharmacie = Pharmacie::query()->create($attributs);
+            $this->telephones->appliquerSaisie($pharmacie, $donnees, OrigineTelephone::Admin);
+
+            return $pharmacie->load(['ville', 'zone', 'horaires', 'assurances']);
+        });
     }
 
     /** @param array<string, mixed> $donnees validées */
@@ -32,7 +41,10 @@ final class GestionPharmacies
         if (array_intersect(array_keys($donnees), ['ville', 'zone', 'latitude', 'longitude']) !== []) {
             $attributs += $this->localiser($donnees + ['latitude' => $pharmacie->lat(), 'longitude' => $pharmacie->lng()], $pharmacie);
         }
-        $pharmacie->update($attributs);
+        DB::transaction(function () use ($pharmacie, $attributs, $donnees): void {
+            $pharmacie->update($attributs);
+            $this->telephones->appliquerSaisie($pharmacie, $donnees, OrigineTelephone::Admin);
+        });
 
         return $pharmacie->load(['ville', 'zone', 'horaires', 'assurances']);
     }
@@ -56,7 +68,10 @@ final class GestionPharmacies
     /** Modification par le pharmacien lui-même : la fiche est considérée vérifiée. */
     public function modifierParPharmacien(Pharmacie $pharmacie, array $donnees): Pharmacie
     {
-        $pharmacie->update(array_intersect_key($donnees, array_flip(['telephone', 'whatsapp', 'services'])) + ['verifiee_le' => now()]);
+        DB::transaction(function () use ($pharmacie, $donnees): void {
+            $pharmacie->update(array_intersect_key($donnees, array_flip(['services'])) + ['verifiee_le' => now()]);
+            $this->telephones->appliquerSaisie($pharmacie, $donnees, OrigineTelephone::Pharmacien);
+        });
 
         return $pharmacie->load(['ville', 'zone', 'horaires', 'assurances']);
     }
@@ -106,7 +121,7 @@ final class GestionPharmacies
     private function attributs(array $donnees): array
     {
         $attributs = array_intersect_key($donnees, array_flip([
-            'nom', 'adresse', 'quartier', 'telephone', 'whatsapp', 'latitude', 'longitude', 'h24', 'services', 'actif',
+            'nom', 'adresse', 'quartier', 'latitude', 'longitude', 'h24', 'services', 'actif',
         ]));
         if (($donnees['verifiee'] ?? false) === true) {
             $attributs['verifiee_le'] = now();

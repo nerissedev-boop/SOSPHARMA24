@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Modules\Pharmacies\Enums\OrigineTelephone;
 use App\Modules\Pharmacies\Models\Pharmacie;
+use App\Modules\Pharmacies\Services\TelephonesPharmacie;
 use App\Modules\Territoire\Models\Ville;
 use App\Modules\Territoire\Models\Zone;
 use Illuminate\Database\Seeder;
@@ -42,7 +44,7 @@ class PharmaciesTestSeeder extends Seeder
 
     private const SERVICES = ['Conseil', 'Prise de tension', 'Test de glycémie', 'Parapharmacie'];
 
-    public function run(): void
+    public function run(TelephonesPharmacie $telephones): void
     {
         $abidjan = Ville::query()->where('id_public', 'vi_abj')->firstOrFail();
         $zones = Zone::query()->where('ville_id', $abidjan->id)->get()->keyBy('id_public');
@@ -67,6 +69,11 @@ class PharmaciesTestSeeder extends Seeder
                 'verifiee_le' => now()->subDays($numero),
                 'actif' => true,
             ]);
+
+            $telephones->ajouter($pharmacie, [$pharmacie->telephone], OrigineTelephone::Admin);
+            if ($pharmacie->whatsapp !== null) {
+                $telephones->ajouterWhatsapp($pharmacie, $pharmacie->whatsapp, OrigineTelephone::Admin);
+            }
 
             $pharmacie->horaires()->delete();
             foreach (self::horaires($profil) as $plage) {

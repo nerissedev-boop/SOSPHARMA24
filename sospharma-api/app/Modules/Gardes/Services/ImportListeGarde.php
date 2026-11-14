@@ -9,8 +9,10 @@ use App\Commun\Securite\CompteAvecRole;
 use App\Modules\Gardes\Enums\StatutTour;
 use App\Modules\Gardes\Models\Garde;
 use App\Modules\Gardes\Models\TourGarde;
+use App\Modules\Pharmacies\Enums\OrigineTelephone;
 use App\Modules\Pharmacies\Models\Pharmacie;
 use App\Modules\Pharmacies\Services\ImportPharmaciesOsm;
+use App\Modules\Pharmacies\Services\TelephonesPharmacie;
 use App\Modules\Territoire\Models\Ville;
 use App\Modules\Territoire\Services\ConfigurationPays;
 use Carbon\CarbonImmutable;
@@ -20,7 +22,8 @@ use Illuminate\Support\Str;
 /**
  * Import de la liste de garde officielle, après relecture : un brouillon de tour par ville (à
  * contrôler puis publier comme les autres), les fiches inconnues créées en « Position à
- * confirmer », et les fiches existantes complétées (numéro, adresse) sans rien écraser.
+ * confirmer », et les fiches existantes complétées sans rien écraser : tous les numéros lus
+ * s'ajoutent aux leurs (telephones_completes en donne le nombre), l'adresse seulement si elle manque.
  *
  * Relançable : le brouillon de la même ville et de la même période est remplacé ; un tour déjà
  * publié n'est pas touché.
@@ -38,9 +41,13 @@ final class ImportListeGarde
     /** Relève comme le tour de démonstration : du samedi 08:00 au samedi suivant 08:00, heure locale. */
     public const HEURE_RELEVE = 8;
 
+    /** @var array<int, string> ville → indicatif du pays */
+    private array $indicatifs = [];
+
     public function __construct(
         private readonly RapprochementListeGarde $rapprochement,
         private readonly ConfigurationPays $configuration,
+        private readonly TelephonesPharmacie $telephones,
     ) {}
 
     /**
@@ -158,28 +165,31 @@ final class ImportListeGarde
     {
         $entree = $resultat->entree;
 
-        return Pharmacie::query()->create([
+        $pharmacie = Pharmacie::query()->create([
             'ville_id' => $resultat->villeId,
             'zone_id' => $resultat->zoneId,
             'nom' => self::nomFiche($entree->nom),
             'adresse' => $entree->repere !== null ? Str::limit($entree->repere, 255, '') : ImportPharmaciesOsm::ADRESSE_INCONNUE,
-            'telephone' => $entree->telephones !== [] ? $this->indicatif((int) $resultat->villeId).$entree->telephones[0] : null,
             // Position à confirmer : la liste n'en donne pas ; un relevé terrain la complétera.
             'latitude' => null,
             'longitude' => null,
             'h24' => false,
             'actif' => true,
         ]);
+        $this->telephones->ajouter($pharmacie, $this->numeros($pharmacie->ville_id, $entree), OrigineTelephone::ListeGarde);
+
+        return $pharmacie;
     }
 
-    /** Complète les vides seulement : un numéro différent déjà sur la fiche reste en place (alerte au rapprochement). */
+    /**
+     * Les numéros de la liste s'ajoutent à ceux de la fiche, sans en retirer ni changer le principal ;
+     * l'adresse n'est complétée que si elle manque.
+     */
     private function completer(Pharmacie $pharmacie, EntreeListeGarde $entree, array &$bilan): void
     {
+        $bilan['telephones_completes'] += count($this->telephones->ajouter($pharmacie, $this->numeros($pharmacie->ville_id, $entree), OrigineTelephone::ListeGarde));
+
         $vides = [];
-        if (($pharmacie->telephone ?? '') === '' && $entree->telephones !== []) {
-            $vides['telephone'] = $this->indicatif($pharmacie->ville_id).$entree->telephones[0];
-            $bilan['telephones_completes']++;
-        }
         if ($pharmacie->adresse === ImportPharmaciesOsm::ADRESSE_INCONNUE && $entree->repere !== null) {
             $vides['adresse'] = Str::limit($entree->repere, 255, '');
             $bilan['adresses_completees']++;
@@ -242,8 +252,14 @@ final class ImportListeGarde
         return Str::limit('Pharmacie '.implode(' ', $mots), 150, '');
     }
 
-    private function indicatif(int $villeId): string
+    /** @return list<string> numéros de la liste au format international, dans l'ordre de la liste */
+    private function numeros(int $villeId, EntreeListeGarde $entree): array
     {
-        return (string) Ville::query()->with('pays')->findOrFail($villeId)->pays->indicatif;
+        if ($entree->telephones === []) {
+            return [];
+        }
+        $indicatif = $this->indicatifs[$villeId] ??= (string) Ville::query()->with('pays')->findOrFail($villeId)->pays->indicatif;
+
+        return array_map(fn (string $national): string => $indicatif.$national, $entree->telephones);
     }
 }

@@ -8,6 +8,7 @@ use App\Commun\Support\Dates;
 use App\Modules\Pharmacies\Models\Assurance;
 use App\Modules\Pharmacies\Models\Horaire;
 use App\Modules\Pharmacies\Models\Pharmacie;
+use App\Modules\Pharmacies\Models\TelephonePharmacie;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -25,6 +26,7 @@ class PharmacieAdminResource extends JsonResource
             'zone' => $this->relationLoaded('zone') && $this->zone !== null ? ['id' => $this->zone->id_public, 'nom' => $this->zone->nom] : null,
             'telephone' => $this->telephone,
             'whatsapp' => $this->whatsapp,
+            'telephones' => $this->resource->loadMissing('telephones')->telephones->map(fn (TelephonePharmacie $t): array => $t->enLigne())->values()->all(),
             'position' => $this->aUnePosition() ? ['lat' => $this->lat(), 'lng' => $this->lng()] : null,
             'h24' => $this->h24,
             'services' => $this->services ?? [],

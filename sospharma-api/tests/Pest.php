@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Commun\Securite\Role;
 use App\Modules\Comptes\Models\User;
+use App\Modules\Pharmacies\Enums\OrigineTelephone;
 use App\Modules\Pharmacies\Enums\TypeAssurance;
 use App\Modules\Pharmacies\Models\Assurance;
 use App\Modules\Pharmacies\Models\Pharmacie;
+use App\Modules\Pharmacies\Services\TelephonesPharmacie;
 use App\Modules\Territoire\Enums\StatutPays;
 use App\Modules\Territoire\Enums\StatutVille;
 use App\Modules\Territoire\Enums\TypeZone;
@@ -77,9 +79,11 @@ function creerAbidjan(): Ville
     return $ville;
 }
 
+/** Téléphone et WhatsApp passent par TelephonesPharmacie, comme dans l'application. */
 function creerPharmacie(Ville $ville, array $attributs = [], array $horaires = []): Pharmacie
 {
-    $pharmacie = Pharmacie::query()->create($attributs + [
+    $numeros = array_intersect_key($attributs, ['telephone' => true, 'whatsapp' => true]);
+    $pharmacie = Pharmacie::query()->create(array_diff_key($attributs, $numeros) + [
         'ville_id' => $ville->id,
         'nom' => 'Pharmacie de test '.random_int(1000, 9999),
         'adresse' => 'Adresse de test',
@@ -88,6 +92,7 @@ function creerPharmacie(Ville $ville, array $attributs = [], array $horaires = [
         'h24' => false,
         'actif' => true,
     ]);
+    app(TelephonesPharmacie::class)->appliquerSaisie($pharmacie, $numeros, OrigineTelephone::Admin);
     foreach ($horaires as $plage) {
         $pharmacie->horaires()->create($plage);
     }

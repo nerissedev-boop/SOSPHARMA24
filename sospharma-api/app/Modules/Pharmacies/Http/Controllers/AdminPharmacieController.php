@@ -34,7 +34,7 @@ class AdminPharmacieController extends Controller
 
         $assurances = FiltresPharmacies::slugs($p->filtre('assurances'));
 
-        $requete = Pharmacie::query()->with(['ville', 'zone', 'assurances'])
+        $requete = Pharmacie::query()->with(['ville', 'zone', 'assurances', 'telephones'])
             ->when(! $compte->estAdmin(), fn ($r) => $r->where('ville_id', $compte->villeId()))
             ->when($p->filtre('ville') !== null, fn ($r) => $r->whereHas('ville', fn ($s) => $s->where('id_public', $p->filtre('ville'))))
             ->when($p->filtre('zone') !== null, fn ($r) => $r->whereHas('zone', fn ($s) => $s->where('id_public', $p->filtre('zone'))))

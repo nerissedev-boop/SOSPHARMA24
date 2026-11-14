@@ -26,8 +26,8 @@ use Illuminate\Support\Facades\Storage;
  * @property string $nom
  * @property string $adresse
  * @property string|null $quartier
- * @property string|null $telephone
- * @property string|null $whatsapp
+ * @property string|null $telephone numéro principal, recopié de telephones_pharmacie (écrire par TelephonesPharmacie)
+ * @property string|null $whatsapp premier numéro WhatsApp, recopié de telephones_pharmacie
  * @property string|null $latitude null : position à confirmer (pharmacie de garde absente d'OpenStreetMap)
  * @property string|null $longitude
  * @property bool $h24
@@ -40,6 +40,7 @@ use Illuminate\Support\Facades\Storage;
  * @property-read Collection<int, Horaire> $horaires
  * @property-read Collection<int, Assurance> $assurances
  * @property-read Collection<int, Assurance> $assurancesActives
+ * @property-read Collection<int, TelephonePharmacie> $telephones
  */
 class Pharmacie extends Model
 {
@@ -76,6 +77,16 @@ class Pharmacie extends Model
     public function zone(): BelongsTo
     {
         return $this->belongsTo(Zone::class);
+    }
+
+    /**
+     * Tous les numéros, le principal en premier.
+     *
+     * @return HasMany<TelephonePharmacie, $this>
+     */
+    public function telephones(): HasMany
+    {
+        return $this->hasMany(TelephonePharmacie::class)->orderBy('rang');
     }
 
     /** @return HasMany<Horaire, $this> */

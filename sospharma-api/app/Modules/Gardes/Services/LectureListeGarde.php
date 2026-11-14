@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Gardes\Services;
 
+use App\Commun\Support\NumerosTelephone;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
@@ -17,14 +18,12 @@ use Illuminate\Support\Str;
  *
  * La ville (ou la commune) n'est écrite qu'une fois, devant la première pharmacie ou seule sur
  * sa ligne. Erreurs de lecture corrigées : « / » lu « 1 », lettres prises pour des chiffres
- * (« og » pour « 09 ») et numéros abrégés (« 36 04/33 82 »). Rien n'est deviné en silence :
- * un numéro corrigé est signalé, un numéro illisible est rendu tel quel.
+ * (« og » pour « 09 ») ; numéros abrégés (« 36 04/33 82 ») et coupés : NumerosTelephone, comme
+ * l'import CSV. Rien n'est deviné en silence : un numéro corrigé est signalé, un numéro illisible
+ * est rendu tel quel.
  */
 final class LectureListeGarde
 {
-    /** Numéros ivoiriens à 10 chiffres : fixes 21, 25, 27 ; mobiles 01, 05, 07. */
-    private const PREFIXES = ['01', '05', '07', '21', '25', '27'];
-
     /** Lettres que la reconnaissance de caractères confond avec des chiffres. */
     private const SOSIES = ['o' => '0', 'O' => '0', 'g' => '9', 'l' => '1', 'I' => '1', '|' => '1', 'S' => '5', 'B' => '8'];
 
@@ -225,13 +224,11 @@ final class LectureListeGarde
             $segments[count($segments) - 1] .= $chiffres;
         }
 
-        $numeros = [];
-        $invalides = [];
-        foreach ($segments as $segment) {
-            if ($segment !== '') {
-                $this->numerosDuSegment($segment, $numeros, $invalides, $corriges);
-            }
-        }
+        // La liste de l'Ordre est celle de la Côte d'Ivoire.
+        $lus = NumerosTelephone::pour('+225')->nationaux($segments);
+        $numeros = $lus['numeros'];
+        $invalides = $lus['illisibles'];
+        $corriges = $corriges || $lus['avertissements'] !== [];
 
         $repere = substr($queue, $finNumeros);
         // « RUE PRINCESSE 1 PETIT BASSAM » : barre lue « 1 » entre deux mots.
@@ -256,37 +253,6 @@ final class LectureListeGarde
         }
 
         return null;
-    }
-
-    /**
-     * @param  list<string>  $numeros
-     * @param  list<string>  $invalides
-     */
-    private function numerosDuSegment(string $segment, array &$numeros, array &$invalides, bool &$corriges): void
-    {
-        $i = 0;
-        $longueur = strlen($segment);
-        while ($i < $longueur) {
-            $reste = substr($segment, $i);
-            $morceau = substr($reste, 0, 10);
-            if (strlen($morceau) === 10 && in_array(substr($morceau, 0, 2), self::PREFIXES, true)) {
-                $numeros[] = $morceau;
-                $i += 10;
-            } elseif (in_array(strlen($reste), [2, 4, 6, 8], true) && $numeros !== []) {
-                // « 27 35 91 36 04/33 82 » : la fin seule du numéro précédent change.
-                $precedent = $numeros[count($numeros) - 1];
-                $numeros[] = substr($precedent, 0, 10 - strlen($reste)).$reste;
-                $corriges = $corriges || $i > 0 || strlen($reste) > 4;
-                $i = $longueur;
-            } elseif ($reste[0] === '1') {
-                // Aucun numéro ne commence par 1 : c'est une barre « / » mal lue.
-                $corriges = true;
-                $i++;
-            } else {
-                $invalides[] = $reste;
-                $i = $longueur;
-            }
-        }
     }
 
     /** @return array{0: CarbonImmutable|null, 1: CarbonImmutable|null} premier et dernier jour annoncés */

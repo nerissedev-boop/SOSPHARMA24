@@ -31,7 +31,7 @@ final class PharmacieRapprochee
     /** La fiche n'a pas de numéro : celui de la liste peut la compléter. */
     public const TELEPHONE_A_AJOUTER = 'telephone_a_ajouter';
 
-    /** La fiche a un autre numéro que ceux de la liste : ne pas écraser sans accord. */
+    /** Aucun numéro de la fiche n'est dans la liste : à l'import, ceux de la liste s'ajoutent aux siens sans les remplacer. */
     public const TELEPHONE_DIFFERENT = 'telephone_different';
 
     /** @param list<string> $alertes */
