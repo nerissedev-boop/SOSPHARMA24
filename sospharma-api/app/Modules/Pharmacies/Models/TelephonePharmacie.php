@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Pharmacies\Models;
 
+use App\Commun\Modeles\AIdentifiantPublic;
 use App\Modules\Pharmacies\Enums\OrigineTelephone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,7 @@ use Illuminate\Support\Carbon;
  * S'écrit par le service TelephonesPharmacie, qui tient à jour pharmacies.telephone et pharmacies.whatsapp.
  *
  * @property int $id
+ * @property string $id_public
  * @property int $pharmacie_id
  * @property string $numero E.164
  * @property int $rang
@@ -24,9 +26,13 @@ use Illuminate\Support\Carbon;
  */
 class TelephonePharmacie extends Model
 {
+    use AIdentifiantPublic;
+
+    protected const PREFIXE_ID = 'tl';
+
     protected $table = 'telephones_pharmacie';
 
-    protected $fillable = ['pharmacie_id', 'numero', 'rang', 'whatsapp', 'whatsapp_confirme_le', 'whatsapp_confirme_par', 'origine'];
+    protected $fillable = ['id_public', 'pharmacie_id', 'numero', 'rang', 'whatsapp', 'whatsapp_confirme_le', 'whatsapp_confirme_par', 'origine'];
 
     protected function casts(): array
     {

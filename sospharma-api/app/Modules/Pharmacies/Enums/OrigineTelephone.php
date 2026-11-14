@@ -11,7 +11,7 @@ enum OrigineTelephone: string
     case Import = 'import';
     case ListeGarde = 'liste_garde';
     case Osm = 'osm';
-    /** Relevé terrain validé. */
+    /** Agent terrain : relevé validé, ou numéro ajouté sur place depuis l'espace agent. */
     case Agent = 'agent';
     case Admin = 'admin';
     /** Le pharmacien, depuis son espace. */

@@ -10,6 +10,7 @@ use App\Modules\Pharmacies\Enums\OrigineTelephone;
 use App\Modules\Pharmacies\Models\Pharmacie;
 use App\Modules\Pharmacies\Models\TelephonePharmacie;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Seule écriture des numéros d'une pharmacie (table telephones_pharmacie). Après chaque changement,
@@ -92,6 +93,77 @@ final class TelephonesPharmacie
             ]);
             $this->synchroniser($pharmacie);
         });
+    }
+
+    /**
+     * Numéro donné par une personne connectée (agent sur place, équipe). Déjà sur la fiche, il n'est pas recréé :
+     * un renvoi de l'app après une coupure retrouve la même ligne. Les réponses WhatsApp et principal s'appliquent
+     * dans les deux cas, comme pour modifier().
+     *
+     * @return array{telephone: TelephonePharmacie, cree: bool}
+     */
+    public function enregistrer(Pharmacie $pharmacie, string $numero, ?bool $whatsapp, bool $principal, CompteAvecRole $par, OrigineTelephone $origine): array
+    {
+        return DB::transaction(function () use ($pharmacie, $numero, $whatsapp, $principal, $par, $origine): array {
+            // Deux envois simultanés du même numéro se suivent au lieu de buter sur l'index unique.
+            Pharmacie::query()->whereKey($pharmacie->id)->lockForUpdate()->first();
+            $cree = $this->ajouter($pharmacie, [$numero], $origine) !== [];
+            $telephone = $this->modifier($pharmacie, $this->ligne($pharmacie, $numero), $whatsapp, $principal, $par, $origine);
+            if ($cree) {
+                Log::info('Numéro de pharmacie ajouté', [
+                    'pharmacie' => $pharmacie->id_public, 'telephone' => $telephone->id_public,
+                    'origine' => $origine->value, 'compte_id' => $par->idInterne(),
+                ]);
+            }
+
+            return ['telephone' => $telephone, 'cree' => $cree];
+        });
+    }
+
+    /**
+     * WhatsApp oui ou non (null : pas de réponse) et passage au rang 1. Rejouer la même réponse ne change que
+     * la date de confirmation : la dernière visite fait foi. Retirer le seul WhatsApp est permis, la fiche
+     * n'a alors plus de numéro WhatsApp (pharmacies.whatsapp à null).
+     */
+    public function modifier(Pharmacie $pharmacie, TelephonePharmacie $telephone, ?bool $whatsapp, bool $principal, CompteAvecRole $par, OrigineTelephone $origine): TelephonePharmacie
+    {
+        DB::transaction(function () use ($pharmacie, $telephone, $whatsapp, $principal, $par, $origine): void {
+            if ($whatsapp !== null) {
+                $this->marquerWhatsapp($pharmacie, $telephone->numero, $whatsapp, $par);
+            }
+            if ($principal && $telephone->rang !== 1) {
+                $this->definirPrincipal($pharmacie, $telephone->numero, $origine);
+            }
+        });
+        if ($whatsapp !== null || $principal) {
+            Log::info('Numéro de pharmacie confirmé', [
+                'pharmacie' => $pharmacie->id_public, 'telephone' => $telephone->id_public,
+                'whatsapp' => $whatsapp, 'principal' => $principal, 'compte_id' => $par->idInterne(),
+            ]);
+        }
+
+        return $telephone->refresh();
+    }
+
+    /**
+     * Numéro faux ou qui n'existe plus. Le principal ne part qu'en dernier : il faut d'abord en choisir un autre,
+     * pour que le bouton « Appeler » ne bascule pas sur un numéro que personne n'a choisi.
+     */
+    public function retirer(Pharmacie $pharmacie, TelephonePharmacie $telephone, CompteAvecRole $par): void
+    {
+        DB::transaction(function () use ($pharmacie, $telephone): void {
+            Pharmacie::query()->whereKey($pharmacie->id)->lockForUpdate()->first();
+            $telephones = $pharmacie->telephones()->get();
+            if ($telephone->rang === 1 && $telephones->count() > 1) {
+                throw new DonneesInvalides('Ce numéro est le principal. Choisissez d\'abord un autre numéro principal, puis retirez celui-ci.');
+            }
+            $telephone->delete();
+            $this->renumeroter($telephones->reject(fn (TelephonePharmacie $t): bool => $t->id === $telephone->id)->values()->all());
+            $this->synchroniser($pharmacie);
+        });
+        Log::info('Numéro de pharmacie retiré', [
+            'pharmacie' => $pharmacie->id_public, 'telephone' => $telephone->id_public, 'compte_id' => $par->idInterne(),
+        ]);
     }
 
     /**

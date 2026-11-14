@@ -11,7 +11,8 @@ use App\Modules\Pharmacies\Services\PharmaciesDuCompte;
 
 /**
  * admin : tout. editeur_ville : lire et corriger les fiches de sa ville.
- * pharmacien : lire et modifier sa propre pharmacie. agent_terrain : rien (il passe par les relevés).
+ * pharmacien : lire et modifier sa propre pharmacie. agent_terrain : rien (il passe par les relevés),
+ * sauf les numéros des pharmacies de ses villes, qu'il vérifie sur place (gererTelephones).
  */
 class PharmaciePolicy
 {
@@ -45,6 +46,21 @@ class PharmaciePolicy
     public function import(CompteAvecRole $compte): bool
     {
         return $compte->estAdmin();
+    }
+
+    /**
+     * Lire les numéros, ajouter un numéro, dire lequel a WhatsApp et lequel est le principal.
+     * L'agent agit sans validation de l'équipe : c'est lui qui appelle ou voit la devanture (décision 59).
+     */
+    public function gererTelephones(CompteAvecRole $compte, Pharmacie $pharmacie): bool
+    {
+        return match ($compte->role()) {
+            Role::Admin => true,
+            Role::EditeurVille => $compte->villeId() === $pharmacie->ville_id,
+            Role::AgentTerrain => in_array($pharmacie->ville_id, $compte->villesAutorisees(), true),
+            // Le pharmacien a son espace et son formulaire à un seul numéro.
+            Role::Pharmacien => false,
+        };
     }
 
     private function peutModifier(CompteAvecRole $compte, Pharmacie $pharmacie): bool

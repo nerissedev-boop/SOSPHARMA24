@@ -70,5 +70,11 @@
     "Vous ne pouvez relever des pharmacies que dans vos villes.": "You can only survey pharmacies in your cities.",
     "On ne peut plus ajouter de photo à ce relevé.": "No more photos can be added to this survey.",
     "Ce relevé a déjà été traité.": "This survey has already been processed.",
-    "Seul un relevé « à corriger » peut être modifié.": "Only a survey marked “to correct” can be edited."
+    "Seul un relevé « à corriger » peut être modifié.": "Only a survey marked “to correct” can be edited.",
+    "Le numéro ne doit contenir que des chiffres, par exemple 07 07 12 34 56.": "The number may only contain digits, for example 07 07 12 34 56.",
+    "Un seul numéro à la fois.": "One number at a time.",
+    "Ce numéro n'est pas reconnu. Saisissez-le en entier, par exemple 07 07 12 34 56.": "This number is not recognised. Enter it in full, for example 07 07 12 34 56.",
+    "Indiquez si ce numéro a WhatsApp, ou s'il devient le numéro principal.": "Say whether this number has WhatsApp, or whether it becomes the main number.",
+    "Pour changer de numéro principal, choisissez l'autre numéro comme principal.": "To change the main number, choose the other number as main.",
+    "Ce numéro est le principal. Choisissez d'abord un autre numéro principal, puis retirez celui-ci.": "This is the main number. First choose another main number, then remove this one."
 }

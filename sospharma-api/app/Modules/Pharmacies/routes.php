@@ -8,6 +8,7 @@ use App\Modules\Pharmacies\Http\Controllers\AssuranceController;
 use App\Modules\Pharmacies\Http\Controllers\EspacePharmacienController;
 use App\Modules\Pharmacies\Http\Controllers\MembrePharmacieController;
 use App\Modules\Pharmacies\Http\Controllers\PharmacieController;
+use App\Modules\Pharmacies\Http\Controllers\TelephonePharmacieController as Telephones;
 use Illuminate\Support\Facades\Route;
 
 // Public (app mobile) — les routes nommées passent avant {pharmacie}.
@@ -38,6 +39,13 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,editeur_ville'])
     Route::delete('pharmacies/{pharmacie}', [Admin::class, 'destroy']);
     Route::put('pharmacies/{pharmacie}/horaires', [Admin::class, 'horaires']);
     Route::put('pharmacies/{pharmacie}/assurances', [AdminAssuranceController::class, 'pharmacie']);
+    // Un numéro d'une autre fiche donne 404 (liaison limitée à la pharmacie de l'adresse).
+    Route::scopeBindings()->group(function (): void {
+        Route::get('pharmacies/{pharmacie}/telephones', [Telephones::class, 'index']);
+        Route::post('pharmacies/{pharmacie}/telephones', [Telephones::class, 'store']);
+        Route::patch('pharmacies/{pharmacie}/telephones/{telephone}', [Telephones::class, 'update']);
+        Route::delete('pharmacies/{pharmacie}/telephones/{telephone}', [Telephones::class, 'destroy']);
+    });
 
     Route::middleware('role:admin')->group(function (): void {
         Route::post('comptes/{compte}/pharmacies', [MembrePharmacieController::class, 'rattacher']);
@@ -60,4 +68,13 @@ Route::prefix('pharmacien')->middleware(['auth:sanctum', 'role:pharmacien'])->gr
     Route::patch('pharmacie', [EspacePharmacienController::class, 'update']);
     Route::put('pharmacie/horaires', [EspacePharmacienController::class, 'horaires']);
     Route::put('pharmacie/assurances', [EspacePharmacienController::class, 'assurances']);
+});
+
+// Espace agent terrain (app mobile) : les numéros des pharmacies de ses villes, vérifiés sur place.
+// Le reste de l'espace agent (relevés, doublons) est dans le module Relevés.
+Route::prefix('agent')->middleware(['auth:sanctum', 'role:agent_terrain'])->scopeBindings()->group(function (): void {
+    Route::get('pharmacies/{pharmacie}/telephones', [Telephones::class, 'index'])->where('pharmacie', 'ph_[a-z0-9]+');
+    Route::post('pharmacies/{pharmacie}/telephones', [Telephones::class, 'store'])->where('pharmacie', 'ph_[a-z0-9]+');
+    Route::patch('pharmacies/{pharmacie}/telephones/{telephone}', [Telephones::class, 'update'])->where('pharmacie', 'ph_[a-z0-9]+');
+    Route::delete('pharmacies/{pharmacie}/telephones/{telephone}', [Telephones::class, 'destroy'])->where('pharmacie', 'ph_[a-z0-9]+');
 });
