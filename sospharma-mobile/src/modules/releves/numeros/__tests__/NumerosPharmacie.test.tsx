@@ -148,20 +148,31 @@ describe('Numéros d’une fiche (espace agent)', () => {
     expect(screen.getByTestId('champ-nouveau-numero').props.value).toBe('');
   });
 
-  it('retirer le principal quand il en reste d’autres : refusé, le numéro revient avec le message de l’API', async () => {
-    const message = 'Ce numéro est le principal. Choisissez d’abord un autre numéro principal, puis retirez celui-ci.';
-    surcharge = ({ methode }) => (methode === 'DELETE' ? echec(422, 'VALIDATION_FAILED', message) : undefined);
+  it('pas de « Retirer » sur le principal tant qu’il en reste d’autres ; il revient après le choix d’un autre principal', async () => {
     await rendre(<NumerosPharmacie />);
     await screen.findByText('07 07 00 00 01');
-    await fireEvent.press(ligne('tl_1').getByText('Retirer ce numéro'));
+    expect(ligne('tl_1').queryByText('Retirer ce numéro')).toBeNull();
+    expect(ligne('tl_2').getByText('Retirer ce numéro')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('numero-tl_2-choisir-principal'));
+    await waitFor(() => expect(screen.getByTestId('numero-tl_2-principal')).toBeTruthy());
+    expect(ligne('tl_1').getByText('Retirer ce numéro')).toBeTruthy();
+    expect(ligne('tl_2').queryByText('Retirer ce numéro')).toBeNull();
+  });
+
+  it('retrait refusé par l’API : le numéro revient avec le message', async () => {
+    const message = 'Ce numéro ne peut pas être retiré.';
+    surcharge = ({ methode }) => (methode === 'DELETE' ? echec(422, 'VALIDATION_FAILED', message) : undefined);
+    await rendre(<NumerosPharmacie />);
+    await screen.findByText('05 05 00 00 02');
+    await fireEvent.press(ligne('tl_2').getByText('Retirer ce numéro'));
     const confirmation = useDialogues.getState().courant;
-    expect(confirmation?.titre).toBe('Retirer le 07 07 00 00 01 ?');
+    expect(confirmation?.titre).toBe('Retirer le 05 05 00 00 02 ?');
     // Bouton neutre, au libellé exact.
     const bouton = confirmation?.boutons.find((b) => b.text === 'Retirer ce numéro');
     expect(bouton?.style).toBeUndefined();
     bouton?.onPress?.();
     await waitFor(() => expect(useDialogues.getState().courant?.message).toBe(message));
-    expect(screen.getByText('07 07 00 00 01')).toBeTruthy();
+    expect(screen.getByText('05 05 00 00 02')).toBeTruthy();
   });
 
   it('retrait déjà fait ailleurs (404) : traité comme un succès, le numéro disparaît', async () => {

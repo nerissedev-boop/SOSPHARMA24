@@ -36,7 +36,8 @@ type PropsLigne = {
   modifiable: boolean;
   onWhatsapp: (valeur: boolean) => void;
   onPrincipal: () => void;
-  onRetirer: () => void;
+  /** Absent : le bouton « Retirer ce numéro » est caché (principal avec d'autres numéros). */
+  onRetirer?: () => void;
 };
 
 function LigneNumero({ telephone, premiere, modifiable, onWhatsapp, onPrincipal, onRetirer }: PropsLigne) {
@@ -112,7 +113,7 @@ function LigneNumero({ telephone, premiere, modifiable, onWhatsapp, onPrincipal,
         {dateVerification}
       </Texte>
 
-      {modifiable ? (
+      {modifiable && onRetirer ? (
         <Pressable
           onPress={onRetirer}
           accessibilityRole="button"
@@ -243,7 +244,9 @@ function NumerosPharmacie() {
             modifiable={enLigne}
             onWhatsapp={(valeur) => numeros.whatsapp.mutate({ telephone, valeur }, { onError: surErreur })}
             onPrincipal={() => numeros.principal.mutate(telephone, { onError: surErreur })}
-            onRetirer={() => retirer(telephone)}
+            // Le principal ne se retire pas tant qu'il reste d'autres numéros (règle de l'API) :
+            // on cache le bouton plutôt que d'afficher un refus. Il revient après le choix d'un autre principal.
+            onRetirer={telephone.principal && liste.length > 1 ? undefined : () => retirer(telephone)}
           />
         ))}
       </View>
