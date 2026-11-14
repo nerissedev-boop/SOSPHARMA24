@@ -9,23 +9,22 @@ import { JOURS } from '../../noyau/libelles';
 import { SessionService } from '../../noyau/session.service';
 import { Pharmacie, Plage, Reference } from '../../noyau/types';
 import { EtatChargement } from '../../ui/chargement';
+import { NumerosPharmacie } from './numeros-pharmacie';
 
 interface Formulaire {
   nom: string;
   adresse: string;
   quartier: string;
   zone: string;
-  telephone: string;
-  whatsapp: string;
   latitude: string;
   longitude: string;
   actif: boolean;
 }
 
-/** Fiche d'une pharmacie : informations, position, horaires et assurances (lecture). */
+/** Fiche d'une pharmacie : informations, numéros, position, horaires et assurances (lecture). */
 @Component({
   selector: 'app-fiche-pharmacie',
-  imports: [FormsModule, RouterLink, DatePipe, LucideAngularModule, EtatChargement],
+  imports: [FormsModule, RouterLink, DatePipe, LucideAngularModule, EtatChargement, NumerosPharmacie],
   template: `
     <a routerLink="/pharmacies" class="inline-flex items-center gap-1 text-sm text-marque hover:underline">
       <lucide-icon [img]="ArrowLeft" [size]="14" /> Pharmacies
@@ -51,73 +50,69 @@ interface Formulaire {
       </div>
 
       <div class="mt-5 grid gap-5 lg:grid-cols-3">
-        <form class="carte space-y-4 lg:col-span-2" (ngSubmit)="enregistrer(false)">
-          <h2>Informations</h2>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <div class="sm:col-span-2">
-              <label class="etiquette" for="nom">Nom</label>
-              <input id="nom" name="nom" class="champ" required [(ngModel)]="f.nom" />
+        <div class="space-y-5 lg:col-span-2">
+          <form class="carte space-y-4" (ngSubmit)="enregistrer(false)">
+            <h2>Informations</h2>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="sm:col-span-2">
+                <label class="etiquette" for="nom">Nom</label>
+                <input id="nom" name="nom" class="champ" required [(ngModel)]="f.nom" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="etiquette" for="adresse">Adresse ou repère</label>
+                <input id="adresse" name="adresse" class="champ" required [(ngModel)]="f.adresse" />
+              </div>
+              <div>
+                <label class="etiquette" for="quartier">Quartier</label>
+                <input id="quartier" name="quartier" class="champ" [(ngModel)]="f.quartier" />
+              </div>
+              <div>
+                <label class="etiquette" for="zone">Commune</label>
+                <select id="zone" name="zone" class="champ" [(ngModel)]="f.zone">
+                  <option value="">Non rattachée</option>
+                  @for (z of zones(); track z.id) {
+                    <option [value]="z.id">{{ z.nom }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label class="etiquette" for="lat">Latitude</label>
+                <input id="lat" name="latitude" class="champ" inputmode="decimal" placeholder="5.3600" [(ngModel)]="f.latitude" />
+              </div>
+              <div>
+                <label class="etiquette" for="lng">Longitude</label>
+                <input id="lng" name="longitude" class="champ" inputmode="decimal" placeholder="-3.9600" [(ngModel)]="f.longitude" />
+              </div>
+              @if (!p.position) {
+                <p class="pastille-ocre sm:col-span-2 justify-self-start">Position à confirmer : l'app affiche la pharmacie sans la placer sur la carte.</p>
+              } @else {
+                <a class="text-sm text-marque hover:underline sm:col-span-2" target="_blank" rel="noopener"
+                   [href]="'https://www.openstreetmap.org/?mlat=' + p.position.lat + '&mlon=' + p.position.lng + '#map=18/' + p.position.lat + '/' + p.position.lng">
+                  Voir la position sur OpenStreetMap
+                </a>
+              }
+              <label class="flex items-center gap-2 text-sm sm:col-span-2">
+                <input type="checkbox" name="actif" [(ngModel)]="f.actif" class="h-4 w-4 accent-marque" />
+                Active (visible dans l'app)
+              </label>
             </div>
-            <div class="sm:col-span-2">
-              <label class="etiquette" for="adresse">Adresse ou repère</label>
-              <input id="adresse" name="adresse" class="champ" required [(ngModel)]="f.adresse" />
-            </div>
-            <div>
-              <label class="etiquette" for="quartier">Quartier</label>
-              <input id="quartier" name="quartier" class="champ" [(ngModel)]="f.quartier" />
-            </div>
-            <div>
-              <label class="etiquette" for="zone">Commune</label>
-              <select id="zone" name="zone" class="champ" [(ngModel)]="f.zone">
-                <option value="">Non rattachée</option>
-                @for (z of zones(); track z.id) {
-                  <option [value]="z.id">{{ z.nom }}</option>
-                }
-              </select>
-            </div>
-            <div>
-              <label class="etiquette" for="tel">Téléphone</label>
-              <input id="tel" name="telephone" class="champ" placeholder="+2250102030405" [(ngModel)]="f.telephone" />
-            </div>
-            <div>
-              <label class="etiquette" for="wa">WhatsApp</label>
-              <input id="wa" name="whatsapp" class="champ" placeholder="+2250102030405" [(ngModel)]="f.whatsapp" />
-            </div>
-            <div>
-              <label class="etiquette" for="lat">Latitude</label>
-              <input id="lat" name="latitude" class="champ" inputmode="decimal" placeholder="5.3600" [(ngModel)]="f.latitude" />
-            </div>
-            <div>
-              <label class="etiquette" for="lng">Longitude</label>
-              <input id="lng" name="longitude" class="champ" inputmode="decimal" placeholder="-3.9600" [(ngModel)]="f.longitude" />
-            </div>
-            @if (!p.position) {
-              <p class="pastille-ocre sm:col-span-2 justify-self-start">Position à confirmer : l'app affiche la pharmacie sans la placer sur la carte.</p>
-            } @else {
-              <a class="text-sm text-marque hover:underline sm:col-span-2" target="_blank" rel="noopener"
-                 [href]="'https://www.openstreetmap.org/?mlat=' + p.position.lat + '&mlon=' + p.position.lng + '#map=18/' + p.position.lat + '/' + p.position.lng">
-                Voir la position sur OpenStreetMap
-              </a>
-            }
-            <label class="flex items-center gap-2 text-sm sm:col-span-2">
-              <input type="checkbox" name="actif" [(ngModel)]="f.actif" class="h-4 w-4 accent-marque" />
-              Active (visible dans l'app)
-            </label>
-          </div>
-          @if (erreurFiche()) { <p class="erreur">{{ erreurFiche() }}</p> }
-          @if (messageFiche()) { <p class="succes">{{ messageFiche() }}</p> }
-          <div class="flex flex-wrap gap-2">
-            <button type="submit" class="bouton-principal" [disabled]="envoi()">Enregistrer</button>
-            <button type="button" class="bouton-secondaire" [disabled]="envoi()" (click)="enregistrer(true)">
-              Enregistrer et marquer vérifiée
-            </button>
-            @if (session.estAdmin()) {
-              <button type="button" class="bouton-secondaire ml-auto" [disabled]="envoi()" (click)="supprimer()">
-                <lucide-icon [img]="Trash2" [size]="16" /> Supprimer « {{ pharmacie()?.nom }} »
+            @if (erreurFiche()) { <p class="erreur">{{ erreurFiche() }}</p> }
+            @if (messageFiche()) { <p class="succes">{{ messageFiche() }}</p> }
+            <div class="flex flex-wrap gap-2">
+              <button type="submit" class="bouton-principal" [disabled]="envoi()">Enregistrer</button>
+              <button type="button" class="bouton-secondaire" [disabled]="envoi()" (click)="enregistrer(true)">
+                Enregistrer et marquer vérifiée
               </button>
-            }
-          </div>
-        </form>
+              @if (session.estAdmin()) {
+                <button type="button" class="bouton-secondaire ml-auto" [disabled]="envoi()" (click)="supprimer()">
+                  <lucide-icon [img]="Trash2" [size]="16" /> Supprimer « {{ pharmacie()?.nom }} »
+                </button>
+              }
+            </div>
+          </form>
+
+          <app-numeros-pharmacie [pharmacie]="p.id" />
+        </div>
 
         <div class="space-y-5">
           <form class="carte space-y-3" (ngSubmit)="enregistrerHoraires()">
@@ -219,8 +214,6 @@ export class FichePharmacie implements OnInit {
       adresse: p.adresse ?? '',
       quartier: p.quartier ?? '',
       zone: p.zone?.id ?? '',
-      telephone: p.telephone ?? '',
-      whatsapp: p.whatsapp ?? '',
       latitude: p.position ? String(p.position.lat) : '',
       longitude: p.position ? String(p.position.lng) : '',
       actif: p.actif,
@@ -237,10 +230,10 @@ export class FichePharmacie implements OnInit {
       adresse: this.f.adresse.trim(),
       quartier: this.f.quartier.trim() || null,
       zone: this.f.zone || null,
-      telephone: this.f.telephone.replace(/\s/g, '') || null,
-      whatsapp: this.f.whatsapp.replace(/\s/g, '') || null,
       actif: this.f.actif,
     };
+    // Ni telephone ni whatsapp : les numéros ont leur section, qui écrit dans telephones_pharmacie.
+    // Les renvoyer ici rétablirait l'ancien principal choisi juste avant dans cette section.
     const lat = this.f.latitude.trim().replace(',', '.');
     const lng = this.f.longitude.trim().replace(',', '.');
     if (lat !== '' || lng !== '') {
@@ -309,5 +302,5 @@ export class FichePharmacie implements OnInit {
 }
 
 function vide(): Formulaire {
-  return { nom: '', adresse: '', quartier: '', zone: '', telephone: '', whatsapp: '', latitude: '', longitude: '', actif: true };
+  return { nom: '', adresse: '', quartier: '', zone: '', latitude: '', longitude: '', actif: true };
 }

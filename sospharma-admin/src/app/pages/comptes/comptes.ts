@@ -65,7 +65,7 @@ interface Formulaire {
         @if (f.role === 'agent_terrain') {
           <div>
             <span class="etiquette">Villes de l'agent</span>
-            <div class="flex max-h-40 flex-col gap-1 overflow-y-auto rounded-lg border border-stone-300 bg-white p-2">
+            <div class="flex max-h-40 flex-col gap-1 overflow-y-auto rounded-lg border border-filet bg-white p-2">
               @for (v of territoire.villes(); track v.id) {
                 <label class="flex items-center gap-2 text-sm">
                   <input type="checkbox" class="accent-marque" [checked]="f.villes.includes(v.id)" (change)="basculerVille(v.id)" /> {{ v.nom }}

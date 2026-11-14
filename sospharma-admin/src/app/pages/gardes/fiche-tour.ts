@@ -64,12 +64,12 @@ import { EtatChargement } from '../../ui/chargement';
               }
             </tbody>
           </table>
-          <form class="flex flex-wrap gap-2 border-t border-stone-100 p-4" (ngSubmit)="chercher()">
+          <form class="flex flex-wrap gap-2 border-t border-filet p-4" (ngSubmit)="chercher()">
             <input name="recherche" class="champ max-w-xs" placeholder="Ajouter une pharmacie…" [(ngModel)]="recherche" />
             <button type="submit" class="bouton-secondaire">Chercher</button>
           </form>
           @if (resultats().length > 0) {
-            <ul class="border-t border-stone-100 px-4 pb-4">
+            <ul class="border-t border-filet px-4 pb-4">
               @for (p of resultats(); track p.id) {
                 <li class="flex items-center justify-between gap-2 py-1.5 text-sm">
                   <span>{{ p.nom }} <span class="text-texte-2">· {{ p.zone?.nom ?? p.quartier ?? '' }}</span></span>

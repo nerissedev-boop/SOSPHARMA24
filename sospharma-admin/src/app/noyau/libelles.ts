@@ -57,8 +57,24 @@ export const ETATS_TOUR_IMPORT: Record<string, string> = {
   deja_publie: 'déjà publié, laissé tel quel',
 };
 
+export const ORIGINES_TELEPHONE: Record<string, string> = {
+  import: 'Import CSV',
+  liste_garde: 'Liste de garde',
+  osm: 'OpenStreetMap',
+  agent: 'Agent terrain',
+  admin: 'Équipe',
+  pharmacien: 'Pharmacien',
+  reprise: 'Ancienne fiche',
+};
+
 export const JOURS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
 export function libelle(table: Record<string, string>, cle: string | null | undefined): string {
   return cle ? (table[cle] ?? cle) : '—';
+}
+
+/** « +2250778681174 » → « 07 78 68 11 74 » (numéros ivoiriens à 10 chiffres) ; un autre pays reste tel quel. */
+export function telephoneLisible(numero: string): string {
+  const m = numero.match(/^\+225(\d{10})$/);
+  return m ? m[1].replace(/(\d{2})(?=\d)/g, '$1 ') : numero;
 }

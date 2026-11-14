@@ -75,7 +75,7 @@ type Filtre = 'toutes' | 'a_relire' | 'trouvee' | 'a_verifier' | 'inconnue';
           <div class="flex flex-wrap gap-1 text-xs">
             @for (f of filtres; track f.cle) {
               <button type="button" class="rounded-full border px-3 py-1"
-                [class]="filtre() === f.cle ? 'border-marque bg-marque text-white' : 'border-stone-300 bg-white'"
+                [class]="filtre() === f.cle ? 'border-marque bg-marque text-white' : 'border-surface bg-surface hover:bg-filet'"
                 (click)="filtre.set(f.cle)">{{ f.texte }}</button>
             }
           </div>
@@ -181,7 +181,7 @@ type Filtre = 'toutes' | 'a_relire' | 'trouvee' | 'a_verifier' | 'inconnue';
         @if (erreurImport()) { <p class="erreur">{{ erreurImport() }}</p> }
 
         @if (bilan(); as b) {
-          <div [class]="simulation() ? 'rounded-lg border border-stone-200 bg-surface p-4' : 'succes p-4'">
+          <div [class]="simulation() ? 'rounded-lg bg-surface p-4' : 'succes p-4'">
             <div class="font-medium">
               {{ simulation() ? 'Simulation : rien n’a été enregistré.' : 'Import terminé.' }}
               @if (b.premier_jour && b.dernier_jour) {

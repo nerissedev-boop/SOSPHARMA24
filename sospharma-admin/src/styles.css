@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-/* Couleurs reprises de l'app mobile (sospharma-mobile/src/commun/theme/jetons.ts). */
+/* Couleurs reprises de l'app mobile (sospharma-mobile/src/commun/theme/jetons.ts, thème jour).
+   Neutres argentés depuis la refonte v2 (14 nov.) : aucun gris de Tailwind (stone, gray…), trop sable ou trop bleutés. */
 @theme {
   --color-marque: #1b8a3e;
   --color-marque-fonce: #136b30;
@@ -8,12 +9,18 @@
   --color-marque-profond: #0f3d22;
   --color-alerte: #d32f2f;
   --color-alerte-clair: #fdecec;
+  --color-alerte-texte: #b71c1c;
   --color-ocre: #8a5300;
   --color-ocre-clair: #fff1d6;
-  --color-fond: #fbf8f3;
-  --color-surface: #f2ede4;
+  --color-fond: #f3f5f3;
+  /* Champs, filtres, puces, boutons secondaires : un cran sous le fond, sans bordure. */
+  --color-surface: #e8ebe8;
+  --color-surface-2: #edf0ed;
+  --color-filet: #dfe3df;
   --color-texte: #1c1f1a;
-  --color-texte-2: #5a5f55;
+  --color-texte-2: #565d58;
+  --color-texte-3: #5f6661;
+  --color-voile: #0f1f17;
   --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -36,7 +43,7 @@
 /* Classes maison : déclarées en @utility pour pouvoir se combiner entre elles (Tailwind 4). */
 
 @utility champ {
-  @apply block w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-marque focus:ring-2 focus:ring-marque/20 disabled:bg-stone-100;
+  @apply block w-full rounded-lg border border-transparent bg-surface px-3 py-2 text-sm outline-none focus:border-marque focus:bg-white focus:ring-2 focus:ring-marque/20 disabled:bg-surface-2 disabled:text-texte-2;
 }
 
 @utility etiquette {
@@ -52,20 +59,20 @@
 }
 
 @utility bouton-secondaire {
-  @apply bouton border border-stone-300 bg-white text-texte hover:bg-surface;
+  @apply bouton bg-surface text-texte hover:bg-filet;
 }
 
 @utility carte {
-  @apply rounded-xl border border-stone-200 bg-white p-5 shadow-sm;
+  @apply rounded-xl border border-filet bg-white p-5;
 }
 
 @utility tableau {
   @apply w-full text-left text-sm;
   & th {
-    @apply border-b border-stone-200 px-3 py-2 text-xs font-semibold tracking-wide text-texte-2 uppercase;
+    @apply border-b border-filet px-3 py-2 text-xs font-semibold tracking-wide text-texte-2 uppercase;
   }
   & td {
-    @apply border-b border-stone-100 px-3 py-2.5 align-top;
+    @apply border-b border-surface-2 px-3 py-2.5 align-top;
   }
   & tbody tr:hover {
     @apply bg-marque-clair/50;
@@ -88,13 +95,13 @@
 }
 
 @utility pastille-grise {
-  @apply pastille bg-stone-100 text-stone-600;
+  @apply pastille bg-surface text-texte-2;
 }
 
 @utility erreur {
-  @apply rounded-lg border border-red-200 bg-alerte-clair px-3 py-2 text-sm text-red-800;
+  @apply rounded-lg bg-alerte-clair px-3 py-2 text-sm text-alerte-texte;
 }
 
 @utility succes {
-  @apply rounded-lg border border-green-200 bg-marque-clair px-3 py-2 text-sm text-marque-fonce;
+  @apply rounded-lg bg-marque-clair px-3 py-2 text-sm text-marque-fonce;
 }

@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ArrowLeft, Download, FileUp, LucideAngularModule, RotateCcw, X } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
 import { ApiService, messageErreur } from '../../noyau/api.service';
+import { telephoneLisible } from '../../noyau/libelles';
 import { TerritoireService } from '../../noyau/territoire.service';
 import { BilanImportPharmacies, LigneImportPharmacie, Reference } from '../../noyau/types';
 
@@ -33,6 +34,7 @@ const CHAMPS: Record<string, string> = {
   quartier: 'quartier',
   zone: 'commune',
   telephone: 'téléphone',
+  telephones: 'numéros ajoutés',
   whatsapp: 'WhatsApp',
   position: 'position',
   h24: '24 h/24',
@@ -40,15 +42,16 @@ const CHAMPS: Record<string, string> = {
   assurances: 'assurances',
 };
 
-/** « +2250778681174 » → « 07 78 68 11 74 » (numéros ivoiriens à 10 chiffres). */
-function telephoneLisible(numero: string): string {
-  const m = numero.match(/^\+225(\d{10})$/);
-  return m ? m[1].replace(/(\d{2})(?=\d)/g, '$1 ') : numero;
-}
+/**
+ * Avertissements de NumerosTelephone (numéro recollé, début inhabituel, « 1 » ignoré) et morceaux illisibles.
+ * L'API les mêle aux autres messages de la ligne, sans code : on les reconnaît à leur début.
+ */
+const AVERTISSEMENT_NUMERO =
+  /^(Numéro corrigé|Numéro au début inhabituel|Chiffre « 1 » ignoré|Téléphone illisible|WhatsApp illisible)/;
 
 const MODELE =
   'nom;adresse;quartier;commune;telephone;whatsapp;latitude;longitude;h24;services;assurances;id\n' +
-  "Pharmacie de l'Étoile;Boulevard Latrille, face à la station;Riviera 2;Cocody;07 07 12 34 56;;5.3601;-3.9612;non;;;\n" +
+  "Pharmacie de l'Étoile;Boulevard Latrille, face à la station;Riviera 2;Cocody;07 07 12 34 56 / 27 22 44 55 66;;5.3601;-3.9612;non;;;\n" +
   'Pharmacie du Marché;;;Adjamé;0505050505;;;;oui;;;\n';
 
 /** Remplir l'annuaire d'une ville depuis un tableur : la pharmacie existe → mise à jour, sinon création. */
@@ -56,92 +59,159 @@ const MODELE =
   selector: 'app-import-pharmacies',
   imports: [FormsModule, RouterLink, LucideAngularModule],
   template: `
-    <a routerLink="/pharmacies" class="inline-flex items-center gap-1 text-sm text-marque hover:underline">
+    <a
+      routerLink="/pharmacies"
+      class="inline-flex items-center gap-1 text-sm text-marque hover:underline"
+    >
       <lucide-icon [img]="ArrowLeft" [size]="14" /> Pharmacies
     </a>
     <h1 class="mt-2">Importer des pharmacies</h1>
     <p class="mt-1 max-w-3xl text-sm text-texte-2">
-      Si la pharmacie existe déjà, sa fiche est mise à jour ; sinon elle est créée. Une pharmacie existante est reconnue
-      par la colonne <code>id</code>, puis par son téléphone, puis par son nom dans la même commune.
-      Une cellule vide ne remplace rien.
+      Si la pharmacie existe déjà, sa fiche est mise à jour ; sinon elle est créée. Une pharmacie
+      existante est reconnue par la colonne <code>id</code>, puis par son téléphone, puis par son
+      nom dans la même commune. Une cellule vide ne remplace rien.
     </p>
     <p class="mt-1 text-sm">
       Vous avez le texte de la liste de l'Ordre (« PHCIE … / M. … - TEL. … ») plutôt qu'un tableur ?
-      <a routerLink="/gardes/liste-officielle" class="text-marque hover:underline">Collez-le ici</a>.
+      <a routerLink="/gardes/liste-officielle" class="text-marque hover:underline">Collez-le ici</a
+      >.
+    </p>
+    <p class="mt-1 text-sm">
+      Pour une grosse mise à jour&nbsp;:
+      <a routerLink="/pharmacies" class="text-marque hover:underline">exportez la liste</a>,
+      corrigez-la dans Excel, puis importez-la ici. La colonne <code>id</code> fait reconnaître
+      chaque fiche.
     </p>
 
     <div class="carte mt-5 space-y-4">
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <label class="etiquette" for="ville">Ville</label>
-          <select id="ville" name="ville" class="champ" [(ngModel)]="ville" (ngModelChange)="changerVille()">
+          <select
+            id="ville"
+            name="ville"
+            class="champ"
+            [(ngModel)]="ville"
+            (ngModelChange)="changerVille()"
+          >
             <option value="" disabled>Choisir…</option>
-            @for (v of territoire.villes(); track v.id) { <option [value]="v.id">{{ v.nom }}</option> }
+            @for (v of territoire.villes(); track v.id) {
+              <option [value]="v.id">{{ v.nom }}</option>
+            }
           </select>
         </div>
         <div>
           <span class="etiquette">Fichier CSV</span>
           <label class="bouton-secondaire w-full cursor-pointer">
-            <lucide-icon [img]="FileUp" [size]="16" /> {{ fichier()?.name ?? 'Choisir un fichier…' }}
-            <input type="file" accept=".csv,text/csv,text/plain" class="hidden" (change)="choisir($event)" />
+            <lucide-icon [img]="FileUp" [size]="16" />
+            {{ fichier()?.name ?? 'Choisir un fichier…' }}
+            <input
+              type="file"
+              accept=".csv,text/csv,text/plain"
+              class="hidden"
+              (change)="choisir($event)"
+            />
           </label>
         </div>
       </div>
       <div class="rounded-lg bg-surface px-4 py-3 text-xs text-texte-2">
-        La <strong>ville</strong> se choisit ci-dessus : un fichier par ville. Dans le fichier, seule la colonne <strong>nom</strong>
-        est obligatoire. Facultatives : adresse, quartier, <strong>commune</strong> (nom tel qu’affiché ci-dessous), telephone,
-        whatsapp, latitude, longitude, h24 (oui/non), services et assurances (séparés par « | »), id.
-        Séparateur « ; » ou « , ». Depuis Excel : Enregistrer sous › CSV UTF-8.
-        <button type="button" class="ml-1 inline-flex items-center gap-1 text-marque hover:underline" (click)="telechargerModele()">
+        La <strong>ville</strong> se choisit ci-dessus : un fichier par ville. Dans le fichier,
+        seule la colonne <strong>nom</strong> est obligatoire. Facultatives : adresse, quartier,
+        <strong>commune</strong> (nom tel qu’affiché ci-dessous), telephone (plusieurs numéros
+        séparés par « / », le premier est le principal), whatsapp, latitude, longitude, h24
+        (oui/non), services et assurances (séparés par « | »), id. Séparateur « ; » ou « , ». Depuis
+        Excel : Enregistrer sous › CSV UTF-8.
+        <button
+          type="button"
+          class="ml-1 inline-flex items-center gap-1 text-marque hover:underline"
+          (click)="telechargerModele()"
+        >
           <lucide-icon [img]="Download" [size]="12" /> Télécharger un modèle
         </button>
       </div>
       @if (ville) {
         <div class="text-sm">
-          <div class="etiquette">Communes de {{ nomVille() }}, à écrire dans la colonne « commune »</div>
+          <div class="etiquette">
+            Communes de {{ nomVille() }}, à écrire dans la colonne « commune »
+          </div>
           @if (communes().length) {
             <div class="flex flex-wrap gap-1.5">
               @for (c of communes(); track c.id) {
-                <button type="button" class="pastille-grise cursor-copy hover:bg-marque-clair" title="Copier le nom" (click)="copier(c.nom)">{{ c.nom }}</button>
+                <button
+                  type="button"
+                  class="pastille-grise cursor-copy hover:bg-marque-clair"
+                  title="Copier le nom"
+                  (click)="copier(c.nom)"
+                >
+                  {{ c.nom }}
+                </button>
               }
             </div>
             <p class="mt-1 text-xs text-texte-2">
-              Majuscules et accents sans importance. Cellule vide : la commune est déduite de la latitude et de la longitude,
-              sinon la pharmacie est rattachée à la ville seule.
-              @if (copie()) { <span class="text-marque-fonce">« {{ copie() }} » copié.</span> }
+              Majuscules et accents sans importance. Cellule vide : la commune est déduite de la
+              latitude et de la longitude, sinon la pharmacie est rattachée à la ville seule.
+              @if (copie()) {
+                <span class="text-marque-fonce">« {{ copie() }} » copié.</span>
+              }
             </p>
           } @else {
-            <p class="text-xs text-texte-2">Aucune commune enregistrée pour cette ville : laissez la colonne vide.</p>
+            <p class="text-xs text-texte-2">
+              Aucune commune enregistrée pour cette ville : laissez la colonne vide.
+            </p>
           }
         </div>
       }
       <div class="flex flex-wrap gap-2">
-        <button type="button" class="bouton-principal" [disabled]="!pret() || envoi()" (click)="envoyer(true)">
+        <button
+          type="button"
+          class="bouton-principal"
+          [disabled]="!pret() || envoi()"
+          (click)="envoyer(true)"
+        >
           {{ envoi() ? 'Lecture…' : 'Prévisualiser' }}
         </button>
       </div>
-      @if (erreur()) { <p class="erreur">{{ erreur() }}</p> }
-      @if (enregistre()) { <p class="succes">{{ enregistre() }}</p> }
+      @if (erreur()) {
+        <p class="erreur">{{ erreur() }}</p>
+      }
+      @if (enregistre()) {
+        <p class="succes">{{ enregistre() }}</p>
+      }
     </div>
 
     @if (bilan(); as b) {
       <div class="carte mt-5">
         <div class="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2>{{ b.simulation ? 'Aperçu : rien n’est encore enregistré' : 'Import enregistré' }}</h2>
+            <h2>
+              {{ b.simulation ? 'Aperçu : rien n’est encore enregistré' : 'Import enregistré' }}
+            </h2>
             <p class="mt-1 text-sm">
               <span class="text-marque-fonce">{{ b.creees }} à créer</span> ·
               <span class="text-ocre">{{ b.mises_a_jour }} mises à jour</span> ·
               {{ b.inchangees }} déjà à jour ·
-              <span [class.text-ocre]="b.ambigues + b.erreurs > 0">{{ b.ambigues + b.erreurs }} à regarder</span>
-              @if (nombreRetirees()) { · {{ nombreRetirees() }} retirées }
+              <span [class.text-ocre]="b.ambigues + b.erreurs > 0"
+                >{{ b.ambigues + b.erreurs }} à regarder</span
+              >
+              @if (nombreRetirees()) {
+                · {{ nombreRetirees() }} retirées
+              }
             </p>
           </div>
           <div class="flex flex-wrap gap-1 text-xs">
             @for (f of filtres; track f.cle) {
-              <button type="button" class="rounded-full border px-3 py-1"
-                [class]="filtre() === f.cle ? 'border-marque bg-marque text-white' : 'border-stone-300 bg-white'"
-                (click)="filtre.set(f.cle)">{{ f.texte }}</button>
+              <button
+                type="button"
+                class="rounded-full border px-3 py-1"
+                [class]="
+                  filtre() === f.cle
+                    ? 'border-marque bg-marque text-white'
+                    : 'border-surface bg-surface hover:bg-filet'
+                "
+                (click)="filtre.set(f.cle)"
+              >
+                {{ f.texte }}
+              </button>
             }
           </div>
         </div>
@@ -149,7 +219,16 @@ const MODELE =
         <div class="mt-4 overflow-x-auto">
           <table class="tableau">
             <thead>
-              <tr><th></th><th>Ligne</th><th>Pharmacie</th><th>Résultat</th><th>Commune</th><th>Adresse</th><th>Téléphone</th><th>Autres informations</th></tr>
+              <tr>
+                <th></th>
+                <th>Ligne</th>
+                <th>Pharmacie</th>
+                <th>Résultat</th>
+                <th>Commune</th>
+                <th>Adresse</th>
+                <th>Numéros</th>
+                <th>Autres informations</th>
+              </tr>
             </thead>
             <tbody>
               @for (l of visibles(); track l.ligne) {
@@ -157,9 +236,18 @@ const MODELE =
                 <tr [class.opacity-50]="retiree">
                   <td>
                     @if (b.simulation && applicable(l)) {
-                      <button type="button" class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-stone-300 px-2 py-0.5 text-xs hover:bg-surface"
-                        [title]="retiree ? 'Remettre cette ligne dans l’import' : 'Ne pas importer cette ligne'" (click)="basculer(l.ligne)">
-                        <lucide-icon [img]="retiree ? RotateCcw : X" [size]="12" /> {{ retiree ? 'Remettre' : 'Retirer' }}
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-surface px-2 py-0.5 text-xs hover:bg-filet"
+                        [title]="
+                          retiree
+                            ? 'Remettre cette ligne dans l’import'
+                            : 'Ne pas importer cette ligne'
+                        "
+                        (click)="basculer(l.ligne)"
+                      >
+                        <lucide-icon [img]="retiree ? RotateCcw : X" [size]="12" />
+                        {{ retiree ? 'Remettre' : 'Retirer' }}
                       </button>
                     }
                   </td>
@@ -169,12 +257,23 @@ const MODELE =
                     @if (l.pharmacie) {
                       <div class="text-xs text-texte-2">
                         Fiche :
-                        <a [routerLink]="['/pharmacies', l.pharmacie.id]" target="_blank" class="text-marque-fonce hover:underline">{{ l.pharmacie.nom }}</a>
-                        @if (l.methode) { ({{ methode(l.methode) }}) }
+                        <a
+                          [routerLink]="['/pharmacies', l.pharmacie.id]"
+                          target="_blank"
+                          class="text-marque-fonce hover:underline"
+                          >{{ l.pharmacie.nom }}</a
+                        >
+                        @if (l.methode) {
+                          ({{ methode(l.methode) }})
+                        }
                       </div>
                     }
                   </td>
-                  <td><span [class]="action(retiree ? 'retiree' : l.action).classe">{{ action(retiree ? 'retiree' : l.action).texte }}</span></td>
+                  <td>
+                    <span [class]="action(retiree ? 'retiree' : l.action).classe">{{
+                      action(retiree ? 'retiree' : l.action).texte
+                    }}</span>
+                  </td>
                   @for (c of colonnes; track c.valeur) {
                     <td [class]="c.classe">
                       @let v = cellule(l, c.valeur, c.champ);
@@ -182,39 +281,77 @@ const MODELE =
                         <div class="text-xs text-texte-2 line-through">{{ v.ancien }}</div>
                       }
                       @if (v.nouveau !== null) {
-                        <div [class.text-marque-fonce]="v.change" [class.font-medium]="v.change">{{ v.nouveau }}</div>
+                        <div [class.text-marque-fonce]="v.change" [class.font-medium]="v.change">
+                          {{ v.nouveau }}
+                        </div>
                       } @else {
                         <span class="text-texte-2">—</span>
                       }
                     </td>
                   }
+                  <td class="whitespace-nowrap tabular-nums">
+                    @for (n of numeros(l); track n.numero) {
+                      <div [class.font-medium]="n.ajoute" [class.text-marque-fonce]="n.ajoute">
+                        {{ n.lisible }}
+                        @if (n.ajoute) {
+                          <span class="text-xs font-normal"> ajouté</span>
+                        }
+                      </div>
+                    } @empty {
+                      <span class="text-texte-2">—</span>
+                    }
+                  </td>
                   <td class="min-w-48 text-xs">
-                    @for (a of autres(l); track a) { <div>{{ a }}</div> }
+                    @for (a of autres(l); track a) {
+                      <div>{{ a }}</div>
+                    }
                     @for (m of l.messages; track $index) {
-                      <div [class]="l.action === 'erreur' || l.action === 'ambigue' ? 'font-medium text-ocre' : 'text-texte-2'">{{ m }}</div>
+                      <div [class]="classeMessage(l, m)">{{ m }}</div>
                     }
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="8" class="py-6 text-center text-texte-2">Aucune ligne pour ce filtre.</td></tr>
+                <tr>
+                  <td colspan="8" class="py-6 text-center text-texte-2">
+                    Aucune ligne pour ce filtre.
+                  </td>
+                </tr>
               }
             </tbody>
           </table>
         </div>
 
         @if (b.simulation) {
-          <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-stone-100 pt-4">
-            <button type="button" class="bouton-principal" [disabled]="envoi() || aEnregistrer().creees + aEnregistrer().misesAJour === 0" (click)="envoyer(false)">
-              Enregistrer {{ aEnregistrer().creees }} créations et {{ aEnregistrer().misesAJour }} mises à jour
+          <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-filet pt-4">
+            <button
+              type="button"
+              class="bouton-principal"
+              [disabled]="envoi() || aEnregistrer().creees + aEnregistrer().misesAJour === 0"
+              (click)="envoyer(false)"
+            >
+              Enregistrer {{ aEnregistrer().creees }} créations et
+              {{ aEnregistrer().misesAJour }} mises à jour
             </button>
             @if (retirees().size) {
-              <button type="button" class="text-sm text-marque hover:underline" (click)="toutRemettre()">Tout remettre</button>
+              <button
+                type="button"
+                class="text-sm text-marque hover:underline"
+                (click)="toutRemettre()"
+              >
+                Tout remettre
+              </button>
             }
             @if (b.ambigues + b.erreurs > 0) {
-              <span class="text-sm text-texte-2">Les lignes à regarder seront laissées de côté. Corrigez le fichier et relancez pour les reprendre.</span>
+              <span class="text-sm text-texte-2"
+                >Les lignes à regarder seront laissées de côté. Corrigez le fichier et relancez pour
+                les reprendre.</span
+              >
             }
             @if (retirees().size) {
-              <span class="text-sm text-texte-2">Une ligne retirée change parfois le rapprochement des autres : « Prévisualiser » à nouveau pour le vérifier.</span>
+              <span class="text-sm text-texte-2"
+                >Une ligne retirée change parfois le rapprochement des autres : « Prévisualiser » à
+                nouveau pour le vérifier.</span
+              >
             }
           </div>
         }
@@ -237,7 +374,9 @@ export class ImportPharmacies implements OnInit {
   protected readonly copie = signal<string | null>(null);
   /** Numéros des lignes retirées de l'import par l'administrateur, dans l'aperçu. */
   protected readonly retirees = signal<ReadonlySet<number>>(new Set());
-  protected readonly nombreRetirees = computed(() => this.bilan()?.retirees ?? this.retirees().size);
+  protected readonly nombreRetirees = computed(
+    () => this.bilan()?.retirees ?? this.retirees().size,
+  );
 
   /** Ce que « Enregistrer » écrira vraiment : les lignes retirées ne comptent plus. */
   protected readonly aEnregistrer = computed(() => {
@@ -261,7 +400,10 @@ export class ImportPharmacies implements OnInit {
     const f = this.filtre();
     const lignes = this.bilan()?.lignes ?? [];
     if (f === 'toutes') return lignes;
-    if (f === 'a_regarder') return lignes.filter((l) => l.action === 'erreur' || l.action === 'ambigue' || l.messages.length > 0);
+    if (f === 'a_regarder')
+      return lignes.filter(
+        (l) => l.action === 'erreur' || l.action === 'ambigue' || l.messages.length > 0,
+      );
     return lignes.filter((l) => l.action === f);
   });
 
@@ -339,16 +481,41 @@ export class ImportPharmacies implements OnInit {
   protected readonly colonnes = [
     { valeur: 'commune', champ: 'zone', classe: 'whitespace-nowrap' },
     { valeur: 'adresse', champ: 'adresse', classe: 'min-w-64 text-xs' },
-    { valeur: 'telephone', champ: 'telephone', classe: 'whitespace-nowrap' },
   ] as const;
 
   /** Valeur lue, et pour une mise à jour l'ancienne valeur de la fiche (barrée à l'écran). */
-  protected cellule(l: LigneImportPharmacie, valeur: 'commune' | 'adresse' | 'telephone', champ: string) {
-    const brut = l.valeurs?.[valeur] ?? null;
+  protected cellule(l: LigneImportPharmacie, valeur: 'commune' | 'adresse', champ: string) {
+    const nouveau = l.valeurs?.[valeur] ?? null;
     const change = l.changements.includes(champ);
     const ancien = change && l.avant ? (l.avant[champ] as string | null) : null;
-    const lisible = (v: string | null) => (v && valeur === 'telephone' ? telephoneLisible(v) : v);
-    return { nouveau: lisible(brut), ancien: ancien ? lisible(ancien) : null, change };
+    return { nouveau, ancien, change };
+  }
+
+  /**
+   * Tous les numéros lus sur la ligne, le premier étant le principal. Une mise à jour ne retire aucun numéro
+   * de la fiche : on marque seulement ceux qu'elle n'a pas encore (`avant.telephones`).
+   */
+  protected numeros(
+    l: LigneImportPharmacie,
+  ): { numero: string; lisible: string; ajoute: boolean }[] {
+    const v = l.valeurs;
+    if (!v) return [];
+    const lus = v.telephones ?? (v.telephone ? [v.telephone] : []);
+    const connus =
+      l.action === 'mettre_a_jour' && l.changements.includes('telephones')
+        ? ((l.avant?.['telephones'] as string[] | undefined) ?? [])
+        : null;
+    return lus.map((numero) => ({
+      numero,
+      lisible: telephoneLisible(numero),
+      ajoute: connus !== null && !connus.includes(numero),
+    }));
+  }
+
+  /** Erreur ou doublon : la ligne est écartée. Numéro corrigé ou douteux : à vérifier avant d'enregistrer. */
+  protected classeMessage(l: LigneImportPharmacie, message: string): string {
+    if (l.action === 'erreur' || l.action === 'ambigue') return 'font-medium text-ocre';
+    return AVERTISSEMENT_NUMERO.test(message) ? 'text-ocre' : 'text-texte-2';
   }
 
   /** Quartier, WhatsApp, position, 24 h/24, services, assurances : seulement ce que le fichier donne. */
@@ -362,7 +529,9 @@ export class ImportPharmacies implements OnInit {
     if (v.h24 !== null) liste.push(v.h24 ? 'Ouverte 24 h/24' : 'Pas 24 h/24');
     if (v.services.length) liste.push(`Services : ${v.services.join(', ')}`);
     if (v.assurances.length) liste.push(`Assurances : ${v.assurances.join(', ')}`);
-    const autresChangements = l.changements.filter((c) => !['zone', 'adresse', 'telephone'].includes(c));
+    const autresChangements = l.changements.filter(
+      (c) => !['zone', 'adresse', 'telephone'].includes(c),
+    );
     if (autresChangements.length) liste.push(`Change aussi : ${this.champs(autresChangements)}`);
     return liste;
   }
@@ -392,7 +561,8 @@ export class ImportPharmacies implements OnInit {
   protected async envoyer(simulation: boolean): Promise<void> {
     const fichier = this.fichier();
     if (!fichier || !this.ville) return;
-    if (!simulation && !confirm('Enregistrer ces créations et mises à jour dans l’annuaire ?')) return;
+    if (!simulation && !confirm('Enregistrer ces créations et mises à jour dans l’annuaire ?'))
+      return;
 
     const formulaire = new FormData();
     formulaire.append('ville', this.ville);
@@ -404,7 +574,9 @@ export class ImportPharmacies implements OnInit {
     this.erreur.set(null);
     this.enregistre.set(null);
     try {
-      const b = await firstValueFrom(this.api.post<BilanImportPharmacies>('admin/pharmacies/import', formulaire));
+      const b = await firstValueFrom(
+        this.api.post<BilanImportPharmacies>('admin/pharmacies/import', formulaire),
+      );
       this.bilan.set(b);
       this.filtre.set(simulation && b.ambigues + b.erreurs > 0 ? 'a_regarder' : 'toutes');
       if (!simulation) {

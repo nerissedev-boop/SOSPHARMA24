@@ -70,6 +70,20 @@ export interface Pharmacie {
   modifie_le: string | null;
 }
 
+/** Un numéro d'une fiche (GET admin/pharmacies/{id}/telephones), le principal en premier. */
+export interface TelephonePharmacie {
+  id: string;
+  /** Format international : +2250707123456. */
+  numero: string;
+  rang: number;
+  /** Rang 1 : le numéro du bouton « Appeler » dans l'app. */
+  principal: boolean;
+  whatsapp: boolean;
+  /** Date de la dernière réponse d'une personne, oui ou non ; null : personne n'a encore vérifié. */
+  whatsapp_confirme_le: string | null;
+  origine: string;
+}
+
 export type StatutSignalement = 'nouveau' | 'traite' | 'rejete';
 
 export interface Signalement {
@@ -196,7 +210,10 @@ export interface LigneImportPharmacie {
     adresse: string | null;
     quartier: string | null;
     commune: string | null;
+    /** Premier numéro lu, le principal. */
     telephone: string | null;
+    /** Tous les numéros lus (« / » ou « | » dans la cellule) ; absent des anciennes versions de l'API. */
+    telephones?: string[];
     whatsapp: string | null;
     position: { lat: number; lng: number } | null;
     h24: boolean | null;

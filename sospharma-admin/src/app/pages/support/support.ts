@@ -42,7 +42,7 @@ import { PaginationListe } from '../../ui/pagination';
           <div class="mt-2 text-sm text-texte-2">Contact : {{ m.contact || 'aucun' }}</div>
           @if (m.a_une_capture && m.capture_url) {
             @if (captures()[m.id]; as url) {
-              <img [src]="url" alt="Capture d'écran jointe" class="mt-3 max-h-96 rounded-lg border border-stone-200" />
+              <img [src]="url" alt="Capture d'écran jointe" class="mt-3 max-h-96 rounded-lg border border-filet" />
             } @else {
               <button type="button" class="mt-2 text-sm text-marque hover:underline" (click)="voirCapture(m)">Voir la capture d'écran</button>
             }

@@ -74,11 +74,11 @@ interface Entree {
       </aside>
 
       @if (menuOuvert()) {
-        <div class="fixed inset-0 z-20 bg-black/40 lg:hidden" (click)="menuOuvert.set(false)"></div>
+        <div class="fixed inset-0 z-20 bg-voile/55 lg:hidden" aria-hidden="true" (click)="menuOuvert.set(false)"></div><!-- ui-check-ignore : raccourci souris, le clavier ferme par « Fermer le menu » -->
       }
 
       <div class="flex min-w-0 flex-1 flex-col">
-        <header class="flex items-center gap-3 border-b border-stone-200 bg-white px-4 py-3 lg:hidden">
+        <header class="flex items-center gap-3 border-b border-filet bg-white px-4 py-3 lg:hidden">
           <button type="button" (click)="menuOuvert.set(true)" aria-label="Ouvrir le menu">
             <lucide-icon [img]="Menu" [size]="22" />
           </button>
