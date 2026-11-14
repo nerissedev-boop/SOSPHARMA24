@@ -46,7 +46,7 @@ final class ImportListeGarde
     /**
      * @param  array<int, array{action: string, pharmacie?: string|null}>  $decisions  par rang dans la liste (0, 1…) ; sans décision : action proposée
      * @return array{
-     *     premier_jour: string, dernier_jour: string,
+     *     premier_jour: string|null, dernier_jour: string|null,
      *     tours: list<array{ville: string, tour: string|null, etat: string, gardes: int}>,
      *     fiches_creees: int, telephones_completes: int, adresses_completees: int,
      *     ignorees: list<array{rang: int, nom: string, raison: string}>
@@ -59,17 +59,21 @@ final class ImportListeGarde
         ?CarbonImmutable $premierJour = null,
         ?CarbonImmutable $dernierJour = null,
         bool $simulation = false,
+        bool $annuaireSeulement = false,
     ): array {
         [$liste, $resultats] = $this->rapprochement->analyser($texte);
         $premierJour ??= $liste->premierJour;
         $dernierJour ??= $liste->dernierJour;
-        if ($premierJour === null || $dernierJour === null || $dernierJour->lessThan($premierJour)) {
+        // Annuaire seulement : fiches créées ou complétées, sans tour de garde, la période ne sert pas.
+        if ($annuaireSeulement) {
+            $premierJour = $dernierJour = null;
+        } elseif ($premierJour === null || $dernierJour === null || $dernierJour->lessThan($premierJour)) {
             throw new DonneesInvalides('', ['periode' => ['Période introuvable dans l\'en-tête de la liste : indiquez le premier et le dernier jour.']]);
         }
 
         $bilan = [
-            'premier_jour' => $premierJour->toDateString(),
-            'dernier_jour' => $dernierJour->toDateString(),
+            'premier_jour' => $premierJour?->toDateString(),
+            'dernier_jour' => $dernierJour?->toDateString(),
             'tours' => [],
             'fiches_creees' => 0,
             'telephones_completes' => 0,
@@ -86,6 +90,9 @@ final class ImportListeGarde
                 if ($pharmacie !== null) {
                     $parVille[$pharmacie->ville_id][$pharmacie->id] = true;
                 }
+            }
+            if ($premierJour === null || $dernierJour === null) {
+                return;
             }
             foreach ($parVille as $villeId => $pharmacies) {
                 $bilan['tours'][] = $this->tour($villeId, array_keys($pharmacies), $premierJour, $dernierJour, $auteur);

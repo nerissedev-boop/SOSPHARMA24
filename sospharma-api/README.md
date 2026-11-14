@@ -4,7 +4,7 @@ API Laravel de SOS Pharma 24 : trouver une pharmacie ouverte ou de garde près d
 
 Le document de référence est `specs/architecture.md`, validé par le client. Ce dépôt correspond à l'**étape 1 de la feuille de route** (socle API), complétée par les **assurances multiples** et le module **Relevés** (agents terrain).
 
-> ⚠️ Ce socle a été écrit **sans pouvoir être exécuté** : Packagist était inaccessible, donc pas de `vendor/`, pas d'`artisan` et pas de tests lancés. Lisez la section « À faire / non vérifié » avant la première mise en route.
+> Le socle a d'abord été écrit sans pouvoir être exécuté (Packagist inaccessible). Depuis le 23 oct. 2026, il est installé et tourne : migrations sur MySQL, suite Pest lancée (176 tests au 12 nov. 2026), API en ligne sur o2switch (`https://api.oculismanager.com/api/v1`). La section « À faire / non vérifié » liste ce qui reste à contrôler.
 
 ---
 
@@ -323,15 +323,19 @@ ph_test01;;
 ph_test04;2026-10-24 20:00;2026-10-25 02:00
 ```
 
-**Pharmacies** (`POST /admin/pharmacies/import`) :
+**Pharmacies** (`POST /admin/pharmacies/import`, champs `ville`, `fichier`, `simulation` facultatif) : **mise à jour si la pharmacie existe, sinon création**.
 
-- colonnes obligatoires : `nom;adresse;latitude;longitude` ;
-- colonnes facultatives : `quartier;telephone;whatsapp;h24;services;assurances;zone` ;
-- `services` et `assurances` séparés par `|`, téléphones au format `+225…`.
+- la ville se choisit à l'envoi (champ `ville`), une ville par fichier ; seule la colonne `nom` est obligatoire ; facultatives : `id;adresse;quartier;commune;telephone;whatsapp;latitude;longitude;h24;services;assurances` ;
+- `services` et `assurances` (slugs) séparés par `|` ; téléphones `+225…` ou à 10 chiffres (l'indicatif du pays est ajouté) ; `h24` : `oui`/`1` ;
+- fiche existante cherchée dans la ville, dans cet ordre : colonne `id`, même téléphone ou WhatsApp (s'il n'est qu'à une fiche), même nom départagé par la commune ou une position à moins de 300 m. Plusieurs fiches possibles : ligne `ambigue`, non appliquée ;
+- mise à jour : seules les cellules remplies et différentes sont écrites, une cellule vide n'efface rien ; un nom qui ne diffère que par « Pharmacie », les accents ou la ponctuation est gardé ; les assurances s'ajoutent ;
+- création sans adresse : « Adresse à vérifier » ; sans position : « Position à confirmer » ;
+- **ce n'est pas tout ou rien** : une ligne en erreur est écartée, les autres sont appliquées dans une transaction. `simulation=1` renvoie le même bilan sans rien écrire ;
+- réponse : `creees`, `mises_a_jour`, `inchangees`, `ambigues`, `erreurs` et `lignes[]` `{ligne, nom, action, pharmacie, methode, changements, messages}`.
 
 **Zones** (`POST /admin/zones/import`) : une `FeatureCollection` GeoJSON. Chaque Feature porte `properties.nom` et `properties.type` (`commune` par défaut) et une géométrie Polygon ou MultiPolygon.
 
-Pour les trois imports, c'est **tout ou rien** : la moindre erreur annule l'import et renvoie un 422 dont `error.details` liste les erreurs ligne par ligne (`ligne_3`) ou Feature par Feature (`features.2`).
+Pour les imports de tours et de zones, c'est **tout ou rien** : la moindre erreur annule l'import et renvoie un 422 dont `error.details` liste les erreurs ligne par ligne (`ligne_3`) ou Feature par Feature (`features.2`).
 
 ## Déploiement sur o2switch (pas à pas)
 
@@ -444,6 +448,10 @@ Les choix faits sans pouvoir demander, à valider :
 54. **Position facultative** (31 oct.) : `latitude` et `longitude` peuvent être nulles, pour publier une pharmacie de la liste de garde absente d'OpenStreetMap (téléphone et repère connus, position pas encore relevée). Dans les réponses, `position` vaut alors `null`, et `distance_m` et `marche_min` aussi. Ces pharmacies n'apparaissent ni dans `proches` ni dans `cadre` (recherche par rectangle) ; dans le tour de garde, elles passent après celles qu'on sait situer. `GET /pharmacies/{id}/trajet` renvoie `voiture: null`. L'app affiche « Position à confirmer », sans point sur la carte ni itinéraire, avec le bouton Appeler. La position se complète par un relevé terrain (la validation la remplit) ou par l'espace pharmacien. La création par l'équipe (`POST /admin/pharmacies`) exige toujours une position.
 55. **Liste de garde officielle** (31 oct.) : la liste de l'Ordre circule en images (chaîne WhatsApp « PHARMACIE DE GARDE CI ») ; on la passe dans PDF24 pour en tirer le texte, sans lecture automatique de WhatsApp ni de Facebook (leurs conditions l'interdisent). `LectureListeGarde` corrige les erreurs de lecture prévisibles : « / » lu « 1 » (un numéro ivoirien a 10 chiffres et commence par 01, 05, 07, 21, 25 ou 27, jamais par 1), lettres prises pour des chiffres (« og »), numéros abrégés (« 36 04/33 82 ») ou coupés en fin de ligne. Tout numéro corrigé est signalé. `RapprochementListeGarde` cherche par téléphone, puis par nom dans la ville ou la commune de la section ; il ne remplace jamais un numéro existant de lui-même (alerte « autre numéro sur la fiche »). `ImportListeGarde` applique ensuite les décisions (par défaut : rattacher les trouvées, créer les inconnues d'une ville connue, écarter les « à vérifier » non confirmées et les villes absentes) : un brouillon par ville, du premier jour 08:00 au lendemain du dernier jour 08:00, heure locale (comme le tour de démonstration ; à ajuster si la relève officielle diffère). Relancé, il remplace son brouillon ; un tour publié n'est pas touché. La publication reste un geste séparé, après contrôle.
 
+56. **Import CSV des pharmacies : mise à jour ou création** (31 oct.) : l'ancien import ne faisait que créer, en tout ou rien. Il sert maintenant à remplir l'annuaire d'une ville à partir de n'importe quel tableur : la fiche existante est reconnue (identifiant, puis téléphone, puis nom départagé par la commune ou la position) et seules les cellules remplies la modifient ; sinon la fiche est créée, sans position si besoin (décision 54). Les homonymes non départagés ne sont jamais fusionnés au hasard : la ligne est signalée « ambiguë ». Le back-office montre la simulation ligne par ligne avant l'enregistrement. Les fiches vérifiées sont aussi mises à jour : le fichier de l'équipe fait foi, contrairement à OpenStreetMap (décision 51).
+
+57. **Liste de l'Ordre sans dates : annuaire seulement** (31 oct.) : `POST /admin/listes-garde/import` accepte `annuaire_seulement` : pas de période ni de tour, les fiches inconnues d'une commune connue sont créées et les fiches trouvées reçoivent le téléphone ou l'adresse qui leur manquent (un numéro déjà présent n'est jamais remplacé, décision 55). La lecture reconnaît aussi « SECTION DE COCODY » (commune des pharmacies qui suivent), une pharmacie écrite sans « PHCIE » devant (« ST SYLVESTRE M. MPOUE - TEL. … »), le pharmacien sans point (« / M MOTTO », « / M, LOUIS ») et « TEL07 » collé au numéro. Exemple de l'équipe dans `tests/Fixtures/liste-garde-bingerville.txt`.
+
 ## Incohérences relevées dans le document d'architecture
 
 1. **Version de PHP** : « PHP 8.2 ou plus », alors que la version stable récente de Laravel (13) exige PHP 8.3. Il faut donc PHP 8.3 ou plus chez o2switch.
@@ -470,18 +478,14 @@ Les choix faits sans pouvoir demander, à valider :
 
 ## À faire / non vérifié
 
-**Rien n'a pu être exécuté.** Packagist et les téléchargements GitHub étaient bloqués : pas de `composer install`, pas d'`artisan`, pas de tests lancés. Ce qui a été fait :
+Fait depuis le premier jet (23 oct. 2026 et suivants) :
 
-- `php -l` sur tous les fichiers PHP, sans erreur ;
-- vérification par script que chaque `use App\…` pointe vers un fichier existant ;
-- signatures lues dans les sources de Laravel 13.38, Sanctum 4.3, Scramble 0.13.49 et Pest 4.7 ;
-- **la règle de statut a été exécutée avec la vraie bibliothèque Carbon sur les 9 cas de `cas-statut.json` : 9/9.**
-- deuxième lot (assurances, relevés) : `php -l` et vérification des `use` sur tous les fichiers ; suppression de l'EXIF exécutée avec GD (décision 34). Les nouveaux tests Pest (`AssurancesTest`, `RelevesTest`, architecture) **n'ont pas tourné**.
+- [x] `composer install`, `php artisan migrate:fresh --seed` sur MySQL 8.4 (Laragon en local).
+- [x] `vendor/bin/pest` (SQLite en mémoire) : la suite tourne. Lancer `php artisan optimize:clear` avant, sinon le garde-fou de `tests/TestCase.php` arrête tout (voir le `CLAUDE.md` du projet).
+- [x] Déploiement sur o2switch : l'API répond sur `https://api.oculismanager.com/api/v1`.
 
-À faire en premier :
+Encore à vérifier :
 
-- [ ] `composer install`, puis vérifier que `composer.lock` se résout (versions fixées « au mieux »).
-- [ ] `php artisan migrate:fresh --seed` sur MySQL **et** `vendor/bin/pest` (SQLite en mémoire). Corriger ce qui casse : les tests n'ont jamais tourné.
 - [ ] `vendor/bin/pint` pour harmoniser le style.
 - [ ] `php artisan route:list --path=api/v1` : vérifier les 100 routes `api/v1` (76 du socle, 13 d'assurances, 11 de relevés) et leurs middlewares.
 - [ ] `php artisan storage:link` sur o2switch (photos de façade), et vérifier que `APP_URL` donne la bonne URL publique.

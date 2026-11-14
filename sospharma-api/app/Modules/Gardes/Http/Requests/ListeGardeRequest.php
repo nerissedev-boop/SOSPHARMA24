@@ -18,6 +18,8 @@ class ListeGardeRequest extends RequeteApi
             'premier_jour' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'required_with:dernier_jour'],
             'dernier_jour' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'after_or_equal:premier_jour'],
             'simulation' => ['sometimes', 'boolean'],
+            // Remplir l'annuaire sans créer de tour de garde (liste sans dates, ou dates déjà passées).
+            'annuaire_seulement' => ['sometimes', 'boolean'],
             'decisions' => ['sometimes', 'array'],
             'decisions.*.rang' => ['required', 'integer', 'min:0'],
             'decisions.*.action' => ['required', Rule::in(ImportListeGarde::ACTIONS)],

@@ -43,6 +43,7 @@ class AdminListeGardeController extends Controller
             $jour($request->validated('premier_jour')),
             $jour($request->validated('dernier_jour')),
             $simulation,
+            $request->boolean('annuaire_seulement'),
         );
 
         return $simulation ? ApiResponse::ok($bilan) : ApiResponse::created($bilan);

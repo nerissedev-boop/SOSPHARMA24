@@ -171,3 +171,23 @@ it('met en forme le nom des fiches créées', function (): void {
         ->and(ImportListeGarde::nomFiche('ST PIERRE NIMBO'))->toBe('Pharmacie St Pierre Nimbo')
         ->and(ImportListeGarde::nomFiche('MARCHE DE GROS DE BOUAKE'))->toBe('Pharmacie Marche de Gros de Bouake');
 });
+
+it('remplit l\'annuaire sans tour de garde ni période', function (): void {
+    $texte = "COCODY PHCIE DES LAGUNES / M. KOUASSI - TEL. 27 22 44 55 66 / RUE DES JARDINS\nPLATEAU PHCIE DU COMMERCE / M. KONE - TEL. 27 20 21 22 23";
+
+    $this->postJson('/api/v1/admin/listes-garde/import', ['texte' => $texte, 'annuaire_seulement' => true, 'simulation' => true])
+        ->assertOk()
+        ->assertJsonPath('data.fiches_creees', 1);
+    expect(Pharmacie::query()->count())->toBe(2);
+
+    $this->postJson('/api/v1/admin/listes-garde/import', ['texte' => $texte, 'annuaire_seulement' => true])
+        ->assertCreated()
+        ->assertJsonPath('data.premier_jour', null)
+        ->assertJsonPath('data.tours', [])
+        ->assertJsonPath('data.fiches_creees', 1)
+        ->assertJsonPath('data.telephones_completes', 1);
+
+    expect(TourGarde::query()->count())->toBe(0)
+        ->and($this->lagunes->fresh()->telephone)->toBe('+2252722445566')
+        ->and(Pharmacie::query()->where('nom', 'Pharmacie du Commerce')->firstOrFail()->zone?->nom)->toBe('Plateau');
+});

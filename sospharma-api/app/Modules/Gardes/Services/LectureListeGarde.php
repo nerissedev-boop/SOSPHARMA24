@@ -60,7 +60,21 @@ final class LectureListeGarde
         $courant = null;
         $section = null;
         foreach ($lignes as $i => $ligne) {
+            // « SECTION DE COCODY » : la commune qui suit, jusqu'à la prochaine section.
+            if (preg_match('/^SECTION\s+(?:D[EU]\s+|DES\s+|D\'\s*)?(.+)$/iu', $ligne, $s) === 1 && preg_match('/\d/', $ligne) !== 1) {
+                $section = self::espaces($s[1]);
+                if ($courant !== null) {
+                    $blocs[] = $courant;
+                    $courant = null;
+                }
+
+                continue;
+            }
             $debut = $this->debutEntree($ligne);
+            // « ST SYLVESTRE M. MPOUE CARLOS - TEL. … » : pharmacie sans « PHCIE » devant, reconnue au pharmacien et au téléphone.
+            if ($debut === null && ($courant === null || $this->aUnTelephone($courant['lignes'])) && $this->ressembleAEntreeSansPrefixe($ligne)) {
+                $debut = [null, $ligne];
+            }
             if ($debut !== null) {
                 $section = $debut[0] ?? $section;
                 if ($courant !== null) {
@@ -112,6 +126,21 @@ final class LectureListeGarde
         return $this->ressembleAVille($prefixe, 4) ? [self::espaces($prefixe), $m[3]] : null;
     }
 
+    /** « TEL. », « TEL: » ou « TEL07… » collé au numéro. */
+    private const MOTIF_TEL = '\bT[EÉ]L(?:\b|(?=\d))';
+
+    /** Nom, puis M. / MME / MLLE / DR (ou « / M »), puis « TEL » suivi de chiffres. */
+    private function ressembleAEntreeSansPrefixe(string $ligne): bool
+    {
+        return preg_match('/^\p{Lu}[^\d]*?(?:\s|\/)(?:MME|MLLE|MR|M|DR)[.,]?\s+\S[^\d]*?'.self::MOTIF_TEL.'\.?\s*:?\s*\d/u', $ligne) === 1;
+    }
+
+    /** @param list<string> $lignes */
+    private function aUnTelephone(array $lignes): bool
+    {
+        return preg_match('/'.self::MOTIF_TEL.'/iu', implode(' ', $lignes)) === 1;
+    }
+
     /** @param array<string, true> $connues */
     private function estSection(string $ligne, array $connues, string $suivante): bool
     {
@@ -141,7 +170,7 @@ final class LectureListeGarde
     private function entree(?string $section, array $lignes): EntreeListeGarde
     {
         $plat = self::espaces(implode(' ', $lignes));
-        if (preg_match('/^(.*?)\bT[EÉ]L\b\.?\s*:?\s*(.*)$/iu', $plat, $m) === 1) {
+        if (preg_match('/^(.*?)'.self::MOTIF_TEL.'\.?\s*:?\s*(.*)$/iu', $plat, $m) === 1) {
             [$tete, $queue] = [$m[1], $m[2]];
         } else {
             [$tete, $queue] = [self::espaces($lignes[0]), self::espaces(implode(' ', array_slice($lignes, 1)))];
@@ -157,9 +186,12 @@ final class LectureListeGarde
     private function nomEtPharmacien(string $tete): array
     {
         $pharmacien = null;
-        if (preg_match('/^(.*?)(?:^|[\s\/])(MME|MLLE|MR\.?|M\.|DR\.?)\s*(\S.*)$/u', $tete, $m) === 1) {
+        // « / M. KOFFI », « MME, HENRI », et après une barre seulement « / M MOTTO » ou « / M, LOUIS » (sans point).
+        if (preg_match('/^(.*?)(?:^|[\s\/])(MME|MLLE|MR\.?|M\.|DR\.?)\s*(\S.*)$/u', $tete, $m) === 1
+            || preg_match('/^(.*?)\/\s*(M|MR|DR),?\s+(\S.*)$/u', $tete, $m) === 1
+            || preg_match('/^(.*?)\s(M),\s*(\S.*)$/u', $tete, $m) === 1) {
             $tete = $m[1];
-            $pharmacien = trim($m[2].' '.$m[3], " \t-/.,") ?: null;
+            $pharmacien = trim($m[2].' '.ltrim($m[3], ' ,.'), " \t-/.,") ?: null;
         }
 
         $nouvelle = preg_match('/\b(NOUVELLE|NVLLE|NLLE)\b/i', $tete) === 1;

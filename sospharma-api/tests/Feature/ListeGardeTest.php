@@ -162,3 +162,29 @@ it('affiche le bilan en ligne de commande', function (): void {
         ->expectsOutputToContain('19 pharmacie(s) lue(s) : 0 trouvée(s), 0 à vérifier, 19 inconnue(s).')
         ->assertSuccessful();
 });
+
+it('lit la section d\'Abidjan : pharmacie sans « PHCIE », pharmacien sans point, « TEL » collé', function (): void {
+    // Extrait de la liste de l'Ordre (section de Cocody, Bingerville), tel que fourni par l'équipe le 31 oct. 2026.
+    $texte = (string) file_get_contents(__DIR__.'/../Fixtures/liste-garde-bingerville.txt');
+    $entrees = (new LectureListeGarde)->lire($texte, ['Bingerville', 'Cocody'])->entrees;
+    $parNom = collect($entrees)->keyBy(fn (EntreeListeGarde $e): string => $e->nom);
+
+    expect($entrees)->toHaveCount(9)
+        ->and(collect($entrees)->pluck('section')->unique()->all())->toBe(['BINGERVILLE'])
+        ->and($entrees[0]->nom)->toBe('ST SYLVESTRE')
+        ->and($entrees[0]->pharmacien)->toBe('M. MPOUE CARLOS')
+        ->and($entrees[0]->telephones)->toBe(['2722519696', '0758176159'])
+        ->and($entrees[0]->repere)->toBe('CITE PALMA FACE RESTAURANT COUP DE FREIN')
+        ->and($parNom['MOTTO']->pharmacien)->toBe('M MOTTO ARMAND')
+        ->and($parNom['AKANDJE']->pharmacien)->toBe('M LOUIS AMON')
+        ->and($parNom['AKANDJE']->telephones)->toBe(['0172750101', '0506391655', '0700779670'])
+        ->and($parNom['LES COLOMBES']->pharmacien)->toBe('MME HENRI KOBLAN-H1_J3ERSON')
+        ->and($parNom['STE MARIE DE LA CELLE']->telephones)->toBe(['0702952431', '0151922591'])
+        ->and($parNom['INAYA D\' ADJAME BINGERVILLE']->telephones)->toBe(['2722567893', '0103238356', '0555277245']);
+});
+
+it('prend « SECTION DE … » pour la commune des pharmacies qui suivent', function (): void {
+    $entrees = (new LectureListeGarde)->lire("SECTION DE COCODY\nPHCIE DES LAGUNES / M. A - TEL. 27 22 44 55 66\n")->entrees;
+
+    expect($entrees)->toHaveCount(1)->and($entrees[0]->section)->toBe('COCODY');
+});
