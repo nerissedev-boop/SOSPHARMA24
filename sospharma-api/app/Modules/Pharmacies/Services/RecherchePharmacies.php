@@ -41,13 +41,14 @@ final class RecherchePharmacies
     }
 
     /** @return array{pharmacies: list<PharmacieTrouvee>, tronque: bool} */
-    public function cadre(Rectangle $cadre, FiltresPharmacies $filtres): array
+    public function cadre(Rectangle $cadre, FiltresPharmacies $filtres, ?float $lat = null, ?float $lng = null): array
     {
         // Avec un filtre de statut (calculé en PHP), on lit plus large avant de plafonner.
         $lecture = $filtres->statut !== null ? self::PLAFOND_CARTE * 10 : self::PLAFOND_CARTE + 1;
         $pharmacies = $this->dansRectangle($this->requeteFiltree($filtres), $cadre)->orderBy('id')->limit($lecture)->get();
 
-        $trouvees = $this->avecStatut($pharmacies, $filtres);
+        // Position de l'usager connue : distance de chaque point (étiquettes de la carte, aperçu).
+        $trouvees = $this->avecStatut($pharmacies, $filtres, $lat, $lng);
 
         return [
             'pharmacies' => array_slice($trouvees, 0, self::PLAFOND_CARTE),

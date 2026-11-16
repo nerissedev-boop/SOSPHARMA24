@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Pharmacies\Http\Requests;
 
-use App\Commun\Http\Requetes\RequeteApi;
+use App\Commun\Http\Requetes\PositionFacultativeRequest;
 
-class CadreRequest extends RequeteApi
+/** Cadre de carte ; lat/lng facultatifs pour donner la distance de chaque point. */
+class CadreRequest extends PositionFacultativeRequest
 {
     public function rules(): array
     {
-        return [
+        return parent::rules() + [
             // minLng,minLat,maxLng,maxLat (ordre GeoJSON / MapLibre)
             'bbox' => ['required', 'string', 'regex:/^-?\d+(\.\d+)?,-?\d+(\.\d+)?,-?\d+(\.\d+)?,-?\d+(\.\d+)?$/'],
         ];

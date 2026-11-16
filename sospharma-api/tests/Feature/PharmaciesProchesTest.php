@@ -119,6 +119,43 @@ it('renvoie les points du cadre de carte avec nombre et tronque', function (): v
         ->assertJsonPath('meta.tronque', false);
 });
 
+it('donne la distance des points du cadre quand la position de l’usager est fournie', function (): void {
+    $sans = $this->getJson('/api/v1/pharmacies/cadre?bbox=-3.98,5.35,-3.96,5.37')->assertOk()->json('data');
+    expect(array_column($sans, 'distance_m'))->each->toBeNull();
+
+    $avec = collect($this->getJson('/api/v1/pharmacies/cadre?bbox=-3.98,5.35,-3.96,5.37&lat=5.355&lng=-3.97')->assertOk()->json('data'))
+        ->keyBy('nom');
+    expect($avec['Proche']['distance_m'])->toBeGreaterThan(100)->toBeLessThan(130)
+        ->and($avec['Proche']['marche_min'])->toBe(2)
+        ->and($avec['Moyenne']['distance_m'])->toBeGreaterThan(1100);
+});
+
+it('refuse une position incomplète sur le cadre, la fiche et la recherche', function (): void {
+    $this->getJson('/api/v1/pharmacies/cadre?bbox=-3.98,5.35,-3.96,5.37&lat=5.355')
+        ->assertStatus(422)->assertJsonPath('error.code', 'VALIDATION_FAILED');
+    $this->getJson('/api/v1/pharmacies/'.$this->proche->id_public.'?lng=-3.97')
+        ->assertStatus(422)->assertJsonPath('error.code', 'VALIDATION_FAILED');
+    $this->getJson('/api/v1/pharmacies/recherche?q=moy&lng=-3.97')
+        ->assertStatus(422)->assertJsonPath('error.code', 'VALIDATION_FAILED');
+});
+
+it('trie la recherche par distance quand la position est fournie', function (): void {
+    $json = $this->getJson('/api/v1/pharmacies/recherche?q=ne&lat=5.355&lng=-3.97')->assertOk()->json('data');
+
+    // « ne » : Lointaine, Moyenne, Inactive (désactivée, absente) ; triées par distance et non par nom.
+    expect(array_column($json, 'nom'))->toBe(['Moyenne', 'Lointaine'])
+        ->and($json[0]['distance_m'])->toBeGreaterThan(1050)->toBeLessThan(1150);
+});
+
+it('donne la distance et le temps de marche sur la fiche quand la position est fournie', function (): void {
+    $this->getJson('/api/v1/pharmacies/'.$this->proche->id_public)
+        ->assertOk()->assertJsonPath('data.distance_m', null)->assertJsonPath('data.marche_min', null);
+
+    $fiche = $this->getJson('/api/v1/pharmacies/'.$this->proche->id_public.'?lat=5.355&lng=-3.97')->assertOk()->json('data');
+    expect($fiche['distance_m'])->toBeGreaterThan(100)->toBeLessThan(130)
+        ->and($fiche['marche_min'])->toBe(2);
+});
+
 it('affiche la fiche complète et ignore les pharmacies désactivées', function (): void {
     $this->getJson('/api/v1/pharmacies/'.$this->proche->id_public)
         ->assertOk()

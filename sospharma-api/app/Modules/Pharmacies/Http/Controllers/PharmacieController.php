@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Pharmacies\Http\Controllers;
 
 use App\Commun\Erreurs\RequeteInvalide;
+use App\Commun\Geo\Distance;
 use App\Commun\Geo\Geometrie;
 use App\Commun\Geo\TrajetVoiture;
 use App\Commun\Http\ApiResponse;
 use App\Commun\Http\Requetes\ParametresListe;
+use App\Commun\Http\Requetes\PositionFacultativeRequest;
 use App\Commun\Http\Requetes\PositionRequest;
 use App\Http\Controllers\Controller;
 use App\Modules\Pharmacies\Exceptions\PharmacieIntrouvable;
@@ -56,7 +58,7 @@ class PharmacieController extends Controller
         } catch (InvalidArgumentException $e) {
             throw new RequeteInvalide($e->getMessage(), ['bbox' => [$e->getMessage()]], $e);
         }
-        $resultat = $this->recherche->cadre($cadre, $filtres);
+        $resultat = $this->recherche->cadre($cadre, $filtres, $request->latitude(), $request->longitude());
 
         return ApiResponse::ok(self::lignes($resultat['pharmacies']), [
             'nombre' => count($resultat['pharmacies']),
@@ -70,27 +72,30 @@ class PharmacieController extends Controller
         $villeId = $request->validated('ville') !== null
             ? Ville::query()->where('id_public', $request->validated('ville'))->value('id')
             : null;
-        $lat = $request->validated('lat');
-        $lng = $request->validated('lng');
         $limite = (int) $request->validated('limite', RecherchePharmacies::LIMITE_DEFAUT);
 
         $trouvees = $this->recherche->rechercher(
             (string) $request->validated('q'),
             $villeId !== null ? (int) $villeId : null,
-            $lat !== null ? (float) $lat : null,
-            $lng !== null ? (float) $lng : null,
+            $request->latitude(),
+            $request->longitude(),
             $limite,
         );
 
         return ApiResponse::ok(self::lignes($trouvees), ['rayon' => null, 'limite' => $limite, 'nombre' => count($trouvees)]);
     }
 
-    public function show(string $pharmacie, StatutsPharmacies $statuts): JsonResponse
+    public function show(string $pharmacie, PositionFacultativeRequest $request, StatutsPharmacies $statuts): JsonResponse
     {
         $modele = Pharmacie::query()->actives()->where('id_public', $pharmacie)->with(['zone', 'ville.pays', 'horaires', 'assurancesActives'])->first()
             ?? throw new PharmacieIntrouvable;
+        $lat = $request->latitude();
+        $lng = $request->longitude();
+        $distance = $lat !== null && $lng !== null && $modele->aUnePosition()
+            ? Distance::metres($lat, $lng, (float) $modele->lat(), (float) $modele->lng())
+            : null;
 
-        return ApiResponse::ok(new PharmacieFicheResource(new PharmacieTrouvee($modele, $statuts->pourUne($modele))));
+        return ApiResponse::ok(new PharmacieFicheResource(new PharmacieTrouvee($modele, $statuts->pourUne($modele), $distance)));
     }
 
     /**

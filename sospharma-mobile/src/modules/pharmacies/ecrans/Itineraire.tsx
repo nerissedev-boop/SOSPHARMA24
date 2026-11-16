@@ -8,6 +8,7 @@ import {
   commencerVisite,
   positionDe,
   distanceKm,
+  distanceMetres,
   estimerTrajet,
   marquerSortieVersAutreApp,
   ouvrirNavigation,
@@ -84,11 +85,17 @@ function Itineraire() {
       </Ecran>
     );
   }
-  const distance = fiche.distance_m ?? 0;
+  // Distance de l'API ; absente (fiche prise dans le cache de la carte, ancienne API), calculée ici depuis la position.
+  // Sans position non plus : aucune estimation plutôt qu'un faux « 0 km · 1 min ».
+  const distance = fiche.distance_m ?? (point ? distanceMetres(point, destination) : null);
   // Voiture : la durée Google avec le trafic quand le serveur l'a, sinon l'estimation par la distance.
   const voitureGoogle = trajet.data?.voiture ?? null;
-  const estimation = (m: ModeTrajet) =>
-    m === 'voiture' && voitureGoogle ? { minutes: voitureGoogle.minutes, distanceM: voitureGoogle.distance_m } : estimerTrajet(distance, m);
+  const estimation = (m: ModeTrajet): { minutes: number; distanceM: number } | null =>
+    m === 'voiture' && voitureGoogle
+      ? { minutes: voitureGoogle.minutes, distanceM: voitureGoogle.distance_m }
+      : distance !== null
+        ? estimerTrajet(distance, m)
+        : null;
   const choisi = estimation(mode);
   const milieu = point
     ? { latitude: (point.latitude + destination.latitude) / 2, longitude: (point.longitude + destination.longitude) / 2 }
@@ -157,16 +164,18 @@ function Itineraire() {
             <PastilleStatut statut={fiche.statut} taille={50} tailleIcone={30} />
           </View>
         </Repere>
-        <Repere id="duree" coordonnees={milieu}>
-          <View style={[styles.etiquetteDuree, { backgroundColor: c.etiquetteSelection }]}>
-            <Texte variante="petitFort" couleur={c.etiquetteSelectionTexte} style={styles.gras}>
-              {t('commun.min', { valeur: choisi.minutes })}
-            </Texte>
-            <Texte variante="petit" couleur={c.etiquetteSelectionTexte} style={styles.opaque}>
-              {distanceKm(choisi.distanceM)}
-            </Texte>
-          </View>
-        </Repere>
+        {choisi ? (
+          <Repere id="duree" coordonnees={milieu}>
+            <View style={[styles.etiquetteDuree, { backgroundColor: c.etiquetteSelection }]}>
+              <Texte variante="petitFort" couleur={c.etiquetteSelectionTexte} style={styles.gras}>
+                {t('commun.min', { valeur: choisi.minutes })}
+              </Texte>
+              <Texte variante="petit" couleur={c.etiquetteSelectionTexte} style={styles.opaque}>
+                {distanceKm(choisi.distanceM)}
+              </Texte>
+            </View>
+          </Repere>
+        ) : null}
       </CarteBase>
 
       <View
@@ -205,19 +214,23 @@ function Itineraire() {
                 onPress={() => setMode(m)}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: actif }}
-                accessibilityLabel={t('itineraire.estimation', { mode: libelle, minutes: e.minutes, distance: distanceKm(e.distanceM) })}
+                accessibilityLabel={e ? t('itineraire.estimation', { mode: libelle, minutes: e.minutes, distance: distanceKm(e.distanceM) }) : libelle}
                 style={[styles.mode, { backgroundColor: actif ? c.vertClair : c.surface }]}
               >
                 {icone(m, actif)}
                 <Texte variante="libelleMoyen" couleur={c.texteSecondaire}>
                   {libelle}
                 </Texte>
-                <Texte variante="distanceGrande" couleur={actif ? c.vertTexte : c.texte}>
-                  {t('commun.min', { valeur: e.minutes })}
-                </Texte>
-                <Texte variante="libelle" couleur={c.texteSecondaire}>
-                  {distanceKm(e.distanceM)}
-                </Texte>
+                {e ? (
+                  <>
+                    <Texte variante="distanceGrande" couleur={actif ? c.vertTexte : c.texte}>
+                      {t('commun.min', { valeur: e.minutes })}
+                    </Texte>
+                    <Texte variante="libelle" couleur={c.texteSecondaire}>
+                      {distanceKm(e.distanceM)}
+                    </Texte>
+                  </>
+                ) : null}
                 {m === 'voiture' && voitureGoogle ? (
                   <Texte variante="libelleFort" couleur={c.vertTexte} testID="trajet-trafic">
                     {t('itineraire.avecTrafic')}

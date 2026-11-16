@@ -197,9 +197,9 @@ Toutes les routes sont préfixées par `/api/v1`. Légende des colonnes « Qui �
 | POST | `/admin/zones/import` (GeoJSON) | 🔑 | — |
 | **Pharmacies** | | | |
 | GET | `/pharmacies/proches?lat=&lng=&rayon=&limite=` (`filter[statut\|h24\|assurances]`) | 🌐 (📱 facultatif) | rayon et limite |
-| GET | `/pharmacies/cadre?bbox=minLng,minLat,maxLng,maxLat` (mêmes filtres) | 🌐 (📱 facultatif) | carte (300 au plus) |
+| GET | `/pharmacies/cadre?bbox=minLng,minLat,maxLng,maxLat` (mêmes filtres ; `lat`, `lng` facultatifs pour `distance_m`) | 🌐 (📱 facultatif) | carte (300 au plus) |
 | GET | `/pharmacies/recherche?q=&ville=[&lat&lng&limite]` | 🌐 (📱 facultatif) | limite |
-| GET | `/pharmacies/{id}` | 🌐 (📱 facultatif) | — |
+| GET | `/pharmacies/{id}` (`lat`, `lng` facultatifs pour `distance_m`) | 🌐 (📱 facultatif) | — |
 | GET | `/pharmacies/{id}/trajet?lat=&lng=` (30/heure/appareil) | 🌐 | — |
 | GET / POST | `/admin/pharmacies` (`filter[ville\|zone\|actif\|h24\|assurances]`, `q`, `sort=nom`) | 👥 (création 🔑) | par page |
 | GET | `/admin/pharmacies/export` (mêmes filtres, `q` et `sort` ; CSV à réimporter) | 👥 | aucune (flux) |
