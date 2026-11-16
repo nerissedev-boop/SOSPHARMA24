@@ -4,7 +4,10 @@ import type { StatutPharmacie } from '@/commun/api';
 import { distanceKm, t } from '@/commun/lib';
 import type { TonStatut } from '@/commun/regles';
 import { CIBLE_TACTILE, rayons, useTheme } from '@/commun/theme';
-import { BadgePosition, HiPhone, RepereStatut, Texte } from '@/commun/ui';
+import { BadgePosition, HiPhone, PhotoFondu, RepereStatut, Texte } from '@/commun/ui';
+
+/** Vignette de façade : moins haute que la ligne (60), qui garde sa hauteur avec ou sans photo. */
+const TAILLE_VIGNETTE = 44;
 
 type Props = {
   nom: string;
@@ -14,6 +17,8 @@ type Props = {
   /** « ocre » quand la pharmacie ferme dans moins de 30 min. */
   ton: TonStatut;
   distanceM: number | null;
+  /** Photo de façade validée ; sans photo, pas de vignette (ni devanture dessinée : la liste reste légère). */
+  photoUrl?: string | null;
   /** Pas de position GPS : ni distance, badge « Position à confirmer ». */
   positionAConfirmer: boolean;
   onPress: () => void;
@@ -23,10 +28,10 @@ type Props = {
 };
 
 /**
- * Ligne de « Mes pharmacies » (refonte v2) : posée dans le groupe à plat, sans vignette ni flèche.
- * Le nom, l'état, la distance, puis le bouton d'appel, comme dans les listes.
+ * Ligne de « Mes pharmacies » (refonte v2) : posée dans le groupe à plat, sans flèche.
+ * La vignette de façade quand la photo est validée, le nom, l'état, la distance, puis le bouton d'appel.
  */
-export function LigneFavori({ nom, statut, libelleStatut, ton, distanceM, positionAConfirmer, onPress, onAppeler, testID }: Props) {
+export function LigneFavori({ nom, statut, libelleStatut, ton, distanceM, photoUrl, positionAConfirmer, onPress, onAppeler, testID }: Props) {
   const { couleurs: c } = useTheme();
   const distance = positionAConfirmer ? null : distanceKm(distanceM) || null;
   const description = [nom, libelleStatut, positionAConfirmer ? t('commun.positionAConfirmer') : distance].filter(Boolean).join(', ');
@@ -38,6 +43,10 @@ export function LigneFavori({ nom, statut, libelleStatut, ton, distanceM, positi
         accessibilityLabel={description}
         style={({ pressed }) => [styles.zone, pressed && { backgroundColor: c.carteAppuyee }]}
       >
+        {photoUrl ? (
+          // Si l'image ne charge pas, la vignette disparaît et le nom reprend la place.
+          <PhotoFondu uri={photoUrl} repli={null} style={[styles.vignette, { backgroundColor: c.surface }]} testID={testID ? `${testID}-vignette` : undefined} />
+        ) : null}
         <View style={styles.textes}>
           <Texte variante="corpsFort" numberOfLines={2}>
             {nom}
@@ -81,6 +90,7 @@ const styles = StyleSheet.create({
     gap: 12,
     borderRadius: rayons.touche,
   },
+  vignette: { width: TAILLE_VIGNETTE, height: TAILLE_VIGNETTE, borderRadius: rayons.touche },
   textes: { flex: 1, minWidth: 0, gap: 2 },
   chiffres: { fontVariant: ['tabular-nums'] },
   appel: { width: CIBLE_TACTILE, height: CIBLE_TACTILE, borderRadius: CIBLE_TACTILE / 2, alignItems: 'center', justifyContent: 'center' },

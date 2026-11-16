@@ -43,6 +43,7 @@ export function CarteFavoris({ style }: { style?: StyleProp<ViewStyle> }) {
           libelleStatut={libelleStatut(p, fuseau, 'liste', maintenant)}
           ton={tonAffiche(p, fuseau, maintenant)}
           distanceM={p.distance_m}
+          photoUrl={p.photo_url}
           positionAConfirmer={p.latitude === null}
           onPress={() => router.push({ pathname: '/pharmacie/[id]', params: { id: p.id } })}
           onAppeler={p.telephone ? appelerFavori(p.id, p.nom, p.telephone) : undefined}

@@ -54,6 +54,18 @@ describe('Aperçu posé sur la carte : la carte « la plus proche », variante c
     expect(screen.queryByTestId('apercu-carte-photo')).toBeNull();
   });
 
+  it('photo de façade validée : petite vignette à gauche, jamais la grande bande', async () => {
+    await rendreFeuille({ ...pharmacie, photo_url: 'https://exemple.ci/facade.jpg' }).rendu;
+    expect(screen.getByTestId('apercu-carte-vignette')).toBeTruthy();
+    expect(screen.queryByTestId('apercu-carte-photo')).toBeNull();
+    expect(screen.getByText('Pharmacie Gazelle')).toBeTruthy();
+  });
+
+  it('sans photo : pas de vignette', async () => {
+    await rendreFeuille(pharmacie).rendu;
+    expect(screen.queryByTestId('apercu-carte-vignette')).toBeNull();
+  });
+
   it('une autre pharmacie touchée sur le plan : pas d’étiquette « La plus proche »', async () => {
     await rendreFeuille(pharmacie, { plusProche: false }).rendu;
     expect(screen.queryByText('La plus proche')).toBeNull();

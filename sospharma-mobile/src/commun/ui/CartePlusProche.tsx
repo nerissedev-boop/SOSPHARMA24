@@ -27,6 +27,8 @@ const ECHELLE_EMPILEMENT = 1.3;
  * parce que chaque point pris ici repousse Appeler vers le bas de l'écran.
  */
 const HAUTEUR_PHOTO = 104;
+/** Vignette de l'aperçu sur le plan : moins haute que l'état, le nom et la distance réunis, l'aperçu ne grandit pas. */
+const TAILLE_VIGNETTE = 56;
 
 type PropsActions = {
   nom: string;
@@ -105,7 +107,7 @@ type Props = {
   repere?: string | null;
   /**
    * Photo de façade validée (`photo_url`), pour reconnaître la devanture en arrivant. Sans photo, rien :
-   * pas de devanture dessinée sur la carte. Ignorée dans la variante compacte (plan).
+   * pas de devanture dessinée sur la carte. Variante compacte (plan) : vignette de 56 à gauche du nom.
    */
   photoUrl?: string | null;
   /** Commune ajoutée après la distance quand le repère n'est pas affiché (variante compacte). */
@@ -178,6 +180,35 @@ export function CartePlusProche({
     .filter(Boolean)
     .join(', ');
   const ombre = estNuit ? null : surPlan ? ombres.fiche : ombres.carte;
+  // Variante compacte (aperçu sur le plan) : petite vignette à gauche, l'aperçu ne grandit pas et Appeler ne bouge pas.
+  const vignette = compacte ? photoUrl || null : null;
+
+  const entete = (
+    <>
+      <View style={styles.haut}>
+        <RepereStatut statut={statut} ton={ton} libelle={libelleStatut} testID={testID ? `${testID}-statut` : undefined} />
+        {plusProche ? (
+          <Texte variante="libelleMoyen" couleur={c.texteSecondaire}>
+            {t('commun.laPlusProche')}
+          </Texte>
+        ) : null}
+      </View>
+      <Texte variante={compacte ? 'titre' : 'nomPlusProche'} titre numberOfLines={3} style={styles.nom}>
+        {nom}
+      </Texte>
+      {distance || suite || positionAConfirmer ? (
+        <Texte variante="texte" couleur={c.texteSecondaire} testID={testID ? `${testID}-details` : undefined}>
+          {distance ? (
+            <Texte variante="distanceGrande" style={styles.chiffres}>
+              {distance}
+            </Texte>
+          ) : null}
+          {distance && suite ? ' · ' : null}
+          {suite}
+        </Texte>
+      ) : null}
+    </>
+  );
 
   return (
     <LayoutAnimationConfig skipEntering>
@@ -202,28 +233,15 @@ export function CartePlusProche({
             // Si l'image ne charge pas, le bandeau disparaît plutôt que de rester gris.
             <PhotoFondu uri={photo} repli={null} style={[styles.photo, { backgroundColor: c.surface }]} testID={testID ? `${testID}-photo` : undefined} />
           ) : null}
-          <View style={styles.haut}>
-            <RepereStatut statut={statut} ton={ton} libelle={libelleStatut} testID={testID ? `${testID}-statut` : undefined} />
-            {plusProche ? (
-              <Texte variante="libelleMoyen" couleur={c.texteSecondaire}>
-                {t('commun.laPlusProche')}
-              </Texte>
-            ) : null}
-          </View>
-          <Texte variante={compacte ? 'titre' : 'nomPlusProche'} titre numberOfLines={3} style={styles.nom}>
-            {nom}
-          </Texte>
-          {distance || suite || positionAConfirmer ? (
-            <Texte variante="texte" couleur={c.texteSecondaire} testID={testID ? `${testID}-details` : undefined}>
-              {distance ? (
-                <Texte variante="distanceGrande" style={styles.chiffres}>
-                  {distance}
-                </Texte>
-              ) : null}
-              {distance && suite ? ' · ' : null}
-              {suite}
-            </Texte>
-          ) : null}
+          {vignette ? (
+            // Si l'image ne charge pas, la vignette disparaît et le texte reprend toute la largeur.
+            <View style={styles.avecVignette}>
+              <PhotoFondu uri={vignette} repli={null} style={[styles.vignette, { backgroundColor: c.surface }]} testID={testID ? `${testID}-vignette` : undefined} />
+              <View style={styles.colonne}>{entete}</View>
+            </View>
+          ) : (
+            entete
+          )}
           {repereVisible ? (
             <Texte variante="petit" couleur={c.texteSecondaire} testID={testID ? `${testID}-repere` : undefined}>
               {repereVisible}
@@ -262,6 +280,9 @@ const styles = StyleSheet.create({
   infos: { gap: 4 },
   // À 8 du bord de la carte, rayon 12 : ses coins suivent ceux de la carte, comme les boutons.
   photo: { height: HAUTEUR_PHOTO, marginTop: -6, marginHorizontal: -8, marginBottom: 8, borderRadius: rayons.touche },
+  avecVignette: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  vignette: { width: TAILLE_VIGNETTE, height: TAILLE_VIGNETTE, borderRadius: rayons.touche },
+  colonne: { flex: 1, minWidth: 0, gap: 4 },
   haut: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 10, rowGap: 4 },
   nom: { marginTop: 2 },
   chiffres: { fontVariant: ['tabular-nums'] },

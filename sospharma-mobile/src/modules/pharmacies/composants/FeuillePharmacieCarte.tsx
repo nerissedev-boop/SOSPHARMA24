@@ -120,6 +120,7 @@ export function FeuillePharmacieCarte({
         libelleStatut={libelleStatut(p)}
         distanceM={p.distance_m}
         marcheMin={p.marche_min}
+        photoUrl={p.photo_url}
         commune={p.commune}
         positionAConfirmer={p.latitude === null}
         onPress={() => onOuvrir(p)}
