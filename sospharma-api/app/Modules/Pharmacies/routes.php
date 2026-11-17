@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Pharmacies\Http\Controllers\AdminAssuranceController;
 use App\Modules\Pharmacies\Http\Controllers\AdminPharmacieController as Admin;
+use App\Modules\Pharmacies\Http\Controllers\AdminPhotoFacadeController;
 use App\Modules\Pharmacies\Http\Controllers\AssuranceController;
 use App\Modules\Pharmacies\Http\Controllers\EspacePharmacienController;
 use App\Modules\Pharmacies\Http\Controllers\MembrePharmacieController;
@@ -40,6 +41,9 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,editeur_ville'])
     Route::delete('pharmacies/{pharmacie}', [Admin::class, 'destroy']);
     Route::put('pharmacies/{pharmacie}/horaires', [Admin::class, 'horaires']);
     Route::put('pharmacies/{pharmacie}/assurances', [AdminAssuranceController::class, 'pharmacie']);
+    // Photo de façade sans relevé terrain (multipart : POST, le PUT ne lit pas les fichiers en PHP).
+    Route::post('pharmacies/{pharmacie}/photo', [AdminPhotoFacadeController::class, 'store'])->middleware('throttle:photos-facades');
+    Route::delete('pharmacies/{pharmacie}/photo', [AdminPhotoFacadeController::class, 'destroy']);
     // Un numéro d'une autre fiche donne 404 (liaison limitée à la pharmacie de l'adresse).
     Route::scopeBindings()->group(function (): void {
         Route::get('pharmacies/{pharmacie}/telephones', [Telephones::class, 'index']);

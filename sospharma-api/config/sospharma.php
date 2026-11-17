@@ -35,6 +35,8 @@ return [
         // Agents terrain : relevés et photos par jour et par agent.
         'releves_par_jour' => 200,
         'photos_releves_par_jour' => 1000,
+        // Équipe : photos de façade posées depuis le back-office, par compte.
+        'photos_facades_par_jour' => 500,
         // Usagers sans compte (« Proposer une pharmacie ») : par appareil, et par adresse IP.
         'propositions_par_jour' => 3,
         'propositions_par_ip' => 10,

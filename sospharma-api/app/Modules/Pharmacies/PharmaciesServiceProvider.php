@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Pharmacies;
 
 use App\Commun\Contrats\RattachementsCompte;
+use App\Commun\Erreurs\CodeErreur;
 use App\Commun\FournisseurModule;
+use App\Commun\Http\ApiResponse;
 use App\Modules\Pharmacies\Console\ImporterPharmaciesOsm;
 use App\Modules\Pharmacies\Contrats\EditionFichesPharmacies;
 use App\Modules\Pharmacies\Contrats\SourcePeriodesGarde;
@@ -42,6 +44,17 @@ class PharmaciesServiceProvider extends FournisseurModule
         // Temps de trajet Google, payant à l'appel : limité par appareil (sinon par adresse IP).
         RateLimiter::for('trajets', fn (Request $request): Limit => Limit::perHour((int) config('sospharma.limites.trajets_par_heure', 30))
             ->by('trajets|'.($request->header('X-Device-Token') ?: $request->ip())));
+
+        // Photos de façade posées depuis le back-office : de quoi traiter une ville entière dans la journée.
+        RateLimiter::for('photos-facades', fn (Request $request): Limit => Limit::perDay((int) config('sospharma.limites.photos_facades_par_jour', 500))
+            ->by('photos-facades|'.($request->user()?->getAuthIdentifier() ?? $request->ip()))
+            ->response(fn (Request $request, array $entetes) => ApiResponse::error(
+                CodeErreur::TooManyRequests,
+                'Trop de photos envoyées aujourd\'hui. Réessayez demain.',
+                null,
+                429,
+                $entetes,
+            )));
 
         if ($this->app->runningInConsole()) {
             $this->commands([ImporterPharmaciesOsm::class]);

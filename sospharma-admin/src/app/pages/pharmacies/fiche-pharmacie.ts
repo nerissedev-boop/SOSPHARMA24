@@ -10,6 +10,7 @@ import { SessionService } from '../../noyau/session.service';
 import { Pharmacie, Plage, Reference } from '../../noyau/types';
 import { EtatChargement } from '../../ui/chargement';
 import { NumerosPharmacie } from './numeros-pharmacie';
+import { PhotoFacade } from './photo-facade';
 
 interface Formulaire {
   nom: string;
@@ -24,7 +25,7 @@ interface Formulaire {
 /** Fiche d'une pharmacie : informations, numéros, position, horaires et assurances (lecture). */
 @Component({
   selector: 'app-fiche-pharmacie',
-  imports: [FormsModule, RouterLink, DatePipe, LucideAngularModule, EtatChargement, NumerosPharmacie],
+  imports: [FormsModule, RouterLink, DatePipe, LucideAngularModule, EtatChargement, NumerosPharmacie, PhotoFacade],
   template: `
     <a routerLink="/pharmacies" class="inline-flex items-center gap-1 text-sm text-marque hover:underline">
       <lucide-icon [img]="ArrowLeft" [size]="14" /> Pharmacies
@@ -160,12 +161,12 @@ interface Formulaire {
             }
           </div>
 
-          @if (p.photo_facade) {
-            <div class="carte">
-              <h2 class="mb-2">Façade</h2>
-              <img [src]="p.photo_facade" alt="Façade de la pharmacie" class="w-full rounded-lg" />
-            </div>
-          }
+          <app-photo-facade
+            [pharmacie]="p.id"
+            [nom]="p.nom"
+            [photo]="p.photo_facade"
+            (modifiee)="photoModifiee($event)"
+          />
         </div>
       </div>
     }
@@ -256,6 +257,12 @@ export class FichePharmacie implements OnInit {
     } finally {
       this.envoi.set(false);
     }
+  }
+
+  /** Seule la photo change : le formulaire en cours de saisie n'est pas écrasé. */
+  protected photoModifiee(p: Pharmacie): void {
+    const actuelle = this.pharmacie();
+    if (actuelle) this.pharmacie.set({ ...actuelle, photo_facade: p.photo_facade });
   }
 
   protected ajouterPlage(): void {
