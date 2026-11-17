@@ -421,3 +421,19 @@ export function IconeCroix({ color, plein = true, ...p }: PropsIconeTrait & { co
     </Base>
   );
 }
+
+/**
+ * Flamme pleine des pompiers (Healthicons n'a pas de flamme seule, « burn » est une main brûlée).
+ * Pleine et de même poids que l'ambulance et l'agent de police, ses voisines sur l'écran Urgence.
+ */
+export function IconeFlamme({ color, ...p }: PropsIconeTrait & { color: string }) {
+  return (
+    <Base {...p}>
+      <Path
+        fillRule="evenodd"
+        d="M12.6 1.5c.5 3.1 2.4 5 4.3 7.1 1.8 2 3.6 4.3 3.6 7.3a8.5 8.5 0 0 1-17 0c0-2.9 1.4-5.2 3.3-7 .2 1.8 1 3.1 2.3 3.9C8.8 8.6 10.2 4.4 12.6 1.5zM12 13.6c-1.5 1.6-2.8 3-2.8 4.8a2.8 2.8 0 0 0 5.6 0c0-1.8-1.3-3.2-2.8-4.8z"
+        fill={color}
+      />
+    </Base>
+  );
+}

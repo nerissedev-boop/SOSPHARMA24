@@ -7,18 +7,26 @@ import { LignePharmacie } from '../LignePharmacie';
 import { PastilleStatut } from '../PastilleStatut';
 
 describe('PastilleStatut', () => {
-  it('ouverte : pastille verte ronde, sans badge 24', async () => {
-    await rendre(<PastilleStatut statut="ouverte" taille={40} badge24 />);
+  it('ouverte : pastille verte ronde avec la croix, sans « 24 »', async () => {
+    await rendre(<PastilleStatut statut="ouverte" taille={40} />);
     const style = StyleSheet.flatten(screen.getByTestId('pastille-ouverte', { includeHiddenElements: true }).props.style);
     expect(style.backgroundColor).toBe(jetonsJour.vert);
     expect(style.borderRadius).toBe(20);
-    expect(screen.queryByTestId('badge-24', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByTestId('pastille-24', { includeHiddenElements: true })).toBeNull();
   });
 
-  it('de garde : pastille rouge avec badge 24', async () => {
-    await rendre(<PastilleStatut statut="garde" taille={46} badge24 />);
+  it('de garde : « 24 » à la place de la croix, la forme distingue la garde sans la couleur', async () => {
+    await rendre(<PastilleStatut statut="garde" taille={46} />);
     expect(StyleSheet.flatten(screen.getByTestId('pastille-garde', { includeHiddenElements: true }).props.style).backgroundColor).toBe(jetonsJour.rouge);
-    expect(screen.getByText('24', { includeHiddenElements: true })).toBeTruthy();
+    const vingtQuatre = screen.getByTestId('pastille-24', { includeHiddenElements: true });
+    expect(vingtQuatre).toHaveTextContent('24');
+    // Dessiné dans un disque de taille fixe : il ne grossit pas avec la police système.
+    expect(vingtQuatre.props.allowFontScaling).toBe(false);
+  });
+
+  it('ferme bientôt : pastille ocre, croix foncée (le blanc y serait illisible)', async () => {
+    await rendre(<PastilleStatut statut="ouverte" ton="ocre" />);
+    expect(StyleSheet.flatten(screen.getByTestId('pastille-ouverte', { includeHiddenElements: true }).props.style).backgroundColor).toBe(jetonsJour.ocrePoint);
   });
 
   it('fermée : pastille gris clair, sans bordure', async () => {

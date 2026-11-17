@@ -15,7 +15,7 @@ type PropsMarqueur = {
   selectionne?: boolean;
 };
 
-/** Marqueur pharmacie : coupe d'Hygie dans sa pastille + étiquette de distance accolée. */
+/** Marqueur pharmacie : croix (ou « 24 » pour la garde) dans sa pastille + étiquette de distance accolée. */
 export function MarqueurPharmacie({ statut, etiquette, selectionne = false }: PropsMarqueur) {
   const { couleurs: c, estNuit } = useTheme();
   const taille = selectionne ? 52 : estInactive(statut) ? 38 : statut === 'garde' ? 42 : 40;
@@ -27,8 +27,7 @@ export function MarqueurPharmacie({ statut, etiquette, selectionne = false }: Pr
         <PastilleStatut
           statut={statut}
           taille={taille}
-          tailleIcone={selectionne ? 32 : estInactive(statut) ? 22 : taille === 40 ? 24 : 26}
-          badge24={statut === 'garde' && (selectionne || !estNuit)}
+          tailleIcone={selectionne ? 30 : estInactive(statut) ? 20 : 22}
           fondFerme={estNuit ? c.surface2 : c.blanc}
         />
       </View>

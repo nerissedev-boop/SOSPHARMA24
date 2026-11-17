@@ -3,14 +3,19 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { NumeroUrgence } from '@/commun/api';
 import { appeler, t } from '@/commun/lib';
 import { rayons, useTheme } from '@/commun/theme';
-import { HiAccidentAndEmergency, HiAmbulance, HiEmergencyPost, HiPhone, Texte } from '@/commun/ui';
+import { HiAmbulance, HiOfficer, HiPhone, IconeFlamme, Texte } from '@/commun/ui';
 
-/** Icône d'un numéro d'urgence selon la configuration pays. */
+/**
+ * Icône d'un numéro d'urgence selon la configuration pays : une icône juste par service, sans carré.
+ * Ambulance (SAMU), flamme (pompiers), agent (police) ; un autre numéro garde le téléphone, jamais
+ * un signe médical qu'il ne mérite pas.
+ */
 export function IconeUrgence({ icone, taille }: { icone: NumeroUrgence['icone']; taille: number }) {
   const { couleurs: c } = useTheme();
   if (icone === 'ambulance') return <HiAmbulance size={taille} color={c.rougeTexteFort} />;
-  if (icone === 'pompiers') return <HiAccidentAndEmergency size={taille} color={c.rougeTexteFort} />;
-  return <HiEmergencyPost size={taille} color={c.rouge} />;
+  if (icone === 'pompiers') return <IconeFlamme size={taille} color={c.rougeTexteFort} />;
+  if (icone === 'police') return <HiOfficer size={taille} color={c.rougeTexteFort} />;
+  return <HiPhone size={taille} color={c.rougeTexteFort} />;
 }
 
 type Props = {

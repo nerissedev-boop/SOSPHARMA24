@@ -38,6 +38,8 @@ export type Jetons = {
   /** Ocre : états intermédiaires seulement, jamais décoratif. */
   ocreTexte: string;
   ocrePoint: string;
+  /** Croix foncée sur la pastille ocre (« ferme bientôt ») : 6,2:1 le jour, 6,3:1 la nuit (le blanc n'y fait que 2,7:1). */
+  ocreIcone: string;
   ocreClair: string;
   blanc: string;
   // Texte
@@ -159,6 +161,7 @@ export const jetonsJour: Jetons = {
   rougeTendre: '#F7D4D2',
   ocreTexte: '#8A5300',
   ocrePoint: '#D98E04',
+  ocreIcone: '#1C1F1A',
   ocreClair: '#FFF1D6',
   blanc: '#FFFFFF',
 
@@ -254,6 +257,7 @@ export const jetonsNuit: Jetons = {
   rougeTendre: '#F2B8B5',
   ocreTexte: '#F2C27B',
   ocrePoint: '#C98A12',
+  ocreIcone: '#0E1511',
   ocreClair: '#2B2214',
   blanc: '#FFFFFF',
 

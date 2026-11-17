@@ -18,8 +18,8 @@ import {
   Ecran,
   EnTete,
   HiInsuranceCardOutline,
-  HiPharmacy,
   IconeHorloge,
+  PastilleStatut,
   PiedFixe,
   Texte,
   useRetour,
@@ -100,13 +100,13 @@ function Filtres() {
             {t('filtres.statut')}
           </Texte>
           <LigneCase
-            icone={rond(c.vert, <HiPharmacy size={22} color={c.blanc} />)}
+            icone={<PastilleStatut statut="ouverte" taille={36} />}
             libelle={t('filtres.ouvertes')}
             coche={brouillon.ouvertes}
             onChange={(v) => maj({ ouvertes: v })}
           />
           <LigneCase
-            icone={rond(c.rouge, <HiPharmacy size={22} color={c.blanc} />)}
+            icone={<PastilleStatut statut="garde" taille={36} />}
             libelle={t('filtres.garde')}
             coche={brouillon.garde}
             onChange={(v) => maj({ garde: v })}

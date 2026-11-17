@@ -39,6 +39,7 @@ const ICONES = [
   'medicine-mortar',
   'hospital-symbol',
   'star-small',
+  'officer',
 ];
 
 const BALISES = { g: 'G', path: 'Path', circle: 'Circle', rect: 'Rect', ellipse: 'Ellipse', polygon: 'Polygon' };

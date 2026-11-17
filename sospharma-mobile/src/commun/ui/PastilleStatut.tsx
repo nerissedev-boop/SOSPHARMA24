@@ -4,23 +4,20 @@ import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated
 import type { StatutPharmacie } from '../api/schema';
 import { estInactive } from '../regles/statut';
 import { t } from '../lib/i18n';
-import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
 import { usePulsation } from './animations';
-import { HiPharmacy, HiPharmacyOutline } from './icones/healthicons';
+import { IconeCroix } from './icones/trait';
 import { Texte } from './Texte';
 
 type Props = {
   statut: StatutPharmacie;
   taille?: number;
-  /** Petit badge « 24 » (garde) en haut à droite, comme dans les blocs et sur la carte. */
-  badge24?: boolean;
   /** Fond de la pastille « fermée » (blanc sur la carte). */
   fondFerme?: string;
-  /** Taille de la coupe d'Hygie (par défaut ≈ 64 % de la pastille). */
+  /** Taille de la croix (par défaut 60 % de la pastille). */
   tailleIcone?: number;
   style?: StyleProp<ViewStyle>;
-  /** « ocre » : ferme dans moins de 30 min (pastille ocre, coupe blanche). */
+  /** « ocre » : ferme dans moins de 30 min (pastille ocre, croix foncée). */
   ton?: 'ocre';
   /** Décorative si elle accompagne un texte de statut (par défaut). */
   annoncee?: boolean;
@@ -33,32 +30,30 @@ type Props = {
 };
 
 /**
- * Pastille de statut (élément réellement rond, exception de la charte) :
- * verte + coupe d'Hygie blanche = ouverte ; rouge + coupe blanche (+ badge 24) = de garde ;
- * gris clair + coupe en contour gris = fermée.
+ * Pastille de statut (élément réellement rond, exception de la charte). La forme dit l'état et la
+ * couleur le confirme : on les distingue sans voir le rouge ni le vert (WCAG 1.4.1).
+ * - de garde : « 24 » blanc sur rouge, de jour comme de nuit ;
+ * - ouverte : croix pleine blanche sur vert, la croix allumée de l'officine ;
+ * - ferme bientôt : croix pleine foncée sur ocre ;
+ * - fermée ou horaires à confirmer : croix en contour, éteinte, sur gris clair.
  */
-export function PastilleStatut({
-  statut,
-  taille = 40,
-  badge24 = false,
-  fondFerme,
-  tailleIcone,
-  style,
-  annoncee = false,
-  pulsation = false,
-  ton,
-  testID,
-}: Props) {
+export function PastilleStatut({ statut, taille = 40, fondFerme, tailleIcone, style, annoncee = false, pulsation = false, ton, testID }: Props) {
   const { couleurs: c } = useTheme();
-  const fond = ton === 'ocre' && !estInactive(statut) ? c.ocrePoint : statut === 'garde' ? c.rouge : statut === 'ouverte' ? c.vert : (fondFerme ?? c.fermeFond);
+  const inactive = estInactive(statut);
+  const ocre = ton === 'ocre' && !inactive && statut !== 'garde';
+  const fond = ocre ? c.ocrePoint : statut === 'garde' ? c.rouge : statut === 'ouverte' ? c.vert : (fondFerme ?? c.fermeFond);
   const { valeur, enMarche } = usePulsation(pulsation && statut === 'garde');
   const styleHalo = useAnimatedStyle(() => ({
     opacity: interpolate(valeur.get(), [0, 1], [0.45, 0]),
     transform: [{ scale: interpolate(valeur.get(), [0, 1], [1, 1.6]) }],
   }));
-  const icone = tailleIcone ?? Math.round(taille * (estInactive(statut) ? 0.6 : 0.65));
+  const icone = tailleIcone ?? Math.round(taille * 0.6);
+  // « 24 » à peu près aussi large que la croix : il remplit le disque sans toucher le bord.
+  const corps24 = Math.round(taille * 0.42);
   const libelle =
-    statut === 'garde' ? t('statut.pastilleGarde') : statut === 'ouverte'
+    statut === 'garde'
+      ? t('statut.pastilleGarde')
+      : statut === 'ouverte'
         ? t('statut.pastilleOuverte')
         : statut === 'inconnue'
           ? t('statut.pastilleInconnue')
@@ -78,35 +73,25 @@ export function PastilleStatut({
           style={[StyleSheet.absoluteFill, { borderRadius: taille / 2, backgroundColor: fond }, styleHalo]}
         />
       ) : null}
-      {estInactive(statut) ? (
-        <HiPharmacyOutline size={icone} color={c.fermeIcone} />
+      {statut === 'garde' ? (
+        // Taille fixe : le « 24 » est dessiné dans un disque de taille fixe, il ne suit pas la police système.
+        <Texte
+          variante="distanceGrande"
+          couleur={c.blanc}
+          allowFontScaling={false}
+          style={[styles.chiffres, { fontSize: corps24, lineHeight: Math.round(corps24 * 1.15) }]}
+          testID="pastille-24"
+        >
+          24
+        </Texte>
       ) : (
-        <HiPharmacy size={icone} color={c.blanc} />
+        <IconeCroix size={icone} color={inactive ? c.fermeIcone : ocre ? c.ocreIcone : c.blanc} plein={!inactive} />
       )}
-      {statut === 'garde' && badge24 ? (
-        <View style={[styles.badge, { backgroundColor: c.blanc }]} testID="badge-24">
-          <Texte variante="miniFort" couleur={c.rouge} style={styles.texteBadge}>
-            24
-          </Texte>
-        </View>
-      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   pastille: { alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  badge: {
-    position: 'absolute',
-    top: -7,
-    right: -9,
-    paddingHorizontal: 4,
-    borderRadius: rayons.repere,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 2,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
-  },
-  texteBadge: { fontSize: 10, lineHeight: 13 },
+  chiffres: { fontVariant: ['tabular-nums'], includeFontPadding: false, textAlign: 'center' },
 });
