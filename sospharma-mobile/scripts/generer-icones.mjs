@@ -29,16 +29,10 @@ const ICONES = [
   'home-outline',
   'ui-user-profile',
   'ui-user-profile-outline',
-  'emergency-post',
   'ambulance',
-  'accident-and-emergency',
+  'ambulance-24px',
   'medical-search-outline',
-  'prescription-document-outline',
   'insurance-card-outline',
-  'medicines-outline',
-  'medicine-mortar',
-  'hospital-symbol',
-  'star-small',
   'officer',
 ];
 
@@ -86,12 +80,13 @@ import Svg, { ${importsSvg.join(', ')} } from 'react-native-svg';
 
 export type PropsIcone = {
   size?: number;
-  color?: string;
+  /** Obligatoire : la couleur vient toujours d'un jeton du thème, jamais d'une valeur par défaut. */
+  color: string;
   accessibilityLabel?: string;
   testID?: string;
 };
 
-function props(p: PropsIcone) {
+function props(p: Omit<PropsIcone, 'color'>) {
   return {
     width: p.size ?? 24,
     height: p.size ?? 24,
@@ -107,7 +102,7 @@ function props(p: PropsIcone) {
 ${composants
   .map(
     (c) => `/** Healthicons « ${c.nom} ». */
-export function ${c.composant}({ color = '#1A1A1A', ...p }: PropsIcone) {
+export function ${c.composant}({ color, ...p }: PropsIcone) {
   return (
     <Svg {...props(p)}>
       ${c.jsx}

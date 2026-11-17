@@ -13,9 +13,9 @@ import {
   Ecran,
   HiGeoLocation,
   HiInsuranceCardOutline,
+  HiPhone,
   IconeChevronDroite,
   IconeHorloge,
-  IconeTelephoneTrait,
   PiedFixe,
   Texte,
   useRetour,
@@ -168,7 +168,7 @@ function FicheReleve() {
               style={({ pressed }) => [styles.horaires, { backgroundColor: c.surface, opacity: pressed ? 0.8 : 1 }]}
               testID="ligne-numeros-fiche"
             >
-              <IconeTelephoneTrait size={22} color={c.vert} />
+              <HiPhone size={22} color={c.vert} />
               <View style={styles.textes}>
                 <Texte variante="petitFort" style={styles.gras}>
                   {t('releve.numerosFiche')}

@@ -21,7 +21,6 @@ import {
   avecErrorBoundary,
   BandeauHorsConnexion,
   BarreZone,
-  BoutonIcone,
   CartePlusProche,
   ChampRecherche,
   ChargementCroix,
@@ -30,7 +29,6 @@ import {
   Filtre,
   HiMedicalSearchOutline,
   IconeChevronDroite,
-  IconeLune,
   LignePharmacie,
   Squelette,
   SqueletteBlocProche,
@@ -76,7 +74,6 @@ function Accueil() {
   const { pays, fuseau } = usePaysCourant();
   const filtreRapide = usePreferences((e) => e.filtreRapide);
   const definirFiltreRapide = usePreferences((e) => e.definirFiltreRapide);
-  const definirModeNuit = usePreferences((e) => e.definirModeNuit);
   const proches = usePharmaciesProches();
   const toutes = usePharmaciesProches({ rapide: 'toutes', actif: true });
   const { tour, dataUpdatedAt: tourMisAJourLe } = useTourEnCours();
@@ -136,22 +133,15 @@ function Accueil() {
   );
 
   /**
-   * Bandeau foncé aux coins bas arrondis : zone et mode nuit, l'état du moment en titre, puis la
-   * plus proche en grande carte qui le chevauche. Hors connexion, l'heure de la dernière mise à jour.
+   * Bandeau foncé aux coins bas arrondis : la zone, l'état du moment en titre, puis la plus proche
+   * en grande carte qui le chevauche. Hors connexion, l'heure de la dernière mise à jour.
+   * Pas de bouton de mode nuit ici : la lune veut dire « garde » dans toute l'app, et le réglage
+   * auto / jour / nuit reste dans Profil.
    */
   const bandeau = (titre: string | null, surtitre: string | null, misAJourLe: number, chevauche: boolean) => (
     <View style={[styles.bandeau, chevauche && styles.bandeauChevauche, { backgroundColor: c.vertProfond }]} testID="bandeau-accueil">
       <View style={styles.entete}>
         <BarreZone variante="pastille" libelle={libelle} onChanger={() => router.push('/zone')} surFonce testID="barre-zone" />
-        <BoutonIcone
-          accessibilityLabel={estNuit ? t('accueil.modeJour') : t('accueil.modeNuit')}
-          rond
-          fond={c.boutonSurFonce}
-          onPress={() => definirModeNuit(estNuit ? 'jour' : 'nuit')}
-          testID="bouton-mode"
-        >
-          <IconeLune size={20} color={c.blanc} plein={estNuit} />
-        </BoutonIcone>
       </View>
       {surtitre ? (
         <Texte variante="petitFort" couleur={c.vertTendre} testID="surtitre-accueil">

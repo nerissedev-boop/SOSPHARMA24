@@ -44,6 +44,7 @@ import {
   Ecran,
   EtatVide,
   FacadeIllustree,
+  HiPhone,
   IconeBulle,
   IconeCoche,
   IconeCoeur,
@@ -51,7 +52,6 @@ import {
   IconeLieu,
   IconePartage,
   IconeRetour,
-  IconeTelephoneTrait,
   IconeVoiture,
   PhotoFondu,
   PressableAnime,
@@ -426,7 +426,7 @@ function Fiche() {
                     style={({ pressed }) => [styles.lienTelephone, pressed && styles.appuye]}
                     testID="lien-telephone"
                   >
-                    <IconeTelephoneTrait size={20} color={c.pastilleActionIcone} />
+                    <HiPhone size={20} color={c.pastilleActionIcone} />
                     <View style={styles.textesInfo}>
                       <Texte variante="libelle" couleur={c.texteSecondaire}>
                         {t('fiche.telephone')}
@@ -494,7 +494,7 @@ function Fiche() {
               {/* Les numéros se corrigent tout de suite, sans passer par un relevé complet. */}
               <Bouton
                 libelle={t('fiche.numerosAgent')}
-                icone={<IconeTelephoneTrait size={20} color={c.vertTexte} />}
+                icone={<HiPhone size={20} color={c.vertTexte} />}
                 variante="clair"
                 typo="boutonPetit"
                 onPress={() => router.push({ pathname: '/agent/numeros/[id]', params: { id: fiche.id } })}

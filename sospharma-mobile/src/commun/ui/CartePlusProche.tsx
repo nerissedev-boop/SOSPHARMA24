@@ -15,7 +15,7 @@ import { BadgeAssurance } from './BadgeAssurance';
 import { BadgePosition } from './BadgePosition';
 import { Bouton } from './Bouton';
 import { HiPhone } from './icones/healthicons';
-import { IconeChevronDroite, IconeItineraire, IconeTelephoneTrait } from './icones/trait';
+import { IconeChevronDroite, IconeItineraire } from './icones/trait';
 import { PhotoFondu } from './PhotoFondu';
 import { RepereStatut } from './RepereStatut';
 import { Texte } from './Texte';
@@ -55,7 +55,6 @@ export function ActionsPharmacie({ nom, conseil = false, onAppeler, onYAller, te
     <>
       {conseil ? (
         <View style={styles.conseil} testID="conseil-garde">
-          <IconeTelephoneTrait size={16} color={c.pastilleActionIcone} />
           <Texte variante="petit" couleur={c.texteSecondaire} style={styles.flexible}>
             {t('garde.conseil')}
           </Texte>

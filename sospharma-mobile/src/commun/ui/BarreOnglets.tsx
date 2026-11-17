@@ -5,8 +5,16 @@ import { t } from '../lib/i18n';
 import { useSessionAgent } from '../lib/sessionAgent';
 import { rayons } from '../theme/rayons';
 import { useTheme } from '../theme/Theme';
-import { HiGeoLocation, HiHome, HiUiUserProfile, HiUiUserProfileOutline } from './icones/healthicons';
-import { IconeLune, IconePlus, IconeReleves } from './icones/trait';
+import {
+  HiAmbulance24px,
+  HiGeoLocation,
+  HiGeoLocationOutline,
+  HiHome,
+  HiHomeOutline,
+  HiUiUserProfile,
+  HiUiUserProfileOutline,
+} from './icones/healthicons';
+import { IconeLune, IconeReleves } from './icones/trait';
 import { Texte } from './Texte';
 
 export type CleOnglet = 'accueil' | 'carte' | 'urgence' | 'garde' | 'profil' | 'releves';
@@ -20,7 +28,7 @@ type Props = {
 };
 
 /**
- * Barre d'onglets personnalisée (5 onglets) : Urgence = cercle rouge avec +,
+ * Barre d'onglets personnalisée (5 onglets) : Urgence = cercle rouge avec l'ambulance,
  * Garde actif en rouge, sinon actif vert. Fond blanc, haut arrondi de 20, à plat (refonte v2), sans bordure.
  * Utilisable par le navigateur d'onglets ou seule (écrans hors onglets des maquettes).
  */
@@ -35,16 +43,18 @@ export function BarreOnglets({ actif, onSelection }: Props) {
     const teinte = estActif ? couleurActive : c.ongletInactif;
     let icone;
     switch (cle) {
+      // Contour au repos, plein quand l'onglet est actif : la forme dit l'onglet courant, pas seulement la couleur.
       case 'accueil':
-        icone = <HiHome size={26} color={teinte} />;
+        icone = estActif ? <HiHome size={26} color={teinte} /> : <HiHomeOutline size={26} color={teinte} />;
         break;
       case 'carte':
-        icone = <HiGeoLocation size={26} color={teinte} />;
+        icone = estActif ? <HiGeoLocation size={26} color={teinte} /> : <HiGeoLocationOutline size={26} color={teinte} />;
         break;
       case 'urgence':
+        // L'ambulance, comme le SAMU sur l'écran Urgence : un « + » se lirait « ajouter ».
         icone = (
           <View style={[styles.urgence, { backgroundColor: c.rougeVif }]}>
-            <IconePlus size={18} color={c.blanc} />
+            <HiAmbulance24px size={20} color={c.blanc} />
           </View>
         );
         break;

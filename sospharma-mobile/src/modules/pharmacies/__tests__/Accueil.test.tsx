@@ -51,6 +51,13 @@ describe('Accueil', () => {
     expect(screen.queryByText('Itinéraire')).toBeNull();
   });
 
+  it('pas de bouton de mode nuit dans le bandeau : la lune veut dire « garde », le réglage est dans Profil', async () => {
+    await rendre(<Accueil />);
+    expect(await screen.findByTestId('bandeau-accueil')).toBeTruthy();
+    expect(screen.queryByTestId('bouton-mode')).toBeNull();
+    expect(screen.queryByLabelText(/Passer en mode/)).toBeNull();
+  });
+
   it.each([
     ['jour', jetonsJour.vert],
     ['nuit', jetonsNuit.vert],

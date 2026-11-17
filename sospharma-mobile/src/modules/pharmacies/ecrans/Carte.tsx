@@ -17,7 +17,7 @@ import {
   Ecran,
   Filtre,
   HiMedicalSearchOutline,
-  IconeCalques,
+  IconeCarteDepliee,
   IconeFermer,
   IconeFiltres,
   IconeViseur,
@@ -321,19 +321,19 @@ function Carte() {
         >
           <IconeViseur size={20} color={c.bleuPosition} />
         </BoutonIcone>
-        <BoutonIcone
-          accessibilityLabel={t('carte.calques')}
-          rond
-          fond={c.feuille}
-          style={ombres.boutonRond}
-          onPress={() =>
-            modeCommunes
-              ? point && refCarte.current?.recentrer(point, 14)
-              : ville && refCarte.current?.recentrer({ latitude: ville.latitude, longitude: ville.longitude }, 11)
-          }
-        >
-          <IconeCalques size={20} color={c.texte} />
-        </BoutonIcone>
+        {/* Dézoome sur la ville (communes et leurs gardes). Déjà à ce niveau, le viseur ramène à l'usager. */}
+        {!modeCommunes && ville ? (
+          <BoutonIcone
+            accessibilityLabel={t('carte.toutLaVille')}
+            rond
+            fond={c.feuille}
+            style={ombres.boutonRond}
+            onPress={() => refCarte.current?.recentrer({ latitude: ville.latitude, longitude: ville.longitude }, 11)}
+            testID="bouton-toute-la-ville"
+          >
+            <IconeCarteDepliee size={20} color={c.texte} />
+          </BoutonIcone>
+        ) : null}
       </View>
 
       {recherche ? (
